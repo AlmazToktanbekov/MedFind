@@ -1,0 +1,78 @@
+{% extends "admin/base.html" %}
+{% block title %}Аптеки — MedFind Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>💊 Аптеки</h1>
+  <p>Управление аптеками</p>
+</div>
+
+<div class="card">
+  <div class="search-bar">
+    <span>🔍</span>
+    <input type="text" placeholder="Поиск по названию..." oninput="filterTable(this.value)">
+  </div>
+  <div class="table-wrap">
+    <table id="pharmTable">
+      <thead>
+        <tr><th>#</th><th>Аптека</th><th>Адрес</th><th>Телефон</th><th>24ч</th><th>Часы работы</th><th>Статус</th><th>Действия</th></tr>
+      </thead>
+      <tbody>
+        {% for p in pharmacies %}
+        <tr data-name="{{ p.name_ru|lower }}">
+          <td style="color:var(--text2); font-size:13px;">{{ p.id }}</td>
+          <td>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div class="avatar">💊</div>
+              <div style="font-weight:600; font-size:14px;">{{ p.name_ru }}</div>
+            </div>
+          </td>
+          <td style="font-size:13px;">{{ p.address_ru[:40] if p.address_ru else '—' }}</td>
+          <td style="font-size:13px;">{{ p.phone or '—' }}</td>
+          <td>{% if p.is_open_24h %}<span class="badge active"><span class="badge-dot"></span>Да</span>{% else %}<span style="color:var(--text2);">Нет</span>{% endif %}</td>
+          <td style="font-size:13px; color:var(--text2);">{{ p.working_hours_ru or '—' }}</td>
+          <td>
+            <span class="badge {{ p.status }}">
+              <span class="badge-dot"></span>
+              {% if p.status == 'active' %}Активна{% elif p.status == 'pending' %}Ожидает{% else %}Отклонена{% endif %}
+            </span>
+          </td>
+          <td>
+            <div style="display:flex; gap:6px;">
+              {% if p.status == 'pending' %}
+                <form method="POST" action="/panel/approve/pharmacy/{{ p.id }}" style="display:inline;">
+                  <button type="submit" class="btn btn-sm btn-success">✓</button>
+                </form>
+                <form method="POST" action="/panel/reject/pharmacy/{{ p.id }}" style="display:inline;" onsubmit="return confirm('Отклонить?')">
+                  <button type="submit" class="btn btn-sm btn-danger">✗</button>
+                </form>
+              {% elif p.status == 'active' %}
+                <form method="POST" action="/panel/reject/pharmacy/{{ p.id }}" style="display:inline;" onsubmit="return confirm('Деактивировать?')">
+                  <button type="submit" class="btn btn-sm btn-danger">🚫</button>
+                </form>
+              {% elif p.status == 'rejected' %}
+                <form method="POST" action="/panel/approve/pharmacy/{{ p.id }}" style="display:inline;">
+                  <button type="submit" class="btn btn-sm btn-success">↩</button>
+                </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8"><div class="empty-state"><div class="empty-icon">💊</div><p>Нет аптек</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function filterTable(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('#pharmTable tbody tr').forEach(tr => {
+    tr.style.display = (tr.dataset.name||'').includes(q) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

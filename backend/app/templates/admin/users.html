@@ -1,0 +1,70 @@
+{% extends "admin/base.html" %}
+{% block title %}Пользователи — MedFind Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>👥 Пользователи</h1>
+  <p>Зарегистрированные пользователи платформы</p>
+</div>
+
+<div class="card">
+  <div class="search-bar">
+    <span>🔍</span>
+    <input type="text" placeholder="Поиск по имени или телефону..." oninput="filterTable(this.value)">
+  </div>
+  <div class="table-wrap">
+    <table id="usersTable">
+      <thead>
+        <tr><th>#</th><th>Пользователь</th><th>Телефон</th><th>Роль</th><th>Статус</th><th>Регистрация</th></tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr data-q="{{ ((u.full_name or '') + u.phone)|lower }}">
+          <td style="color:var(--text2); font-size:13px;">{{ u.id }}</td>
+          <td>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div class="avatar">{{ (u.full_name or u.phone)[0] }}</div>
+              <div>
+                <div style="font-weight:600; font-size:14px;">{{ u.full_name or '—' }}</div>
+                <div style="font-size:12px; color:var(--text2);">{{ u.email or '' }}</div>
+              </div>
+            </div>
+          </td>
+          <td style="font-size:14px;">{{ u.phone }}</td>
+          <td>
+            {% set role_colors = {'admin': 'error', 'doctor': 'active', 'clinic': 'active', 'patient': 'pending', 'pharmacy': 'active'} %}
+            <span class="badge {{ role_colors.get(u.role, 'pending') }}">
+              <span class="badge-dot"></span>
+              {{ u.role }}
+            </span>
+          </td>
+          <td>
+            {% if u.is_active %}
+              <span class="badge active"><span class="badge-dot"></span>Активен</span>
+            {% else %}
+              <span class="badge rejected"><span class="badge-dot"></span>Заблокирован</span>
+            {% endif %}
+          </td>
+          <td style="font-size:13px; color:var(--text2);">{{ u.created_at.strftime('%d.%m.%Y') }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6"><div class="empty-state"><div class="empty-icon">👥</div><p>Нет пользователей</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div style="padding-top:16px; border-top:1px solid #EEF1F8; font-size:13px; color:var(--text2);">
+    Всего: {{ users|length }} пользователей
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function filterTable(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('#usersTable tbody tr').forEach(tr => {
+    tr.style.display = (tr.dataset.q||'').includes(q) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

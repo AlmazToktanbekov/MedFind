@@ -1,0 +1,146 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ doctor.full_name_ru }} — MedFind Admin{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:20px;">
+  <a href="/panel/doctors" style="color:var(--text2); text-decoration:none; font-size:14px;">← Назад к врачам</a>
+</div>
+
+<div style="display:grid; grid-template-columns: 1fr 2fr; gap:20px;">
+  <!-- Left: Info card -->
+  <div>
+    <div class="card" style="text-align:center; margin-bottom:16px;">
+      {% if doctor.photo_url %}
+        <img src="{{ doctor.photo_url }}" style="width:100px; height:100px; border-radius:50%; object-fit:cover; margin-bottom:12px;">
+      {% else %}
+        <div style="width:100px; height:100px; border-radius:50%; background:#EEF2FF; display:flex; align-items:center; justify-content:center; font-size:40px; margin:0 auto 12px;">{{ doctor.full_name_ru[0] }}</div>
+      {% endif %}
+      <h2 style="font-size:18px; font-weight:700; margin-bottom:4px;">{{ doctor.full_name_ru }}</h2>
+      <div style="color:var(--text2); font-size:14px; margin-bottom:12px;">{{ doctor.specialization_ru }}</div>
+      <span class="badge {{ doctor.status }}" style="margin-bottom:16px;">
+        <span class="badge-dot"></span>
+        {% if doctor.status == 'active' %}Активен
+        {% elif doctor.status == 'pending' %}Ожидает
+        {% else %}Отклонён{% endif %}
+      </span>
+
+      {% if doctor.status == 'pending' %}
+      <div style="display:flex; gap:8px; margin-top:16px;">
+        <form method="POST" action="/panel/approve/doctor/{{ doctor.id }}" style="flex:1;">
+          <button type="submit" class="btn btn-success" style="width:100%;">✓ Одобрить</button>
+        </form>
+        <form method="POST" action="/panel/reject/doctor/{{ doctor.id }}" style="flex:1;"
+              onsubmit="return confirm('Отклонить?')">
+          <button type="submit" class="btn btn-danger" style="width:100%;">✗ Отклонить</button>
+        </form>
+      </div>
+      {% elif doctor.status == 'active' %}
+      <form method="POST" action="/panel/reject/doctor/{{ doctor.id }}" style="margin-top:16px;"
+            onsubmit="return confirm('Деактивировать?')">
+        <button type="submit" class="btn btn-danger" style="width:100%;">🚫 Деактивировать</button>
+      </form>
+      {% endif %}
+    </div>
+
+    <!-- Stats -->
+    <div class="card">
+      <h4 style="font-size:14px; font-weight:700; margin-bottom:12px; color:var(--text2);">СТАТИСТИКА</h4>
+      {% set rows = [
+        ('⭐ Рейтинг', "%.1f"|format(doctor.rating)),
+        ('💬 Отзывы', doctor.reviews_count),
+        ('🗓 Опыт', (doctor.experience_years|string + ' лет') if doctor.experience_years else '—'),
+        ('💻 Онлайн', 'Да' if doctor.has_online else 'Нет'),
+        ('🏥 Офлайн', 'Да' if doctor.has_offline else 'Нет'),
+      ] %}
+      {% for label, val in rows %}
+      <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #EEF1F8; font-size:14px;">
+        <span style="color:var(--text2);">{{ label }}</span>
+        <span style="font-weight:600;">{{ val }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Right: Details -->
+  <div style="display:flex; flex-direction:column; gap:16px;">
+    <!-- Bio -->
+    {% if doctor.bio_ru %}
+    <div class="card">
+      <h4 style="font-size:14px; font-weight:700; margin-bottom:10px; color:var(--text2);">О ВРАЧЕ</h4>
+      <p style="font-size:14px; line-height:1.6; color:var(--text);">{{ doctor.bio_ru }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Contacts -->
+    {% if doctor.contacts %}
+    <div class="card">
+      <h4 style="font-size:14px; font-weight:700; margin-bottom:12px; color:var(--text2);">КОНТАКТЫ</h4>
+      {% for c in doctor.contacts %}
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px; font-size:14px;">
+        {% if c.type == 'phone' %}📞{% elif c.type == 'whatsapp' %}💬{% elif c.type == 'telegram' %}✈️{% elif c.type == 'instagram' %}📸{% else %}📧{% endif %}
+        <span style="font-weight:600; text-transform:capitalize;">{{ c.type }}:</span>
+        <span>{{ c.value }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Services -->
+    {% if doctor.services %}
+    <div class="card">
+      <h4 style="font-size:14px; font-weight:700; margin-bottom:12px; color:var(--text2);">УСЛУГИ И ЦЕНЫ</h4>
+      <table style="width:100%;">
+        <thead><tr><th>Услуга</th><th style="text-align:right;">Цена (сом)</th></tr></thead>
+        <tbody>
+          {% for s in doctor.services %}
+          <tr>
+            <td style="font-size:14px; padding:8px 0; border-bottom:1px solid #EEF1F8;">{{ s.name_ru }}</td>
+            <td style="text-align:right; font-weight:600; font-size:14px; padding:8px 0; border-bottom:1px solid #EEF1F8;">
+              {% if s.price %}{{ "{:,.0f}".format(s.price) }}{% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <!-- Schedule -->
+    {% if doctor.schedules %}
+    <div class="card">
+      <h4 style="font-size:14px; font-weight:700; margin-bottom:12px; color:var(--text2);">РАСПИСАНИЕ</h4>
+      {% set days = ['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'] %}
+      {% for s in doctor.schedules %}
+      {% if s.is_available %}
+      <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #EEF1F8; font-size:14px;">
+        <span>{{ days[s.day_of_week] }}</span>
+        <span style="font-weight:600; color:var(--primary);">{{ s.start_time }} – {{ s.end_time }}</span>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Online/Offline prices -->
+    <div class="card">
+      <h4 style="font-size:14px; font-weight:700; margin-bottom:12px; color:var(--text2);">ПРИЁМ</h4>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        {% if doctor.has_online %}
+        <div style="background:#EEF2FF; border-radius:12px; padding:14px;">
+          <div style="font-size:12px; color:var(--primary); font-weight:600; margin-bottom:6px;">💻 Онлайн</div>
+          <div style="font-size:18px; font-weight:700;">{{ "{:,.0f}".format(doctor.online_price) if doctor.online_price else '—' }} сом</div>
+          <div style="font-size:12px; color:var(--text2); margin-top:4px;">{{ doctor.online_duration_min or 30 }} мин</div>
+        </div>
+        {% endif %}
+        {% if doctor.has_offline %}
+        <div style="background:#F8FAFF; border-radius:12px; padding:14px;">
+          <div style="font-size:12px; color:var(--text2); font-weight:600; margin-bottom:6px;">🏥 Офлайн</div>
+          <div style="font-size:18px; font-weight:700;">{{ "{:,.0f}".format(doctor.offline_price) if doctor.offline_price else '—' }} сом</div>
+          <div style="font-size:12px; color:var(--text2); margin-top:4px;">{{ doctor.offline_duration_min or 30 }} мин</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

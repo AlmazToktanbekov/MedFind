@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MedFind Admin — Вход</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #1565C0; --primary-dark: #0D47A1; --accent: #2979FF;
+      --bg: #F0F4FF; --error: #E53935;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); min-height: 100vh;
+           display: flex; align-items: center; justify-content: center; }
+
+    .login-wrap {
+      width: 100%; max-width: 420px; padding: 20px;
+    }
+    .login-card {
+      background: #fff; border-radius: 20px; padding: 40px 36px;
+      box-shadow: 0 8px 40px rgba(21,101,192,.15);
+    }
+    .logo {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 32px;
+    }
+    .logo-icon {
+      width: 52px; height: 52px; background: linear-gradient(135deg, var(--primary-dark), var(--accent));
+      border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px;
+    }
+    .logo h1 { font-size: 22px; font-weight: 700; }
+    .logo span { font-size: 13px; color: #6B7A99; display: block; }
+
+    h2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+    .subtitle { color: #6B7A99; font-size: 14px; margin-bottom: 28px; }
+
+    .field { margin-bottom: 16px; }
+    label { display: block; font-size: 13px; font-weight: 600; color: #0D1B3E; margin-bottom: 6px; }
+    input {
+      width: 100%; padding: 12px 16px; border: 1.5px solid #E0E8FF;
+      border-radius: 12px; font-size: 15px; font-family: 'Inter', sans-serif;
+      outline: none; transition: border-color .2s; color: #0D1B3E;
+    }
+    input:focus { border-color: var(--primary); }
+
+    .btn-submit {
+      width: 100%; padding: 14px; background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 700;
+      cursor: pointer; font-family: 'Inter', sans-serif; margin-top: 8px; transition: opacity .2s;
+    }
+    .btn-submit:hover { opacity: .9; }
+
+    .error-msg { background: #FEE8E8; color: var(--error); padding: 12px 16px;
+                 border-radius: 10px; font-size: 14px; margin-bottom: 16px; }
+    .hint { font-size: 12px; color: #6B7A99; text-align: center; margin-top: 16px; }
+  </style>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="logo">
+      <div class="logo-icon">🏥</div>
+      <div>
+        <h1>MedFind</h1>
+        <span>Панель администратора</span>
+      </div>
+    </div>
+
+    <h2>Войти</h2>
+    <p class="subtitle">Введите данные для доступа к панели</p>
+
+    {% if error %}
+      <div class="error-msg">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="/panel/login">
+      <div class="field">
+        <label>Телефон (логин)</label>
+        <input type="text" name="phone" placeholder="+996 700 000 000" required autofocus>
+      </div>
+      <div class="field">
+        <label>Пароль</label>
+        <input type="password" name="password" placeholder="Введите пароль" required>
+      </div>
+      <button type="submit" class="btn-submit">Войти в панель</button>
+    </form>
+
+    <p class="hint">Доступ только для администраторов</p>
+  </div>
+</div>
+</body>
+</html>

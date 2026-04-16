@@ -1,0 +1,89 @@
+{% extends "admin/base.html" %}
+{% block title %}Клиники — MedFind Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>🏥 Клиники</h1>
+  <p>Управление профилями клиник</p>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn {% if current_status == 'all' %}active{% endif %}" onclick="window.location='/panel/clinics?status=all'">Все ({{ counts.all }})</button>
+  <button class="tab-btn {% if current_status == 'active' %}active{% endif %}" onclick="window.location='/panel/clinics?status=active'">Активные ({{ counts.active }})</button>
+  <button class="tab-btn {% if current_status == 'pending' %}active{% endif %}" onclick="window.location='/panel/clinics?status=pending'">На модерации ({{ counts.pending }})</button>
+  <button class="tab-btn {% if current_status == 'rejected' %}active{% endif %}" onclick="window.location='/panel/clinics?status=rejected'">Отклонённые ({{ counts.rejected }})</button>
+</div>
+
+<div class="card">
+  <div class="search-bar">
+    <span>🔍</span>
+    <input type="text" placeholder="Поиск по названию или категории..."
+           oninput="filterTable(this.value)">
+  </div>
+  <div class="table-wrap">
+    <table id="clinicsTable">
+      <thead>
+        <tr><th>#</th><th>Клиника</th><th>Категория</th><th>Адрес</th><th>Рейтинг</th><th>Статус</th><th>Действия</th></tr>
+      </thead>
+      <tbody>
+        {% for c in clinics %}
+        <tr data-name="{{ c.name_ru|lower }}" data-cat="{{ (c.category_ru or '')|lower }}">
+          <td style="color:var(--text2); font-size:13px;">{{ c.id }}</td>
+          <td>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div class="avatar">{{ c.name_ru[0] }}</div>
+              <div>
+                <div style="font-weight:600; font-size:14px;">{{ c.name_ru }}</div>
+                {% if c.phone %}<div style="font-size:12px; color:var(--text2);">{{ c.phone }}</div>{% endif %}
+              </div>
+            </div>
+          </td>
+          <td style="font-size:14px;">{{ c.category_ru or '—' }}</td>
+          <td style="font-size:13px; color:var(--text2);">{{ c.address_ru[:40] if c.address_ru else '—' }}</td>
+          <td><span style="font-weight:600; color:#FF8C00;">★ {{ "%.1f"|format(c.rating) }}</span> <span style="font-size:12px; color:var(--text2);">({{ c.reviews_count }})</span></td>
+          <td>
+            <span class="badge {{ c.status }}">
+              <span class="badge-dot"></span>
+              {% if c.status == 'active' %}Активна{% elif c.status == 'pending' %}Ожидает{% else %}Отклонена{% endif %}
+            </span>
+          </td>
+          <td>
+            <div style="display:flex; gap:6px;">
+              {% if c.status == 'pending' %}
+                <form method="POST" action="/panel/approve/clinic/{{ c.id }}" style="display:inline;">
+                  <button type="submit" class="btn btn-sm btn-success">✓</button>
+                </form>
+                <form method="POST" action="/panel/reject/clinic/{{ c.id }}" style="display:inline;" onsubmit="return confirm('Отклонить?')">
+                  <button type="submit" class="btn btn-sm btn-danger">✗</button>
+                </form>
+              {% elif c.status == 'active' %}
+                <form method="POST" action="/panel/reject/clinic/{{ c.id }}" style="display:inline;" onsubmit="return confirm('Деактивировать?')">
+                  <button type="submit" class="btn btn-sm btn-danger">🚫</button>
+                </form>
+              {% elif c.status == 'rejected' %}
+                <form method="POST" action="/panel/approve/clinic/{{ c.id }}" style="display:inline;">
+                  <button type="submit" class="btn btn-sm btn-success">↩</button>
+                </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7"><div class="empty-state"><div class="empty-icon">🏥</div><p>Нет клиник</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function filterTable(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('#clinicsTable tbody tr').forEach(tr => {
+    const n = (tr.dataset.name||'') + (tr.dataset.cat||'');
+    tr.style.display = n.includes(q) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}
