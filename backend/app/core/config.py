@@ -25,6 +25,9 @@ class Settings(BaseSettings):
 
     GROQ_API_KEY: str = ""
 
+    FIREBASE_PROJECT_ID: str = ""          # Firebase project ID
+    FIREBASE_SERVICE_ACCOUNT_PATH: str = ""  # path to serviceAccountKey.json
+
     BACKEND_CORS_ORIGINS: List[str] = ["*"]
 
     class Config:

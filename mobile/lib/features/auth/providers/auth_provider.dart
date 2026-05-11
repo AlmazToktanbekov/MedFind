@@ -1,6 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../data/auth_repository.dart';
+import '../../../core/services/notification_service.dart';
+import '../../profile/providers/profile_provider.dart';
+import '../../search/providers/search_provider.dart';
+import '../../provider/providers/doctor_setup_provider.dart';
+import '../../clinics/presentation/screens/clinic_manage_screen.dart' show myClinicProvider;
+import '../../../shared/providers/favorites_provider.dart';
 
 // ─── Repository provider ───────────────────────────────────────────────────
 
@@ -14,22 +20,26 @@ class AuthState {
   final AuthStatus status;
   final String? errorMessage;
   final String? role;
+  final String? pendingDevCode;
 
   const AuthState({
     this.status = AuthStatus.initial,
     this.errorMessage,
     this.role,
+    this.pendingDevCode,
   });
 
   AuthState copyWith({
     AuthStatus? status,
     String? errorMessage,
     String? role,
+    String? pendingDevCode,
   }) =>
       AuthState(
         status: status ?? this.status,
         errorMessage: errorMessage,
         role: role ?? this.role,
+        pendingDevCode: pendingDevCode,
       );
 }
 
@@ -37,19 +47,29 @@ class AuthState {
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthRepository _repo;
+  final Ref _ref;
 
-  AuthNotifier(this._repo) : super(const AuthState());
+  AuthNotifier(this._repo, this._ref) : super(const AuthState());
+
+  /// Сбрасывает все провайдеры, привязанные к конкретному пользователю,
+  /// чтобы после смены аккаунта (вход / регистрация / выход) не показывались
+  /// данные предыдущего пользователя.
+  void _resetUserScopedState() {
+    _ref.invalidate(profileProvider);
+    _ref.invalidate(favoritesProvider);
+    _ref.invalidate(searchProvider);
+    _ref.invalidate(myDoctorProvider);
+    _ref.invalidate(myClinicProvider);
+  }
 
   /// Проверяет авторизацию при старте (SplashScreen).
-  /// Возвращает роль если авторизован, null иначе.
   Future<String?> checkAuth() async {
     final loggedIn = await _repo.isLoggedIn();
     if (!loggedIn) return null;
     return _repo.getRole();
   }
 
-  /// Регистрация нового пользователя.
-  /// Возвращает роль при успехе, null при ошибке.
+  /// Регистрация по паролю. Возвращает роль при успехе, null при ошибке.
   Future<String?> register({
     required String phone,
     required String password,
@@ -65,11 +85,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
         role: role,
       );
       final userRole = data['role'] as String;
+      _resetUserScopedState();
       state = state.copyWith(status: AuthStatus.authenticated, role: userRole);
       return userRole;
     } on DioException catch (e) {
-      final message = _extractError(e);
-      state = state.copyWith(status: AuthStatus.error, errorMessage: message);
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: _extractError(e),
+      );
       return null;
     } catch (_) {
       state = state.copyWith(
@@ -80,8 +103,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Вход по телефону и паролю.
-  /// Возвращает роль при успехе, null при ошибке.
+  /// Вход по паролю. Возвращает роль при успехе, null при ошибке.
   Future<String?> login({
     required String phone,
     required String password,
@@ -90,11 +112,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final data = await _repo.login(phone: phone, password: password);
       final userRole = data['role'] as String;
+      _resetUserScopedState();
       state = state.copyWith(status: AuthStatus.authenticated, role: userRole);
+      NotificationService.instance.init();
       return userRole;
     } on DioException catch (e) {
-      final message = _extractError(e);
-      state = state.copyWith(status: AuthStatus.error, errorMessage: message);
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: _extractError(e),
+      );
       return null;
     } catch (_) {
       state = state.copyWith(
@@ -105,9 +131,79 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Отправить OTP-код. Возвращает dev_code (DEV_MODE) или null (prod/ошибка).
+  /// При ошибке устанавливает state.errorMessage.
+  Future<bool> sendOtp({
+    required String phone,
+    String? fullName,
+    String role = 'patient',
+  }) async {
+    state = state.copyWith(
+      status: AuthStatus.loading,
+      errorMessage: null,
+      pendingDevCode: null,
+    );
+    try {
+      final data = await _repo.sendOtp(phone: phone, fullName: fullName, role: role);
+      state = state.copyWith(
+        status: AuthStatus.initial,
+        pendingDevCode: data['dev_code'] as String?,
+      );
+      return true;
+    } on DioException catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: _extractError(e),
+      );
+      return false;
+    } catch (_) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: 'Не удалось отправить код. Проверьте соединение.',
+      );
+      return false;
+    }
+  }
+
+  /// Подтвердить OTP. Возвращает роль при успехе, null при ошибке.
+  Future<String?> verifyOtp({
+    required String phone,
+    required String code,
+    String? fullName,
+    String role = 'patient',
+  }) async {
+    state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
+    try {
+      final data = await _repo.verifyOtp(
+        phone: phone,
+        code: code,
+        fullName: fullName,
+        role: role,
+      );
+      final userRole = data['role'] as String;
+      _resetUserScopedState();
+      state = state.copyWith(status: AuthStatus.authenticated, role: userRole);
+      NotificationService.instance.init();
+      return userRole;
+    } on DioException catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: _extractError(e),
+      );
+      return null;
+    } catch (_) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: 'Ошибка подтверждения. Попробуйте позже.',
+      );
+      return null;
+    }
+  }
+
   /// Выход из аккаунта
   Future<void> logout() async {
     await _repo.logout();
+    _resetUserScopedState();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 
@@ -116,17 +212,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
     return _repo.hasProviderProfile(role);
   }
 
+  /// Получить статус профиля врача (pending/active/rejected/deactivated/removed)
+  Future<String?> getDoctorStatus() {
+    return _repo.getDoctorStatus();
+  }
+
   String _extractError(DioException e) {
     final detail = e.response?.data?['detail'];
     if (detail is String) return detail;
-    return e.response?.statusCode == 401
-        ? 'Неверный номер телефона или пароль'
-        : 'Произошла ошибка. Попробуйте позже.';
+    return 'Произошла ошибка. Попробуйте позже.';
   }
 }
 
 // ─── Provider ──────────────────────────────────────────────────────────────
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>(
-  (ref) => AuthNotifier(ref.watch(authRepositoryProvider)),
+  (ref) => AuthNotifier(ref.watch(authRepositoryProvider), ref),
 );

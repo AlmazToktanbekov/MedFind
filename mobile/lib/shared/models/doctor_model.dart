@@ -1,3 +1,5 @@
+import '../../core/constants/app_constants.dart';
+
 class DoctorContactModel {
   final int id;
   final String type; // phone | whatsapp | telegram | instagram
@@ -23,8 +25,13 @@ class DoctorModel {
   final String fullName;
   final String specialization;
   final String? bio;
+  final String? education;
+  final String? consultationLanguage;
   final String? photoUrl;
+  final String? coverPhotoUrl;
   final int? experienceYears;
+  final int? clinicId;
+  final String? clinicName;
   final double rating;
   final int reviewCount;
   final bool hasOnline;
@@ -41,8 +48,13 @@ class DoctorModel {
     required this.fullName,
     required this.specialization,
     this.bio,
+    this.education,
+    this.consultationLanguage,
     this.photoUrl,
+    this.coverPhotoUrl,
     this.experienceYears,
+    this.clinicId,
+    this.clinicName,
     this.rating = 0.0,
     this.reviewCount = 0,
     this.hasOnline = false,
@@ -75,8 +87,13 @@ class DoctorModel {
       fullName: json['full_name_ru'] as String? ?? '',
       specialization: json['specialization_ru'] as String? ?? '',
       bio: json['bio_ru'] as String?,
-      photoUrl: json['photo_url'] as String?,
+      education: json['education'] as String?,
+      consultationLanguage: json['consultation_language'] as String?,
+      photoUrl: AppConstants.fixUrlOrNull(json['photo_url'] as String?),
+      coverPhotoUrl: AppConstants.fixUrlOrNull(json['cover_photo_url'] as String?),
       experienceYears: json['experience_years'] as int?,
+      clinicId: json['clinic_id'] as int?,
+      clinicName: json['clinic_name'] as String?,
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       reviewCount: json['reviews_count'] as int? ?? 0,
       hasOnline: json['has_online'] as bool? ?? false,

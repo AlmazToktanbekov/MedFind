@@ -1,0 +1,36 @@
+{
+  "@@locale": "ky",
+  "appTitle": "MedFind",
+
+  "navHome": "Башкы",
+  "navSearch": "Издөө",
+  "navAi": "ЖИ",
+  "navHealth": "Ден соолук",
+  "navProfile": "Профиль",
+
+  "commonRetry": "Кайталоо",
+  "commonLoading": "Жүктөлүүдө…",
+
+  "profileUser": "Колдонуучу",
+  "profileFavorites": "Тандалмалар",
+  "profileFavoriteClinics": "Тандалган клиникалар",
+  "profileFavoritePharmacies": "Тандалган дарыканалар",
+  "profileSearchHistory": "Издөө тарыхы",
+  "profileClear": "Тазалоо",
+  "profileAppLanguage": "Колдонмонун тили",
+  "profileLogout": "Чыгуу",
+
+  "pharmaciesTitle": "Дарыканалар",
+  "pharmaciesAll": "Бардык дарыканалар",
+  "pharmaciesNearby": "Жакынкылар",
+  "pharmaciesNotFound": "Дарыканалар табылган жок",
+  "pharmaciesNearbyNotFound": "Жакын жерден дарыкана табылган жок",
+  "pharmaciesDistanceFromYou": "Сизден {km} км",
+
+  "locationServiceDisabled": "Геолокация түзмөктө өчүрүлгөн. Жөндөөлөрдөн күйгүзүңүз.",
+  "locationPermissionDenied": "Жакынкы дарыканаларды көрсөтүү үчүн геолокацияга уруксат бериңиз.",
+  "locationPermissionDeniedForever": "Геолокацияга уруксат жок. Колдонмонун жөндөөлөрүнөн уруксат бериңиз.",
+  "locationEnableGeo": "Геолокацияны күйгүзүү",
+  "locationOpenSettings": "Жөндөөлөрдү ачуу",
+  "locationAllow": "Уруксат берүү"
+}

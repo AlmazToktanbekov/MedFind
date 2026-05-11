@@ -26,7 +26,7 @@ class PendingReviewScreen extends StatelessWidget {
         'pharmacy' =>
           'Данные вашей аптеки отправлены на модерацию. Администратор проверит информацию и активирует профиль в течение 24 часов.',
         _ =>
-          'Ваш врачебный профиль отправлен на модерацию. Мы проверим данные и активируем аккаунт в течение 24 часов.',
+          'Ваш врачебный профиль отправлен в клинику на подтверждение. Как только клиника одобрит заявку, вы станете видны пациентам.',
       };
 
   Color get _accentColor => switch (providerType) {
@@ -127,14 +127,14 @@ class PendingReviewScreen extends StatelessWidget {
                         _StatusRow(
                           icon: PhosphorIconsFill.clock,
                           color: AppColors.warning,
-                          text: 'Ожидает проверки администратора',
+                          text: 'Ожидает подтверждения клиники',
                           isDone: false,
                         ),
                         const _Divider(),
                         _StatusRow(
                           icon: PhosphorIconsFill.bell,
                           color: AppColors.primaryBlue,
-                          text: 'Аккаунт будет активирован после проверки',
+                          text: 'Вы станете видны пациентам после одобрения',
                           isDone: false,
                         ),
                       ],

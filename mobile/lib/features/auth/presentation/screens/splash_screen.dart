@@ -52,24 +52,29 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       case 'admin':
         context.go('/main');
       case 'doctor':
-        final hasProfile =
-            await ref.read(authProvider.notifier).hasProviderProfile('doctor');
+        final status =
+            await ref.read(authProvider.notifier).getDoctorStatus();
         if (!mounted) return;
-        context.go(hasProfile ? '/provider/pending' : '/provider/setup');
+        switch (status) {
+          case null:
+            context.go('/provider/setup'); // нет профиля — регистрация
+          case 'rejected':
+          case 'removed':
+            context.go('/provider/setup'); // отклонён/удалён — выбрать клинику
+          default:
+            context.go('/main'); // pending/active/deactivated — в приложение
+        }
       case 'clinic':
         final hasProfile =
             await ref.read(authProvider.notifier).hasProviderProfile('clinic');
         if (!mounted) return;
-        context.go(
-            hasProfile ? '/provider/pending-clinic' : '/provider/clinic-setup');
+        context.go(hasProfile ? '/clinic/manage' : '/provider/clinic-intro');
       case 'pharmacy':
         final hasProfile = await ref
             .read(authProvider.notifier)
             .hasProviderProfile('pharmacy');
         if (!mounted) return;
-        context.go(hasProfile
-            ? '/provider/pending-pharmacy'
-            : '/provider/pharmacy-setup');
+        context.go(hasProfile ? '/main' : '/provider/pharmacy-setup');
       default:
         context.go('/main');
     }

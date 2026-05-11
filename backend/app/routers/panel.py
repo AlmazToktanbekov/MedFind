@@ -13,11 +13,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
 from app.core.database import get_db
-from app.core.security import create_access_token, decode_token
+from app.core.security import create_access_token, decode_token, verify_password
 from app.models.user import User
 from app.models.doctor import Doctor, DoctorContact, DoctorService, DoctorSchedule
 from app.models.clinic import Clinic
-from app.models.pharmacy import Pharmacy
+from app.models.pharmacy import PharmacyCompany
 from app.models.article import Article
 from sqlalchemy.orm import selectinload
 from jose import JWTError
@@ -58,8 +58,7 @@ def _redirect_login():
 async def _pending_count(db: AsyncSession) -> int:
     d = (await db.execute(select(func.count()).where(Doctor.status == "pending"))).scalar() or 0
     c = (await db.execute(select(func.count()).where(Clinic.status == "pending"))).scalar() or 0
-    p = (await db.execute(select(func.count()).where(Pharmacy.status == "pending"))).scalar() or 0
-    return d + c + p
+    return d + c
 
 
 def _ctx(request: Request, active: str, extra: dict = None, pending_count: int = 0) -> dict:
@@ -95,9 +94,7 @@ async def login_submit(
             status_code=401,
         )
 
-    # В dev-режиме принимаем пароль "admin123"
-    # В production нужно заменить на: verify_password(password, user.password_hash)
-    if password != "admin123":
+    if not user.password_hash or not verify_password(password, user.password_hash):
         return templates.TemplateResponse(
             "admin/login.html",
             {"request": request, "error": "Неверный пароль"},
@@ -130,7 +127,7 @@ async def dashboard(request: Request, db: AsyncSession = Depends(get_db)):
     # Статистика
     d_total = (await db.execute(select(func.count(Doctor.id)))).scalar() or 0
     c_total = (await db.execute(select(func.count(Clinic.id)))).scalar() or 0
-    p_total = (await db.execute(select(func.count(Pharmacy.id)))).scalar() or 0
+    p_total = (await db.execute(select(func.count(PharmacyCompany.id)))).scalar() or 0
 
     stats = {
         "doctors_total": d_total,
@@ -156,8 +153,6 @@ async def dashboard(request: Request, db: AsyncSession = Depends(get_db)):
     # Заявки на модерации (первые 5)
     pend_d = (await db.execute(select(Doctor).where(Doctor.status == "pending").limit(5))).scalars().all()
     pend_c = (await db.execute(select(Clinic).where(Clinic.status == "pending").limit(3))).scalars().all()
-    pend_p = (await db.execute(select(Pharmacy).where(Pharmacy.status == "pending").limit(2))).scalars().all()
-
     pending_items = []
     for d in pend_d:
         pending_items.append({"id": d.id, "entity_type": "doctor", "name": d.full_name_ru,
@@ -165,9 +160,6 @@ async def dashboard(request: Request, db: AsyncSession = Depends(get_db)):
     for c in pend_c:
         pending_items.append({"id": c.id, "entity_type": "clinic", "name": c.name_ru,
                                "type": "Клиника", "detail": c.category_ru or ""})
-    for p in pend_p:
-        pending_items.append({"id": p.id, "entity_type": "pharmacy", "name": p.name_ru,
-                               "type": "Аптека", "detail": p.address_ru or ""})
 
     return templates.TemplateResponse(
         "admin/dashboard.html",
@@ -279,7 +271,7 @@ async def pharmacies_list(request: Request, db: AsyncSession = Depends(get_db)):
         return _redirect_login()
 
     pc = await _pending_count(db)
-    pharmacies = (await db.execute(select(Pharmacy).order_by(Pharmacy.created_at.desc()))).scalars().all()
+    pharmacies = (await db.execute(select(PharmacyCompany).order_by(PharmacyCompany.created_at.desc()))).scalars().all()
     return templates.TemplateResponse(
         "admin/pharmacies.html",
         _ctx(request, "pharmacies", {"pharmacies": pharmacies}, pc),
@@ -297,11 +289,9 @@ async def pending_list(request: Request, db: AsyncSession = Depends(get_db)):
     pc = await _pending_count(db)
     doctors  = (await db.execute(select(Doctor).where(Doctor.status   == "pending").order_by(Doctor.created_at))).scalars().all()
     clinics  = (await db.execute(select(Clinic).where(Clinic.status   == "pending").order_by(Clinic.created_at))).scalars().all()
-    pharmacies = (await db.execute(select(Pharmacy).where(Pharmacy.status == "pending").order_by(Pharmacy.created_at))).scalars().all()
-
     return templates.TemplateResponse(
         "admin/pending.html",
-        _ctx(request, "pending", {"doctors": doctors, "clinics": clinics, "pharmacies": pharmacies}, pc),
+        _ctx(request, "pending", {"doctors": doctors, "clinics": clinics}, pc),
     )
 
 
@@ -346,7 +336,7 @@ async def reject(
 
 
 async def _find_entity(entity_type: str, entity_id: int, db: AsyncSession):
-    model = {"doctor": Doctor, "clinic": Clinic, "pharmacy": Pharmacy}.get(entity_type)
+    model = {"doctor": Doctor, "clinic": Clinic}.get(entity_type)
     if not model:
         return None
     return (await db.execute(select(model).where(model.id == entity_id))).scalar_one_or_none()

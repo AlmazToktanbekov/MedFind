@@ -49,9 +49,33 @@ class ProviderRepository {
     try {
       final response = await _dio.get('/doctors/my');
       return response.data as Map<String, dynamic>?;
-    } catch (_) {
-      return null;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+      rethrow;
     }
+  }
+
+  /// Отправить заявку в клинику (для врача со статусом removed)
+  Future<void> applyClinic(int clinicId) async {
+    await _dio.post('/doctors/apply-clinic', data: {'clinic_id': clinicId});
+  }
+
+  /// Отправить запрос на обновление профиля врача — клиника должна подтвердить
+  Future<void> requestProfileUpdate(Map<String, dynamic> body) async {
+    await _dio.post('/doctors/my/request-update', data: body);
+  }
+
+  /// Отменить pending-запрос на обновление профиля
+  Future<void> cancelPendingUpdate() async {
+    await _dio.delete('/doctors/my/pending-update');
+  }
+
+  /// Поиск клиник по названию
+  Future<List<Map<String, dynamic>>> searchClinics(String query) async {
+    final response = await _dio.get('/search', queryParameters: {'q': query});
+    final data = response.data as Map<String, dynamic>;
+    final list = data['clinics'] as List<dynamic>? ?? [];
+    return list.cast<Map<String, dynamic>>();
   }
 
   // ─── Clinic ────────────────────────────────────────────────────────────
@@ -59,6 +83,10 @@ class ProviderRepository {
   Future<int> createClinic(Map<String, dynamic> body) async {
     final response = await _dio.post('/clinics', data: body);
     return response.data['id'] as int;
+  }
+
+  Future<void> addClinicPhoto(int clinicId, String url, {int order = 0}) async {
+    await _dio.post('/clinics/$clinicId/photos', data: {'url': url, 'order': order});
   }
 
   Future<int> updateClinic(int clinicId, Map<String, dynamic> body) async {
@@ -76,6 +104,10 @@ class ProviderRepository {
   }
 
   // ─── Pharmacy ──────────────────────────────────────────────────────────
+
+  Future<void> registerPharmacy(Map<String, dynamic> body) async {
+    await _dio.post('/pharmacy/register', data: body);
+  }
 
   Future<int> createPharmacy(Map<String, dynamic> body) async {
     final response = await _dio.post('/pharmacies', data: body);

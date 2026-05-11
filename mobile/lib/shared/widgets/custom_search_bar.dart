@@ -29,8 +29,9 @@ class CustomSearchBar extends StatelessWidget {
             child: Container(
             height: 52,
             decoration: BoxDecoration(
-              color: AppColors.backgroundChip,
+              color: AppColors.backgroundCard,
               borderRadius: BorderRadius.circular(14),
+              boxShadow: AppColors.cardShadow,
             ),
             child: TextField(
               controller: controller,

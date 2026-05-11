@@ -1,0 +1,36 @@
+{
+  "@@locale": "ru",
+  "appTitle": "MedFind",
+
+  "navHome": "Главная",
+  "navSearch": "Поиск",
+  "navAi": "ИИ",
+  "navHealth": "Здоровье",
+  "navProfile": "Профиль",
+
+  "commonRetry": "Повторить",
+  "commonLoading": "Загрузка…",
+
+  "profileUser": "Пользователь",
+  "profileFavorites": "Избранные",
+  "profileFavoriteClinics": "Избранные клиники",
+  "profileFavoritePharmacies": "Избранные аптеки",
+  "profileSearchHistory": "История поиска",
+  "profileClear": "Очистить",
+  "profileAppLanguage": "Язык приложения",
+  "profileLogout": "Выйти",
+
+  "pharmaciesTitle": "Аптеки",
+  "pharmaciesAll": "Все аптеки",
+  "pharmaciesNearby": "Ближайшие",
+  "pharmaciesNotFound": "Аптеки не найдены",
+  "pharmaciesNearbyNotFound": "Аптек рядом не найдено",
+  "pharmaciesDistanceFromYou": "{km} км от вас",
+
+  "locationServiceDisabled": "Геолокация отключена на устройстве. Включите её в настройках.",
+  "locationPermissionDenied": "Чтобы показать ближайшие аптеки, разрешите доступ к геолокации.",
+  "locationPermissionDeniedForever": "Доступ к геолокации запрещён. Разрешите его в настройках приложения.",
+  "locationEnableGeo": "Включить геолокацию",
+  "locationOpenSettings": "Открыть настройки",
+  "locationAllow": "Разрешить"
+}

@@ -11,9 +11,9 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/models/doctor_model.dart';
 import '../../../../shared/widgets/gradient_button.dart';
 import '../../../../shared/widgets/rating_stars.dart';
+import '../../../../shared/widgets/review_card.dart';
 import '../../providers/doctors_provider.dart';
 import '../../providers/reviews_provider.dart';
-import '../../data/reviews_repository.dart';
 
 class DoctorDetailScreen extends ConsumerStatefulWidget {
   final String doctorId;
@@ -89,6 +89,7 @@ class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen>
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           _buildSliverHeader(doctor),
+          _buildSliverTabBar(),
         ],
         body: TabBarView(
           controller: _tabController,
@@ -100,6 +101,27 @@ class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen>
               onOpenUrl: _openUrl,
             ),
             _ReviewsTab(doctorId: id),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSliverTabBar() {
+    return SliverPersistentHeader(
+      pinned: true,
+      delegate: _TabBarDelegate(
+        TabBar(
+          controller: _tabController,
+          labelColor: AppColors.primaryBlue,
+          unselectedLabelColor: AppColors.textSecondary,
+          indicatorColor: AppColors.primaryBlue,
+          indicatorWeight: 2.5,
+          labelStyle: AppTextStyles.labelBold,
+          unselectedLabelStyle: AppTextStyles.bodySmall,
+          tabs: const [
+            Tab(text: 'О враче'),
+            Tab(text: 'Отзывы'),
           ],
         ),
       ),
@@ -123,10 +145,44 @@ class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen>
         ),
       ],
       flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: const BoxDecoration(gradient: AppColors.heroGradient),
-          padding: const EdgeInsets.fromLTRB(24, 80, 24, 20),
-          child: Row(
+        background: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Cover image or gradient
+            if (doctor.coverPhotoUrl != null)
+              CachedNetworkImage(
+                imageUrl: doctor.coverPhotoUrl!,
+                fit: BoxFit.cover,
+                placeholder: (_, _) => Container(
+                  decoration: const BoxDecoration(gradient: AppColors.heroGradient),
+                ),
+                errorWidget: (_, _, _) => Container(
+                  decoration: const BoxDecoration(gradient: AppColors.heroGradient),
+                ),
+              )
+            else
+              Container(
+                decoration: const BoxDecoration(gradient: AppColors.heroGradient),
+              ),
+            // Dark gradient overlay for text readability
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: [0.0, 0.35, 1.0],
+                  colors: [
+                    Color(0x55000000),
+                    Color(0x22000000),
+                    Color(0xCC000000),
+                  ],
+                ),
+              ),
+            ),
+            // Content
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 80, 24, 20),
+              child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Expanded(
@@ -185,7 +241,8 @@ class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen>
                       ? CachedNetworkImage(
                           imageUrl: doctor.photoUrl!,
                           fit: BoxFit.cover,
-                          errorWidget: (_, __, ___) => const _PhotoPlaceholder(),
+                          placeholder: (_, _) => const _PhotoPlaceholder(),
+                          errorWidget: (_, _, _) => const _PhotoPlaceholder(),
                         )
                       : const _PhotoPlaceholder(),
                 ),
@@ -193,19 +250,33 @@ class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen>
             ],
           ),
         ),
-      ),
-      bottom: TabBar(
-        controller: _tabController,
-        labelColor: Colors.white,
-        unselectedLabelColor: Colors.white54,
-        indicatorColor: Colors.white,
-        tabs: const [
-          Tab(text: 'О враче'),
-          Tab(text: 'Отзывы'),
-        ],
+          ],
+        ),
       ),
     );
   }
+}
+
+class _TabBarDelegate extends SliverPersistentHeaderDelegate {
+  final TabBar tabBar;
+  const _TabBarDelegate(this.tabBar);
+
+  @override
+  double get minExtent => tabBar.preferredSize.height;
+  @override
+  double get maxExtent => tabBar.preferredSize.height;
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: Colors.white,
+      child: tabBar,
+    );
+  }
+
+  @override
+  bool shouldRebuild(_TabBarDelegate oldDelegate) => false;
 }
 
 // ─── О враче tab ───────────────────────────────────────────────────────────
@@ -236,11 +307,28 @@ class _AboutTab extends StatelessWidget {
             iconSize: 18,
           ),
 
+          // ── Подтверждён клиникой ────────────────────────────────────
+          if (doctor.clinicId != null && doctor.clinicName != null) ...[
+            const SizedBox(height: 16),
+            _ClinicBadge(
+              clinicId: doctor.clinicId!,
+              clinicName: doctor.clinicName!,
+            ),
+          ],
+
           if (doctor.bio != null) ...[
             const SizedBox(height: 20),
             Text('О враче', style: AppTextStyles.headingMedium),
             const SizedBox(height: 8),
             Text(doctor.bio!, style: AppTextStyles.bodyLarge),
+          ],
+
+          // ── Образование ──────────────────────────────────────────────
+          if (doctor.education != null) ...[
+            const SizedBox(height: 20),
+            Text('Образование', style: AppTextStyles.headingMedium),
+            const SizedBox(height: 8),
+            Text(doctor.education!, style: AppTextStyles.bodyLarge),
           ],
 
           const SizedBox(height: 24),
@@ -374,8 +462,12 @@ class _ReviewsTab extends ConsumerWidget {
             : ListView.separated(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
                 itemCount: state.reviews.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (_, i) => _ReviewCard(review: state.reviews[i]),
+                separatorBuilder: (_, _) => const SizedBox(height: 12),
+                itemBuilder: (_, i) => ReviewCard(
+                  review: state.reviews[i],
+                  onUpdate: ref.read(reviewsProvider(doctorId).notifier).update,
+                  onDelete: ref.read(reviewsProvider(doctorId).notifier).delete,
+                ),
               ),
 
         // Кнопка "Написать отзыв"
@@ -386,96 +478,6 @@ class _ReviewsTab extends ConsumerWidget {
           child: _WriteReviewButton(doctorId: doctorId),
         ),
       ],
-    );
-  }
-}
-
-// ─── Review card ───────────────────────────────────────────────────────────
-
-class _ReviewCard extends StatelessWidget {
-  final ReviewModel review;
-  const _ReviewCard({required this.review});
-
-  String get _initials {
-    final name = review.authorName ?? '';
-    final parts = name.trim().split(' ');
-    if (parts.isEmpty || parts.first.isEmpty) return '?';
-    if (parts.length == 1) return parts[0][0].toUpperCase();
-    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-  }
-
-  String get _formattedDate {
-    final d = review.createdAt.toLocal();
-    final months = [
-      'янв', 'фев', 'мар', 'апр', 'май', 'июн',
-      'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'
-    ];
-    return '${d.day} ${months[d.month - 1]} ${d.year}';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundCard,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: AppColors.cardShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              // Аватар
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: AppColors.primaryBlue.withValues(alpha: 0.12),
-                child: Text(
-                  _initials,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primaryBlue,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      review.authorName ?? 'Аноним',
-                      style: AppTextStyles.labelBold.copyWith(
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    Text(_formattedDate, style: AppTextStyles.bodySmall),
-                  ],
-                ),
-              ),
-              // Рейтинг
-              Row(
-                children: [
-                  Icon(Icons.star_rounded, color: const Color(0xFFFFB800), size: 16),
-                  const SizedBox(width: 2),
-                  Text(
-                    review.rating.toStringAsFixed(1),
-                    style: AppTextStyles.labelBold.copyWith(
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          if (review.text != null && review.text!.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Text(review.text!, style: AppTextStyles.bodyLarge),
-          ],
-        ],
-      ),
     );
   }
 }
@@ -714,8 +716,8 @@ class _ReviewsShimmer extends StatelessWidget {
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: 4,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (_, __) => Container(
+        separatorBuilder: (_, _) => const SizedBox(height: 12),
+        itemBuilder: (_, _) => Container(
           height: 100,
           decoration: BoxDecoration(
             color: Colors.white,
@@ -881,6 +883,64 @@ class _DetailShimmer extends StatelessWidget {
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Clinic badge ──────────────────────────────────────────────────────────
+
+class _ClinicBadge extends StatelessWidget {
+  final int clinicId;
+  final String clinicName;
+
+  const _ClinicBadge({required this.clinicId, required this.clinicName});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.push('/main/clinics/$clinicId'),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.success.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppColors.success.withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.verified_rounded,
+                color: AppColors.success, size: 18),
+            const SizedBox(width: 8),
+            Flexible(
+              child: RichText(
+                text: TextSpan(
+                  style: AppTextStyles.bodySmall,
+                  children: [
+                    const TextSpan(
+                      text: 'Подтверждён клиникой: ',
+                      style: TextStyle(color: AppColors.textSecondary),
+                    ),
+                    TextSpan(
+                      text: clinicName,
+                      style: const TextStyle(
+                        color: AppColors.success,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Icon(Icons.arrow_forward_ios_rounded,
+                size: 12, color: AppColors.success.withValues(alpha: 0.7)),
           ],
         ),
       ),

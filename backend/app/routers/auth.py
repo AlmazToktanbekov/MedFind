@@ -1,8 +1,14 @@
+import random
 import secrets
+from datetime import datetime, timezone, timedelta
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import (
     create_access_token,
@@ -10,13 +16,17 @@ from app.core.security import (
     verify_password,
     get_current_user,
 )
-from app.models.user import User
+from app.models.user import User, OTPCode
 from app.schemas.auth import (
     RegisterRequest,
     LoginRequest,
     TokenResponse,
     RefreshRequest,
     UserOut,
+    OTPSendRequest,
+    OTPSendResponse,
+    OTPVerifyRequest,
+    FCMTokenRequest,
 )
 
 
@@ -124,3 +134,97 @@ async def logout(
 async def get_me(current_user: User = Depends(get_current_user)):
     """Получить данные текущего пользователя."""
     return current_user
+
+
+class UpdateMeRequest(BaseModel):
+    full_name: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+
+@router.patch("/me", response_model=UserOut)
+async def update_me(
+    body: UpdateMeRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Обновить имя и/или аватар текущего пользователя."""
+    if body.full_name is not None:
+        current_user.full_name = body.full_name.strip() or None
+    if body.avatar_url is not None:
+        current_user.avatar_url = body.avatar_url or None
+    await db.flush()
+    return current_user
+
+
+# ── OTP ───────────────────────────────────────────────────────────────────────
+
+@router.post("/otp/send", response_model=OTPSendResponse)
+async def otp_send(body: OTPSendRequest, db: AsyncSession = Depends(get_db)):
+    """Отправить OTP-код на номер телефона."""
+    code = str(random.randint(100000, 999999))
+    expires = datetime.now(timezone.utc) + timedelta(minutes=settings.OTP_EXPIRE_MINUTES)
+
+    otp = OTPCode(phone=body.phone, code=code, expires_at=expires)
+    db.add(otp)
+    await db.flush()
+
+    if not settings.DEV_MODE and settings.SMS_API_KEY:
+        # Production: send SMS via SMS provider (stub — integrate actual SMS API here)
+        pass
+
+    return OTPSendResponse(
+        message="Код отправлен",
+        dev_code=code if settings.DEV_MODE else None,
+    )
+
+
+@router.post("/otp/verify", response_model=TokenResponse)
+async def otp_verify(body: OTPVerifyRequest, db: AsyncSession = Depends(get_db)):
+    """Проверить OTP и войти / зарегистрировать пользователя."""
+    now = datetime.now(timezone.utc)
+
+    otp_result = await db.execute(
+        select(OTPCode).where(
+            OTPCode.phone == body.phone,
+            OTPCode.code == body.code,
+            OTPCode.is_used == False,
+            OTPCode.expires_at > now,
+        ).order_by(OTPCode.created_at.desc()).limit(1)
+    )
+    otp = otp_result.scalar_one_or_none()
+    if not otp:
+        raise HTTPException(status_code=400, detail="Неверный или истёкший код")
+
+    otp.is_used = True
+
+    user_result = await db.execute(select(User).where(User.phone == body.phone))
+    user = user_result.scalar_one_or_none()
+
+    refresh = _make_refresh_token()
+    if user:
+        user.refresh_token = refresh
+    else:
+        user = User(
+            phone=body.phone,
+            full_name=body.full_name,
+            role=body.role,
+            refresh_token=refresh,
+        )
+        db.add(user)
+        await db.flush()
+
+    token = create_access_token({"sub": str(user.id)})
+    return _token_response(user, token, refresh)
+
+
+# ── FCM token ─────────────────────────────────────────────────────────────────
+
+@router.post("/fcm-token")
+async def save_fcm_token(
+    body: FCMTokenRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Сохранить FCM-токен устройства для push-уведомлений."""
+    current_user.fcm_token = body.fcm_token
+    return {"message": "FCM token saved"}

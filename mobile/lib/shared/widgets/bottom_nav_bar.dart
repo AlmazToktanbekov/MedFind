@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:medfind/l10n/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 
@@ -13,15 +14,16 @@ class AppBottomNavBar extends StatelessWidget {
     required this.onTap,
   });
 
-  static const _items = [
-    (icon: PhosphorIconsRegular.house, label: 'Главная'),
-    (icon: PhosphorIconsRegular.magnifyingGlass, label: 'Поиск'),
-    (icon: PhosphorIconsRegular.heartbeat, label: 'Здоровье'),
-    (icon: PhosphorIconsRegular.userCircle, label: 'Профиль'),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final items = [
+      (icon: PhosphorIconsRegular.house, label: l.navHome),
+      (icon: PhosphorIconsRegular.magnifyingGlass, label: l.navSearch),
+      (icon: PhosphorIconsRegular.robot, label: l.navAi),
+      (icon: PhosphorIconsRegular.heartbeat, label: l.navHealth),
+      (icon: PhosphorIconsRegular.userCircle, label: l.navProfile),
+    ];
     return Container(
       height: 72,
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -32,8 +34,8 @@ class AppBottomNavBar extends StatelessWidget {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(_items.length, (index) {
-          final item = _items[index];
+        children: List.generate(items.length, (index) {
+          final item = items[index];
           final isActive = index == currentIndex;
           return GestureDetector(
             onTap: () => onTap(index),

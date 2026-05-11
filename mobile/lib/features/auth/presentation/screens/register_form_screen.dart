@@ -77,10 +77,18 @@ class _RegisterFormScreenState extends ConsumerState<RegisterFormScreen>
         _ => PhosphorIconsFill.userCircle,
       };
 
-  String get _namePlaceholder => switch (widget.role) {
+  String get _nameLabel => switch (widget.role) {
         'clinic' => 'Название клиники',
-        'pharmacy' => 'Название аптеки',
-        _ => 'Ваше полное имя',
+        'pharmacy' => 'Название компании',
+        'doctor' => 'ФИО',
+        _ => 'Имя и фамилия',
+      };
+
+  String get _nameHint => switch (widget.role) {
+        'clinic' => 'Например: МедЦентр Бишкек',
+        'pharmacy' => 'Например: АлтынФарм',
+        'doctor' => 'Алиев Азамат Бекович',
+        _ => 'Иванов Иван',
       };
 
   Future<void> _register() async {
@@ -99,15 +107,13 @@ class _RegisterFormScreenState extends ConsumerState<RegisterFormScreen>
     if (role != null) {
       _navigateByRole(role);
     } else {
-      final error =
-          ref.read(authProvider).errorMessage ?? 'Ошибка регистрации';
+      final error = ref.read(authProvider).errorMessage ?? 'Ошибка регистрации';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(error),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           margin: const EdgeInsets.all(16),
         ),
       );
@@ -115,19 +121,18 @@ class _RegisterFormScreenState extends ConsumerState<RegisterFormScreen>
   }
 
   void _navigateByRole(String role) {
-    final setupRoute = switch (role) {
+    final dest = switch (role) {
       'doctor' => '/provider/setup',
-      'clinic' => '/provider/clinic-setup',
+      'clinic' => '/provider/clinic-intro',
       'pharmacy' => '/provider/pharmacy-setup',
       _ => '/main',
     };
-    context.go(setupRoute);
+    context.go(dest);
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLoading =
-        ref.watch(authProvider).status == AuthStatus.loading;
+    final isLoading = ref.watch(authProvider).status == AuthStatus.loading;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundApp,
@@ -173,7 +178,6 @@ class _RegisterFormScreenState extends ConsumerState<RegisterFormScreen>
                         ),
                         const SizedBox(height: 28),
 
-                        // Иконка роли
                         Container(
                           width: 60,
                           height: 60,
@@ -197,13 +201,16 @@ class _RegisterFormScreenState extends ConsumerState<RegisterFormScreen>
                         ),
                         const SizedBox(height: 36),
 
-                        // Имя
-                        _buildLabel(_namePlaceholder),
+                        // Имя / Название
+                        _buildLabel(_nameLabel),
                         const SizedBox(height: 8),
                         _buildTextField(
                           controller: _nameController,
-                          hint: _namePlaceholder,
-                          icon: PhosphorIconsRegular.user,
+                          hint: _nameHint,
+                          icon: widget.role == 'clinic' || widget.role == 'pharmacy'
+                              ? PhosphorIconsRegular.buildings
+                              : PhosphorIconsRegular.user,
+                          textCapitalization: TextCapitalization.words,
                           validator: (v) {
                             if (v == null || v.trim().length < 2) {
                               return 'Введите не менее 2 символов';
@@ -301,6 +308,7 @@ class _RegisterFormScreenState extends ConsumerState<RegisterFormScreen>
     required TextEditingController controller,
     required String hint,
     required IconData icon,
+    TextCapitalization textCapitalization = TextCapitalization.none,
     String? Function(String?)? validator,
   }) {
     return Container(
@@ -312,6 +320,7 @@ class _RegisterFormScreenState extends ConsumerState<RegisterFormScreen>
       child: TextFormField(
         controller: controller,
         style: AppTextStyles.bodyLarge,
+        textCapitalization: textCapitalization,
         validator: validator,
         decoration: InputDecoration(
           hintText: hint,

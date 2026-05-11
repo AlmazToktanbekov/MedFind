@@ -66,10 +66,15 @@ class DoctorOut(BaseModel):
     bio_ru: Optional[str]
     bio_kg: Optional[str]
     bio_en: Optional[str]
+    phone: Optional[str]
+    education: Optional[str]
+    consultation_language: Optional[str]
     photo_url: Optional[str]
+    cover_photo_url: Optional[str] = None
     experience_years: Optional[int]
     address_ru: Optional[str]
     clinic_id: Optional[int]
+    clinic_name: Optional[str] = None
     has_online: bool
     has_offline: bool
     online_price: Optional[float]
@@ -79,6 +84,8 @@ class DoctorOut(BaseModel):
     rating: float
     reviews_count: int
     status: str
+    rejection_reason: Optional[str] = None
+    has_pending_update: bool = False
     created_at: datetime
     contacts: List[DoctorContactOut] = []
     services: List[DoctorServiceOut] = []
@@ -100,6 +107,8 @@ class DoctorListItem(BaseModel):
     online_price: Optional[float]
     offline_price: Optional[float]
     status: str
+    clinic_id: Optional[int] = None
+    clinic_name: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -115,6 +124,9 @@ class DoctorCreate(BaseModel):
     bio_ru: Optional[str] = None
     bio_kg: Optional[str] = None
     bio_en: Optional[str] = None
+    phone: Optional[str] = None
+    education: Optional[str] = None
+    consultation_language: Optional[str] = None
     experience_years: Optional[int] = None
     address_ru: Optional[str] = None
     clinic_id: Optional[int] = None
@@ -125,6 +137,7 @@ class DoctorCreate(BaseModel):
     online_duration_min: Optional[int] = 30
     offline_duration_min: Optional[int] = 30
     photo_url: Optional[str] = None
+    cover_photo_url: Optional[str] = None
     contacts: Optional[List[ContactInput]] = None
     services: Optional[List[ServiceInput]] = None
     schedules: Optional[List[ScheduleInput]] = None
@@ -140,13 +153,66 @@ class DoctorUpdate(BaseModel):
     bio_ru: Optional[str] = None
     bio_kg: Optional[str] = None
     bio_en: Optional[str] = None
+    phone: Optional[str] = None
+    education: Optional[str] = None
+    consultation_language: Optional[str] = None
     experience_years: Optional[int] = None
     address_ru: Optional[str] = None
+    clinic_id: Optional[int] = None
     has_online: Optional[bool] = None
     has_offline: Optional[bool] = None
     online_price: Optional[float] = None
     offline_price: Optional[float] = None
     photo_url: Optional[str] = None
+    cover_photo_url: Optional[str] = None
     contacts: Optional[List[ContactInput]] = None
     services: Optional[List[ServiceInput]] = None
     schedules: Optional[List[ScheduleInput]] = None
+
+
+class ApplyClinicRequest(BaseModel):
+    clinic_id: int
+
+
+class DoctorUpdateRequestCreate(BaseModel):
+    full_name_ru: Optional[str] = None
+    specialization_ru: Optional[str] = None
+    bio_ru: Optional[str] = None
+    phone: Optional[str] = None
+    education: Optional[str] = None
+    consultation_language: Optional[str] = None
+    photo_url: Optional[str] = None
+    cover_photo_url: Optional[str] = None
+    experience_years: Optional[int] = None
+    has_online: Optional[bool] = None
+    has_offline: Optional[bool] = None
+    online_price: Optional[float] = None
+    offline_price: Optional[float] = None
+    online_duration_min: Optional[int] = None
+    offline_duration_min: Optional[int] = None
+    contacts: Optional[List[ContactInput]] = None
+    services: Optional[List[ServiceInput]] = None
+    schedules: Optional[List[ScheduleInput]] = None
+
+
+class DoctorProfileUpdateOut(BaseModel):
+    id: int
+    doctor_id: int
+    status: str
+    created_at: datetime
+    full_name_ru: Optional[str] = None
+    specialization_ru: Optional[str] = None
+    bio_ru: Optional[str] = None
+    phone: Optional[str] = None
+    education: Optional[str] = None
+    photo_url: Optional[str] = None
+    has_online: Optional[bool] = None
+    has_offline: Optional[bool] = None
+    online_price: Optional[float] = None
+    offline_price: Optional[float] = None
+    contacts_json: Optional[str] = None
+    services_json: Optional[str] = None
+    schedules_json: Optional[str] = None
+
+    class Config:
+        from_attributes = True

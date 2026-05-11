@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
@@ -19,15 +20,18 @@ class ApiClient {
       ),
     );
 
-    _dio.interceptors.addAll([
-      _authInterceptor(),
-      PrettyDioLogger(
-        requestHeader: false,
-        requestBody: true,
-        responseBody: true,
-        compact: true,
-      ),
-    ]);
+    _dio.interceptors.add(_authInterceptor());
+    // Логгер запросов только в debug — в release он сильно тормозит и засоряет логи.
+    if (kDebugMode) {
+      _dio.interceptors.add(
+        PrettyDioLogger(
+          requestHeader: false,
+          requestBody: true,
+          responseBody: true,
+          compact: true,
+        ),
+      );
+    }
   }
 
   late final Dio _dio;
@@ -60,6 +64,13 @@ class ApiClient {
         // Не рефрешим запросы к самому /auth/refresh — иначе рекурсия
         final path = error.requestOptions.path;
         if (path.contains('/auth/refresh') || path.contains('/auth/login')) {
+          handler.next(error);
+          return;
+        }
+
+        // Запрос уже повторялся после рефреша — не уходим в новый цикл
+        if (error.requestOptions.extra['__retried_after_refresh'] == true) {
+          await onUnauthorized?.call();
           handler.next(error);
           return;
         }
@@ -119,6 +130,7 @@ class ApiClient {
       RequestOptions options, String token) {
     final opts = options.copyWith(
       headers: {...options.headers, 'Authorization': 'Bearer $token'},
+      extra: {...options.extra, '__retried_after_refresh': true},
     );
     return _dio.fetch(opts);
   }

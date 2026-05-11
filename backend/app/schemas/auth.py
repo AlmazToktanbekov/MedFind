@@ -45,3 +45,41 @@ class UserOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class OTPSendRequest(BaseModel):
+    phone: str
+    full_name: Optional[str] = None
+    role: str = "patient"
+
+    @field_validator("role")
+    @classmethod
+    def validate_role(cls, v: str) -> str:
+        allowed = {"patient", "doctor", "clinic", "pharmacy"}
+        if v not in allowed:
+            raise ValueError(f"Роль должна быть одной из: {allowed}")
+        return v
+
+
+class OTPSendResponse(BaseModel):
+    message: str
+    dev_code: Optional[str] = None  # only in DEV_MODE
+
+
+class OTPVerifyRequest(BaseModel):
+    phone: str
+    code: str
+    full_name: Optional[str] = None
+    role: str = "patient"
+
+    @field_validator("role")
+    @classmethod
+    def validate_role(cls, v: str) -> str:
+        allowed = {"patient", "doctor", "clinic", "pharmacy"}
+        if v not in allowed:
+            raise ValueError(f"Роль должна быть одной из: {allowed}")
+        return v
+
+
+class FCMTokenRequest(BaseModel):
+    fcm_token: str

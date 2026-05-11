@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from typing import Optional
-from sqlalchemy import String, DateTime, Float, Integer, ForeignKey, Text
+from sqlalchemy import DateTime, Float, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from app.core.database import Base
 
@@ -12,8 +12,10 @@ class Review(Base):
     author_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     doctor_id: Mapped[Optional[int]] = mapped_column(ForeignKey("doctors.id"))
     clinic_id: Mapped[Optional[int]] = mapped_column(ForeignKey("clinics.id"))
+    branch_id: Mapped[Optional[int]] = mapped_column(ForeignKey("pharmacy_branches.id"))
     rating: Mapped[float] = mapped_column(Float)
     text: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)

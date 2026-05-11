@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/custom_search_bar.dart';
 import '../../../../shared/widgets/doctor_card.dart';
 import '../../providers/search_provider.dart';
+import '../../../../shared/models/pharmacy_model.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -216,7 +218,7 @@ class _ResultsView extends StatelessWidget {
           ...state.pharmacies.map(
             (p) => _PharmacyResultCard(
               pharmacy: p,
-              onTap: () => context.push('/main/pharmacies'),
+              onTap: () => context.push('/main/pharmacies/company/${p.id}'),
             ),
           ),
         ],
@@ -347,16 +349,17 @@ class _ClinicResultCard extends StatelessWidget {
   }
 }
 
-// ─── Карточка аптеки ───────────────────────────────────────────────────────
+// ─── Карточка аптеки (компания) ───────────────────────────────────────────
 
 class _PharmacyResultCard extends StatelessWidget {
-  final dynamic pharmacy;
+  final PharmacyCompanyModel pharmacy;
   final VoidCallback onTap;
 
   const _PharmacyResultCard({required this.pharmacy, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final branchCount = pharmacy.branches.where((b) => b.isActive).length;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -369,6 +372,7 @@ class _PharmacyResultCard extends StatelessWidget {
         ),
         child: Row(
           children: [
+            // Логотип компании
             Container(
               width: 48,
               height: 48,
@@ -376,11 +380,22 @@ class _PharmacyResultCard extends StatelessWidget {
                 color: AppColors.backgroundChip,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
-                PhosphorIconsRegular.pill,
-                color: AppColors.primaryBlue,
-                size: 24,
-              ),
+              clipBehavior: Clip.antiAlias,
+              child: pharmacy.logoUrl != null
+                  ? CachedNetworkImage(
+                      imageUrl: pharmacy.logoUrl!,
+                      fit: BoxFit.cover,
+                      errorWidget: (ctx, url, err) => const Icon(
+                        PhosphorIconsRegular.pill,
+                        color: AppColors.primaryBlue,
+                        size: 24,
+                      ),
+                    )
+                  : const Icon(
+                      PhosphorIconsRegular.pill,
+                      color: AppColors.primaryBlue,
+                      size: 24,
+                    ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -388,44 +403,37 @@ class _PharmacyResultCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    pharmacy.name as String,
+                    pharmacy.name,
                     style: AppTextStyles.bodyLarge
                         .copyWith(fontWeight: FontWeight.w600),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (pharmacy.address != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      pharmacy.address as String,
-                      style: AppTextStyles.bodySmall,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                  const SizedBox(height: 2),
+                  Text(
+                    'Аптечная сеть • $branchCount ${_branchWord(branchCount)}',
+                    style: AppTextStyles.bodySmall
+                        .copyWith(color: AppColors.textSecondary),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
             ),
-            if (pharmacy.isOpen24h == true)
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '24 ч',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.success,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+            const Icon(Icons.arrow_forward_ios_rounded,
+                size: 14, color: AppColors.textSecondary),
           ],
         ),
       ),
     );
+  }
+
+  String _branchWord(int n) {
+    if (n % 10 == 1 && n % 100 != 11) return 'филиал';
+    if (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) {
+      return 'филиала';
+    }
+    return 'филиалов';
   }
 }
 

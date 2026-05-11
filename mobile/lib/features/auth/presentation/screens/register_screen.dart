@@ -136,7 +136,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                           crossAxisCount: 2,
                           mainAxisSpacing: 16,
                           crossAxisSpacing: 16,
-                          childAspectRatio: 0.88,
+                          childAspectRatio: 0.78,
                         ),
                         itemCount: _roles.length,
                         itemBuilder: (context, i) {

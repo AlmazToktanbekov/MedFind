@@ -1,0 +1,39 @@
+{
+  "@@locale": "en",
+  "appTitle": "MedFind",
+
+  "navHome": "Home",
+  "navSearch": "Search",
+  "navAi": "AI",
+  "navHealth": "Health",
+  "navProfile": "Profile",
+
+  "commonRetry": "Retry",
+  "commonLoading": "Loading…",
+
+  "profileUser": "User",
+  "profileFavorites": "Favorites",
+  "profileFavoriteClinics": "Favorite clinics",
+  "profileFavoritePharmacies": "Favorite pharmacies",
+  "profileSearchHistory": "Search history",
+  "profileClear": "Clear",
+  "profileAppLanguage": "App language",
+  "profileLogout": "Log out",
+
+  "pharmaciesTitle": "Pharmacies",
+  "pharmaciesAll": "All pharmacies",
+  "pharmaciesNearby": "Nearby",
+  "pharmaciesNotFound": "No pharmacies found",
+  "pharmaciesNearbyNotFound": "No pharmacies nearby",
+  "pharmaciesDistanceFromYou": "{km} km from you",
+  "@pharmaciesDistanceFromYou": {
+    "placeholders": { "km": { "type": "String" } }
+  },
+
+  "locationServiceDisabled": "Location is disabled on this device. Turn it on in settings.",
+  "locationPermissionDenied": "To show nearby pharmacies, allow location access.",
+  "locationPermissionDeniedForever": "Location access is denied. Allow it in the app settings.",
+  "locationEnableGeo": "Enable location",
+  "locationOpenSettings": "Open settings",
+  "locationAllow": "Allow"
+}

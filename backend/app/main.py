@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.routers import auth, doctors, clinics, pharmacies, search, reviews, content, admin
-from app.routers import upload, panel, ai
+from app.routers import upload, panel, ai, symptoms, favorites, notifications
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -34,6 +34,9 @@ app.include_router(content.router)
 app.include_router(admin.router)
 app.include_router(panel.router)
 app.include_router(ai.router)
+app.include_router(symptoms.router)
+app.include_router(favorites.router)
+app.include_router(notifications.router)
 
 
 _uploads_dir = Path("uploads")

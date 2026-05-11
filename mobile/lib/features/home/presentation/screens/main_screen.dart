@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../shared/widgets/bottom_nav_bar.dart';
 import 'home_screen.dart';
 import '../../../search/presentation/screens/search_screen.dart';
+import '../../../ai/presentation/screens/ai_chat_screen.dart';
 import '../../../health/presentation/screens/health_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 
@@ -18,6 +19,7 @@ class _MainScreenState extends State<MainScreen> {
   final _screens = const [
     HomeScreen(),
     SearchScreen(),
+    AiChatScreen(),
     HealthScreen(),
     ProfileScreen(),
   ];

@@ -47,6 +47,20 @@
 			</array>
 		</dict>
 	</dict>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>MedFind использует ваше местоположение, чтобы показать ближайшие аптеки и построить маршрут до них.</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>tel</string>
+		<string>whatsapp</string>
+		<string>tg</string>
+		<string>dgis</string>
+		<string>comgooglemaps</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

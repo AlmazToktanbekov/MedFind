@@ -13,16 +13,29 @@ import '../../providers/doctor_setup_provider.dart';
 
 // ─── Main screen ───────────────────────────────────────────────────────────
 
-class DoctorSetupScreen extends ConsumerWidget {
+class DoctorSetupScreen extends ConsumerStatefulWidget {
   const DoctorSetupScreen({super.key});
 
+  @override
+  ConsumerState<DoctorSetupScreen> createState() => _DoctorSetupScreenState();
+}
+
+class _DoctorSetupScreenState extends ConsumerState<DoctorSetupScreen> {
+  @override
+  Widget build(BuildContext context) => _DoctorSetupScreenView();
+}
+
+class _DoctorSetupScreenView extends ConsumerWidget {
+  const _DoctorSetupScreenView();
+
   static const _stepTitles = [
-    'Фото и ФИО',
+    'Основная информация',
     'Специализация',
     'Образование',
     'Услуги',
     'Контакты',
-    'Адрес и график',
+    'График приёма',
+    'Выбор клиники',
   ];
 
   @override
@@ -43,23 +56,33 @@ class DoctorSetupScreen extends ConsumerWidget {
       const _Step4(),
       const _Step5(),
       const _Step6(),
+      const _Step7(),
     ];
 
     return Scaffold(
       backgroundColor: AppColors.backgroundApp,
       appBar: AppBar(
         backgroundColor: AppColors.backgroundApp,
-        leading: state.currentStep > 0
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded),
-                color: AppColors.textPrimary,
-                onPressed: () =>
-                    ref.read(doctorSetupProvider.notifier).prevStep(),
-              )
-            : null,
-        title: Text(
-          _stepTitles[state.currentStep],
-          style: AppTextStyles.headingMedium,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          color: AppColors.textPrimary,
+          onPressed: state.currentStep > 0
+              ? () => ref.read(doctorSetupProvider.notifier).prevStep()
+              : () => context.canPop() ? context.pop() : context.go('/main'),
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Регистрация врача',
+              style: AppTextStyles.bodySmall
+                  .copyWith(color: AppColors.textSecondary),
+            ),
+            Text(
+              _stepTitles[state.currentStep],
+              style: AppTextStyles.headingMedium,
+            ),
+          ],
         ),
         centerTitle: false,
       ),
@@ -188,18 +211,21 @@ class _Step1 extends ConsumerStatefulWidget {
 
 class _Step1State extends ConsumerState<_Step1> {
   late final TextEditingController _nameCtrl;
+  late final TextEditingController _phoneCtrl;
 
   @override
   void initState() {
     super.initState();
-    _nameCtrl = TextEditingController(
-      text: ref.read(doctorSetupProvider).fullName,
-    );
+    final s = ref.read(doctorSetupProvider);
+    _nameCtrl = TextEditingController(text: s.fullName);
+    final rawPhone = s.phone.startsWith('+996') ? s.phone.substring(4) : s.phone;
+    _phoneCtrl = TextEditingController(text: rawPhone);
   }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _phoneCtrl.dispose();
     super.dispose();
   }
 
@@ -211,56 +237,148 @@ class _Step1State extends ConsumerState<_Step1> {
     }
   }
 
+  Future<void> _pickCoverPhoto() async {
+    final picker = ImagePicker();
+    final img = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    if (img != null) {
+      ref.read(doctorSetupProvider.notifier).setCoverPhoto(img.path);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Update controllers once async pre-fill from storage arrives
+    ref.listen<DoctorSetupState>(doctorSetupProvider, (prev, next) {
+      if (_nameCtrl.text.isEmpty && next.fullName.isNotEmpty) {
+        _nameCtrl.text = next.fullName;
+        _nameCtrl.selection =
+            TextSelection.collapsed(offset: next.fullName.length);
+      }
+      if (_phoneCtrl.text.isEmpty && next.phone.isNotEmpty) {
+        final raw = next.phone.startsWith('+996')
+            ? next.phone.substring(4)
+            : next.phone;
+        _phoneCtrl.text = raw;
+        _phoneCtrl.selection = TextSelection.collapsed(offset: raw.length);
+      }
+    });
+
     final photoPath = ref.watch(
       doctorSetupProvider.select((s) => s.photoPath),
     );
+    final coverPhotoPath = ref.watch(
+      doctorSetupProvider.select((s) => s.coverPhotoPath),
+    );
+    final coverPhotoUrl = ref.watch(
+      doctorSetupProvider.select((s) => s.coverPhotoUrl),
+    );
+    final n = ref.read(doctorSetupProvider.notifier);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Аватар
+          // ── Обложка ──────────────────────────────────────────────
           GestureDetector(
-            onTap: _pickPhoto,
+            onTap: _pickCoverPhoto,
             child: Stack(
               children: [
                 Container(
-                  width: 110,
-                  height: 110,
+                  width: double.infinity,
+                  height: 160,
                   decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.backgroundChip,
-                    image: photoPath != null
+                    gradient: (coverPhotoPath == null && coverPhotoUrl == null)
+                        ? AppColors.heroGradient
+                        : null,
+                    image: coverPhotoPath != null
                         ? DecorationImage(
-                            image: FileImage(File(photoPath)),
+                            image: FileImage(File(coverPhotoPath)),
                             fit: BoxFit.cover,
                           )
-                        : null,
+                        : coverPhotoUrl != null
+                            ? DecorationImage(
+                                image: NetworkImage(AppConstants.fixUrl(coverPhotoUrl)),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
                   ),
-                  child: photoPath == null
-                      ? const Icon(
-                          PhosphorIconsRegular.userCircle,
-                          size: 52,
-                          color: AppColors.primaryBlue,
-                        )
-                      : null,
-                ),
-                Positioned(
-                  bottom: 4,
-                  right: 4,
-                  child: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: const BoxDecoration(
-                      color: AppColors.primaryBlue,
-                      shape: BoxShape.circle,
+                  child: Align(
+                    alignment: Alignment.bottomRight,
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.45),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(PhosphorIconsRegular.image, color: Colors.white, size: 16),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Фото обложки',
+                              style: AppTextStyles.bodySmall.copyWith(color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                    child: const Icon(
-                      PhosphorIconsRegular.camera,
-                      color: Colors.white,
-                      size: 16,
+                  ),
+                ),
+                // Аватар поверх обложки
+                Positioned(
+                  bottom: 0,
+                  left: 24,
+                  child: Transform.translate(
+                    offset: const Offset(0, 40),
+                    child: GestureDetector(
+                      onTap: _pickPhoto,
+                      child: Stack(
+                        children: [
+                          Container(
+                            width: 90,
+                            height: 90,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppColors.backgroundChip,
+                              border: Border.all(color: Colors.white, width: 3),
+                              image: photoPath != null
+                                  ? DecorationImage(
+                                      image: FileImage(File(photoPath)),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : null,
+                            ),
+                            child: photoPath == null
+                                ? const Icon(
+                                    PhosphorIconsRegular.userCircle,
+                                    size: 44,
+                                    color: AppColors.primaryBlue,
+                                  )
+                                : null,
+                          ),
+                          Positioned(
+                            bottom: 2,
+                            right: 2,
+                            child: Container(
+                              width: 26,
+                              height: 26,
+                              decoration: const BoxDecoration(
+                                color: AppColors.primaryBlue,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                PhosphorIconsRegular.camera,
+                                color: Colors.white,
+                                size: 14,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -268,19 +386,26 @@ class _Step1State extends ConsumerState<_Step1> {
             ),
           ),
 
-          const SizedBox(height: 8),
-          Text(
-            'Нажмите чтобы выбрать фото',
-            style: AppTextStyles.bodySmall,
-          ),
+          const SizedBox(height: 56),
 
-          const SizedBox(height: 32),
-
-          _FormField(
-            label: 'ФИО *',
-            hint: 'Иванов Иван Иванович',
-            controller: _nameCtrl,
-            onChanged: ref.read(doctorSetupProvider.notifier).setFullName,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              children: [
+                _FormField(
+                  label: 'ФИО *',
+                  hint: 'Иванов Иван Иванович',
+                  controller: _nameCtrl,
+                  onChanged: n.setFullName,
+                ),
+                const SizedBox(height: 20),
+                _PhoneField(
+                  label: 'Номер телефона *',
+                  controller: _phoneCtrl,
+                  onChanged: (v) => n.setPhone(v.isEmpty ? '' : '+996$v'),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -374,11 +499,12 @@ class _Step2State extends ConsumerState<_Step2> {
           if (hasOffline) ...[
             const SizedBox(height: 8),
             _FormField(
-              label: 'Цена (сом)',
+              label: 'Цена (сом) *',
               hint: '1000',
               controller: _offlinePriceCtrl,
               onChanged: n.setOfflinePrice,
               keyboard: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             ),
           ],
 
@@ -391,11 +517,12 @@ class _Step2State extends ConsumerState<_Step2> {
           if (hasOnline) ...[
             const SizedBox(height: 8),
             _FormField(
-              label: 'Цена онлайн (сом)',
+              label: 'Цена онлайн (сом) *',
               hint: '800',
               controller: _onlinePriceCtrl,
               onChanged: n.setOnlinePrice,
               keyboard: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             ),
           ],
         ],
@@ -416,20 +543,26 @@ class _Step3 extends ConsumerStatefulWidget {
 }
 
 class _Step3State extends ConsumerState<_Step3> {
+  late final TextEditingController _eduCtrl;
   late final TextEditingController _bioCtrl;
+  late final TextEditingController _langCtrl;
   late final TextEditingController _expCtrl;
 
   @override
   void initState() {
     super.initState();
     final s = ref.read(doctorSetupProvider);
+    _eduCtrl = TextEditingController(text: s.education);
     _bioCtrl = TextEditingController(text: s.bio);
+    _langCtrl = TextEditingController(text: s.consultationLanguage);
     _expCtrl = TextEditingController(text: s.experienceYears);
   }
 
   @override
   void dispose() {
+    _eduCtrl.dispose();
     _bioCtrl.dispose();
+    _langCtrl.dispose();
     _expCtrl.dispose();
     super.dispose();
   }
@@ -443,15 +576,30 @@ class _Step3State extends ConsumerState<_Step3> {
       child: Column(
         children: [
           _FormField(
-            label: 'Образование и опыт',
+            label: 'Образование *',
             hint: 'КГМА, ординатура по кардиологии...',
-            controller: _bioCtrl,
-            onChanged: n.setBio,
-            maxLines: 5,
+            controller: _eduCtrl,
+            onChanged: n.setEducation,
+            maxLines: 3,
           ),
           const SizedBox(height: 20),
           _FormField(
-            label: 'Стаж (лет)',
+            label: 'О себе *',
+            hint: 'Опишите свой опыт и подход к пациентам...',
+            controller: _bioCtrl,
+            onChanged: n.setBio,
+            maxLines: 4,
+          ),
+          const SizedBox(height: 20),
+          _FormField(
+            label: 'Язык консультации *',
+            hint: 'Русский, Кыргызский',
+            controller: _langCtrl,
+            onChanged: n.setConsultationLanguage,
+          ),
+          const SizedBox(height: 20),
+          _FormField(
+            label: 'Стаж (лет) *',
             hint: '5',
             controller: _expCtrl,
             onChanged: n.setExperienceYears,
@@ -548,6 +696,7 @@ class _Step4State extends ConsumerState<_Step4> {
                       hint: 'Цена, сом',
                       controller: _priceCtls[i],
                       keyboard: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       onChanged: (v) => n.updateService(
                           i, services[i].copyWith(price: v)),
                     ),
@@ -610,7 +759,6 @@ class _Step5 extends ConsumerStatefulWidget {
 }
 
 class _Step5State extends ConsumerState<_Step5> {
-  late final TextEditingController _phoneCtrl;
   late final TextEditingController _waCtrl;
   late final TextEditingController _tgCtrl;
   late final TextEditingController _igCtrl;
@@ -619,15 +767,14 @@ class _Step5State extends ConsumerState<_Step5> {
   void initState() {
     super.initState();
     final s = ref.read(doctorSetupProvider);
-    _phoneCtrl = TextEditingController(text: s.phone);
-    _waCtrl = TextEditingController(text: s.whatsapp);
-    _tgCtrl = TextEditingController(text: s.telegram);
-    _igCtrl = TextEditingController(text: s.instagram);
+    final rawWa = s.whatsapp.startsWith('+996') ? s.whatsapp.substring(4) : s.whatsapp;
+    _waCtrl = TextEditingController(text: rawWa);
+    _tgCtrl = TextEditingController(text: s.telegram.replaceAll('@', ''));
+    _igCtrl = TextEditingController(text: s.instagram.replaceAll('@', ''));
   }
 
   @override
   void dispose() {
-    _phoneCtrl.dispose();
     _waCtrl.dispose();
     _tgCtrl.dispose();
     _igCtrl.dispose();
@@ -641,43 +788,63 @@ class _Step5State extends ConsumerState<_Step5> {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _ContactField(
-            icon: PhosphorIconsRegular.phone,
-            iconColor: AppColors.primaryBlue,
-            label: 'Телефон',
-            hint: '+996 700 000 000',
-            controller: _phoneCtrl,
-            onChanged: n.setPhone,
-            keyboard: TextInputType.phone,
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.primaryBlue.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: [
+                const Icon(PhosphorIconsRegular.info,
+                    color: AppColors.primaryBlue, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Номер телефона вы указали на первом шаге. Здесь добавьте мессенджеры.',
+                    style: AppTextStyles.bodySmall
+                        .copyWith(color: AppColors.primaryBlue),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           _ContactField(
             icon: PhosphorIconsRegular.whatsappLogo,
             iconColor: const Color(0xFF25D366),
-            label: 'WhatsApp',
-            hint: '996700000000',
+            label: 'WhatsApp *',
+            hint: '700 000 000',
             controller: _waCtrl,
-            onChanged: n.setWhatsapp,
+            onChanged: (v) => n.setWhatsapp(v.isEmpty ? '' : '+996$v'),
             keyboard: TextInputType.phone,
+            prefixText: '+996 ',
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            maxLength: 9,
           ),
           const SizedBox(height: 16),
           _ContactField(
             icon: PhosphorIconsRegular.telegramLogo,
             iconColor: const Color(0xFF0088CC),
-            label: 'Telegram',
-            hint: '@username',
+            label: 'Telegram *',
+            hint: 'username',
             controller: _tgCtrl,
-            onChanged: n.setTelegram,
+            onChanged: (v) => n.setTelegram(v.replaceAll('@', '')),
+            prefixText: '@',
+            inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'[@\s]'))],
           ),
           const SizedBox(height: 16),
           _ContactField(
             icon: PhosphorIconsRegular.instagramLogo,
             iconColor: const Color(0xFFE1306C),
-            label: 'Instagram',
-            hint: '@username',
+            label: 'Instagram *',
+            hint: 'username',
             controller: _igCtrl,
-            onChanged: n.setInstagram,
+            onChanged: (v) => n.setInstagram(v.replaceAll('@', '')),
+            prefixText: '@',
+            inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'[@\s]'))],
           ),
         ],
       ),
@@ -697,21 +864,6 @@ class _Step6 extends ConsumerStatefulWidget {
 }
 
 class _Step6State extends ConsumerState<_Step6> {
-  late final TextEditingController _addressCtrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _addressCtrl =
-        TextEditingController(text: ref.read(doctorSetupProvider).address);
-  }
-
-  @override
-  void dispose() {
-    _addressCtrl.dispose();
-    super.dispose();
-  }
-
   Future<void> _pickTime(
     BuildContext ctx,
     ScheduleEntry entry,
@@ -740,21 +892,40 @@ class _Step6State extends ConsumerState<_Step6> {
     final n = ref.read(doctorSetupProvider.notifier);
     final schedules =
         ref.watch(doctorSetupProvider.select((s) => s.schedules));
+    final clinicName = ref.watch(
+        doctorSetupProvider.select((s) => s.selectedClinicName));
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _FormField(
-            label: 'Адрес приёма',
-            hint: 'ул. Чуй 123, кабинет 5',
-            controller: _addressCtrl,
-            onChanged: n.setAddress,
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.primaryBlue.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: [
+                const Icon(PhosphorIconsRegular.mapPin,
+                    color: AppColors.primaryBlue, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    clinicName != null
+                        ? 'Адрес приёма: берётся из клиники «$clinicName»'
+                        : 'Адрес приёма берётся автоматически из выбранной вами клиники.',
+                    style: AppTextStyles.bodySmall
+                        .copyWith(color: AppColors.primaryBlue),
+                  ),
+                ),
+              ],
+            ),
           ),
 
           const SizedBox(height: 28),
-          Text('График работы', style: AppTextStyles.headingMedium),
+          Text('График приёма', style: AppTextStyles.headingMedium),
           const SizedBox(height: 12),
 
           ...schedules.map((entry) {
@@ -852,6 +1023,210 @@ class _TimeButton extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// ШАГ 7 — Выбор клиники
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _Step7 extends ConsumerStatefulWidget {
+  const _Step7();
+
+  @override
+  ConsumerState<_Step7> createState() => _Step7State();
+}
+
+class _Step7State extends ConsumerState<_Step7> {
+  final _searchCtrl = TextEditingController();
+  List<Map<String, dynamic>> _results = [];
+  bool _searching = false;
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _search(String q) async {
+    if (q.trim().isEmpty) {
+      setState(() { _results = []; });
+      return;
+    }
+    setState(() { _searching = true; });
+    try {
+      final results = await ref.read(doctorSetupProvider.notifier).searchClinics(q.trim());
+      if (mounted) setState(() { _results = results; _searching = false; });
+    } catch (_) {
+      if (mounted) setState(() { _searching = false; });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = ref.watch(doctorSetupProvider.select((s) => s.selectedClinicId));
+    final selectedName = ref.watch(doctorSetupProvider.select((s) => s.selectedClinicName));
+    final n = ref.read(doctorSetupProvider.notifier);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Найдите клинику, в которой вы работаете, и отправьте заявку на подтверждение.',
+            style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 20),
+
+          // Выбранная клиника
+          if (selected != null) ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.primaryBlue.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(PhosphorIconsRegular.checkCircle,
+                      color: AppColors.primaryBlue, size: 22),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      selectedName ?? '',
+                      style: AppTextStyles.bodyLarge
+                          .copyWith(color: AppColors.primaryBlue, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => n.clearClinic(),
+                    child: const Icon(PhosphorIconsRegular.x,
+                        color: AppColors.textSecondary, size: 18),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // Поиск
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.backgroundCard,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: AppColors.cardShadow,
+            ),
+            child: TextField(
+              controller: _searchCtrl,
+              onChanged: _search,
+              style: AppTextStyles.bodyLarge,
+              decoration: InputDecoration(
+                hintText: 'Введите название клиники...',
+                hintStyle: AppTextStyles.bodySmall,
+                prefixIcon: const Icon(PhosphorIconsRegular.magnifyingGlass,
+                    color: AppColors.textSecondary, size: 20),
+                suffixIcon: _searching
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : null,
+                border: InputBorder.none,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Результаты поиска
+          ..._results.map((clinic) {
+            final id = clinic['id'] as int?;
+            final name = clinic['name_ru'] as String? ?? '';
+            final address = clinic['address_ru'] as String? ?? '';
+            final logoUrl = clinic['logo_url'] as String?;
+            final isSelected = id != null && id == selected;
+            return GestureDetector(
+              onTap: () {
+                if (id != null) {
+                  n.setClinic(id, name);
+                  setState(() { _results = []; _searchCtrl.clear(); });
+                }
+              },
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.primaryBlue.withValues(alpha: 0.06)
+                      : AppColors.backgroundCard,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: AppColors.cardShadow,
+                  border: isSelected
+                      ? Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.3))
+                      : null,
+                ),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: logoUrl != null
+                          ? Image.network(
+                              AppConstants.fixUrl(logoUrl),
+                              width: 44,
+                              height: 44,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, _) =>
+                                  const _ClinicSearchLogoPlaceholder(),
+                            )
+                          : const _ClinicSearchLogoPlaceholder(),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(name, style: AppTextStyles.labelBold),
+                          if (address.isNotEmpty)
+                            Text(address,
+                                style: AppTextStyles.bodySmall
+                                    .copyWith(color: AppColors.textSecondary),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis),
+                        ],
+                      ),
+                    ),
+                    if (isSelected)
+                      const Icon(PhosphorIconsRegular.checkCircle,
+                          color: AppColors.primaryBlue, size: 20),
+                  ],
+                ),
+              ),
+            );
+          }),
+
+          if (_results.isEmpty && _searchCtrl.text.isNotEmpty && !_searching)
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: Center(
+                child: Text(
+                  'Клиника не найдена. Попробуйте другой запрос.',
+                  style: AppTextStyles.bodySmall
+                      .copyWith(color: AppColors.textSecondary),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Shared form widgets
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -913,12 +1288,14 @@ class _InlineField extends StatelessWidget {
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
   final TextInputType? keyboard;
+  final List<TextInputFormatter>? inputFormatters;
 
   const _InlineField({
     required this.hint,
     required this.controller,
     required this.onChanged,
     this.keyboard,
+    this.inputFormatters,
   });
 
   @override
@@ -927,6 +1304,7 @@ class _InlineField extends StatelessWidget {
       controller: controller,
       onChanged: onChanged,
       keyboardType: keyboard,
+      inputFormatters: inputFormatters,
       style: AppTextStyles.bodySmall
           .copyWith(color: AppColors.textPrimary, fontSize: 14),
       decoration: InputDecoration(
@@ -975,6 +1353,56 @@ class _ToggleRow extends StatelessWidget {
   }
 }
 
+class _PhoneField extends StatelessWidget {
+  final String label;
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+
+  const _PhoneField({
+    required this.label,
+    required this.controller,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppTextStyles.labelBold),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.backgroundCard,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: AppColors.cardShadow,
+          ),
+          child: TextField(
+            controller: controller,
+            onChanged: onChanged,
+            keyboardType: TextInputType.phone,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            maxLength: 9,
+            style: AppTextStyles.bodyLarge,
+            decoration: InputDecoration(
+              hintText: '700 000 000',
+              hintStyle: AppTextStyles.bodySmall
+                  .copyWith(color: AppColors.textSecondary),
+              prefixText: '+996 ',
+              prefixStyle: AppTextStyles.bodyLarge
+                  .copyWith(fontWeight: FontWeight.w600),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              border: InputBorder.none,
+              counterText: '',
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _ContactField extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
@@ -983,6 +1411,9 @@ class _ContactField extends StatelessWidget {
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
   final TextInputType? keyboard;
+  final String? prefixText;
+  final List<TextInputFormatter>? inputFormatters;
+  final int? maxLength;
 
   const _ContactField({
     required this.icon,
@@ -992,6 +1423,9 @@ class _ContactField extends StatelessWidget {
     required this.controller,
     required this.onChanged,
     this.keyboard,
+    this.prefixText,
+    this.inputFormatters,
+    this.maxLength,
   });
 
   @override
@@ -1013,13 +1447,20 @@ class _ContactField extends StatelessWidget {
               controller: controller,
               onChanged: onChanged,
               keyboardType: keyboard,
+              inputFormatters: inputFormatters,
+              maxLength: maxLength,
               style: AppTextStyles.bodyLarge,
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: AppTextStyles.bodySmall,
+                hintStyle: AppTextStyles.bodySmall
+                    .copyWith(color: AppColors.textSecondary),
                 labelText: label,
                 labelStyle: AppTextStyles.bodySmall,
+                prefixText: prefixText,
+                prefixStyle: AppTextStyles.bodyLarge
+                    .copyWith(fontWeight: FontWeight.w600),
                 border: InputBorder.none,
+                counterText: '',
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 0, vertical: 14),
               ),
@@ -1027,6 +1468,27 @@ class _ContactField extends StatelessWidget {
           ),
           const SizedBox(width: 14),
         ],
+      ),
+    );
+  }
+}
+
+class _ClinicSearchLogoPlaceholder extends StatelessWidget {
+  const _ClinicSearchLogoPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: AppColors.backgroundChip,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: const Icon(
+        PhosphorIconsRegular.hospital,
+        color: AppColors.primaryBlue,
+        size: 22,
       ),
     );
   }

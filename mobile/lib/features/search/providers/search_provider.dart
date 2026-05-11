@@ -17,7 +17,7 @@ class SearchState {
   final String query;
   final List<DoctorModel> doctors;
   final List<ClinicModel> clinics;
-  final List<PharmacyModel> pharmacies;
+  final List<PharmacyCompanyModel> pharmacies;
   final List<String> history;
 
   const SearchState({
@@ -37,7 +37,7 @@ class SearchState {
     String? query,
     List<DoctorModel>? doctors,
     List<ClinicModel>? clinics,
-    List<PharmacyModel>? pharmacies,
+    List<PharmacyCompanyModel>? pharmacies,
     List<String>? history,
   }) =>
       SearchState(
@@ -145,3 +145,13 @@ final searchRepositoryProvider =
 final searchProvider = StateNotifierProvider<SearchNotifier, SearchState>(
   (ref) => SearchNotifier(ref.read(searchRepositoryProvider)),
 );
+
+final specializationsProvider =
+    FutureProvider.autoDispose<List<String>>((ref) async {
+  return ref.read(searchRepositoryProvider).getSpecializations();
+});
+
+final clinicCategoriesProvider =
+    FutureProvider.autoDispose<List<String>>((ref) async {
+  return ref.read(searchRepositoryProvider).getCategories();
+});

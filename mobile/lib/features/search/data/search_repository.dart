@@ -7,7 +7,7 @@ import '../../../shared/models/pharmacy_model.dart';
 class SearchResultsModel {
   final List<DoctorModel> doctors;
   final List<ClinicModel> clinics;
-  final List<PharmacyModel> pharmacies;
+  final List<PharmacyCompanyModel> pharmacies;
   final List<String> specializations;
 
   const SearchResultsModel({
@@ -28,7 +28,7 @@ class SearchResultsModel {
           .map((e) => ClinicModel.fromJson(e as Map<String, dynamic>))
           .toList(),
       pharmacies: (json['pharmacies'] as List<dynamic>? ?? [])
-          .map((e) => PharmacyModel.fromJson(e as Map<String, dynamic>))
+          .map((e) => PharmacyCompanyModel.fromJson(e as Map<String, dynamic>))
           .toList(),
       specializations: (json['specializations'] as List<dynamic>? ?? [])
           .map((e) => e as String)
@@ -45,5 +45,17 @@ class SearchRepository {
   Future<SearchResultsModel> search(String query) async {
     final response = await _dio.get('/search', queryParameters: {'q': query});
     return SearchResultsModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<List<String>> getSpecializations() async {
+    final response = await _dio.get('/search/specializations');
+    final list = response.data as List<dynamic>;
+    return list.map((e) => e as String).toList();
+  }
+
+  Future<List<String>> getCategories() async {
+    final response = await _dio.get('/search/categories');
+    final list = response.data as List<dynamic>;
+    return list.map((e) => e as String).toList();
   }
 }

@@ -12,6 +12,7 @@ import '../../../../features/doctors/providers/doctors_provider.dart';
 import '../../../../features/clinics/providers/clinics_provider.dart';
 import '../../../../features/pharmacies/providers/pharmacies_provider.dart';
 import '../../../../features/profile/providers/profile_provider.dart';
+import '../../../../features/notifications/providers/notifications_provider.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -26,22 +27,21 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(profileProvider);
+    final unreadCount = ref.watch(notificationsProvider).unreadCount;
     return Scaffold(
       backgroundColor: AppColors.backgroundApp,
       body: CustomScrollView(
         slivers: [
-          SliverToBoxAdapter(child: _buildHeader(profile)),
+          SliverToBoxAdapter(child: _buildHeader(profile, unreadCount)),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-              child: CustomSearchBar(
-                onTap: () => context.push('/main/search'),
-              ),
+              child: CustomSearchBar(onTap: () => context.push('/main/search')),
             ),
           ),
           SliverToBoxAdapter(child: _buildQuickServices(context)),
           SliverToBoxAdapter(child: _buildAiChatBanner(context)),
-          SliverToBoxAdapter(child: _buildSymptomsHero(context)),
+          SliverToBoxAdapter(child: _buildSymptomsHero(context, ref)),
           SliverToBoxAdapter(child: _buildSpecializationsSection(context)),
           SliverToBoxAdapter(child: _buildDoctorsSection(context, ref)),
           SliverToBoxAdapter(child: _buildClinicsSection(context, ref)),
@@ -52,7 +52,10 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(ProfileState profile) {
+  Widget _buildHeader(ProfileState profile, int unreadCount) {
+    final role = profile.role;
+    final isProvider = role == 'doctor' || role == 'clinic' || role == 'pharmacy' || role == 'admin';
+
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 60, 16, 20),
       child: Row(
@@ -64,16 +67,33 @@ class HomeScreen extends ConsumerWidget {
               gradient: AppColors.btnGradient,
               shape: BoxShape.circle,
             ),
-            child: Center(
-              child: Text(
-                profile.initials,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
-                ),
-              ),
-            ),
+            child: profile.photoUrl != null
+                ? ClipOval(
+                    child: Image.network(
+                      profile.photoUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, e, _) => Center(
+                        child: Text(
+                          profile.initials,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                : Center(
+                    child: Text(
+                      profile.initials,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -82,8 +102,9 @@ class HomeScreen extends ConsumerWidget {
               children: [
                 Text(
                   _greeting(),
-                  style: AppTextStyles.bodySmall
-                      .copyWith(color: AppColors.textSecondary),
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
                 Text(
                   profile.isLoading ? '...' : profile.displayName,
@@ -91,23 +112,15 @@ class HomeScreen extends ConsumerWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+                if (!profile.isLoading && role != null)
+                  const SizedBox(height: 3),
+                if (!profile.isLoading && role != null)
+                  _RoleBadge(role: role),
               ],
             ),
           ),
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: AppColors.backgroundCard,
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: AppColors.cardShadow,
-            ),
-            child: const Icon(
-              PhosphorIconsRegular.bell,
-              color: AppColors.textPrimary,
-              size: 22,
-            ),
-          ),
+          if (isProvider)
+            _BellButton(unreadCount: unreadCount),
         ],
       ),
     );
@@ -115,57 +128,68 @@ class HomeScreen extends ConsumerWidget {
 
   Widget _buildQuickServices(BuildContext context) {
     final items = [
-      (PhosphorIconsFill.stethoscope, 'Врачи', AppColors.primaryBlue,
-          '/main/doctors'),
-      (PhosphorIconsFill.hospital, 'Клиники', AppColors.accentBlue,
-          '/main/clinics'),
-      (PhosphorIconsFill.pill, 'Аптеки', AppColors.warning,
-          '/main/pharmacies'),
-      (PhosphorIconsFill.magnifyingGlass, 'Поиск', AppColors.success,
-          '/main/search'),
+      (
+        PhosphorIconsFill.stethoscope,
+        'Врачи',
+        AppColors.primaryBlue,
+        '/main/doctors',
+      ),
+      (
+        PhosphorIconsFill.hospital,
+        'Клиники',
+        AppColors.accentBlue,
+        '/main/clinics',
+      ),
+      (PhosphorIconsFill.pill, 'Аптеки', AppColors.warning, '/main/pharmacies'),
+      (
+        PhosphorIconsFill.magnifyingGlass,
+        'Поиск',
+        AppColors.success,
+        '/main/search',
+      ),
     ];
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       child: Row(
         children: items
-            .map((item) => Expanded(
-                  child: GestureDetector(
-                    onTap: () => context.push(item.$4),
-                    child: Container(
-                      margin: EdgeInsets.only(
-                          right: item == items.last ? 0 : 10),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: BoxDecoration(
-                        color: AppColors.backgroundCard,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: AppColors.cardShadow,
-                      ),
-                      child: Column(
-                        children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: item.$3.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(item.$1,
-                                color: item.$3, size: 22),
+            .map(
+              (item) => Expanded(
+                child: GestureDetector(
+                  onTap: () => context.push(item.$4),
+                  child: Container(
+                    margin: EdgeInsets.only(right: item == items.last ? 0 : 10),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.backgroundCard,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: AppColors.cardShadow,
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: item.$3.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            item.$2,
-                            style: AppTextStyles.bodySmall.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                            ),
+                          child: Icon(item.$1, color: item.$3, size: 22),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          item.$2,
+                          style: AppTextStyles.bodySmall.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                ))
+                ),
+              ),
+            )
             .toList(),
       ),
     );
@@ -202,15 +226,13 @@ class HomeScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'ИИ-Симптом Чекер',
-                    style: AppTextStyles.labelBold,
-                  ),
+                  Text('ИИ-Помощник', style: AppTextStyles.labelBold),
                   const SizedBox(height: 3),
                   Text(
                     'Опишите симптомы — ИИ подскажет\nк какому врачу обратиться',
-                    style: AppTextStyles.bodySmall
-                        .copyWith(color: AppColors.textSecondary),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -234,113 +256,63 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSymptomsHero(BuildContext context) {
-    final symptoms = AppConstants.symptoms.take(8).toList();
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-      decoration: BoxDecoration(
-        gradient: AppColors.heroGradient,
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Stack(
-        children: [
-          // Decorative circle
-          Positioned(
-            top: -30,
-            right: -30,
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.07),
-              ),
+  Widget _buildSymptomsHero(BuildContext context, WidgetRef ref) {
+    final symptomsAsync = ref.watch(symptomsProvider);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionHeader(
+          title: 'Симптомы',
+          onTapAll: () => context.push('/main/symptoms'),
+        ),
+        symptomsAsync.when(
+          loading: () => const _HorizontalShimmer(height: 116, width: 100),
+          error: (e, _) => const SizedBox.shrink(),
+          data: (symptoms) => SizedBox(
+            height: 116,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: symptoms.take(8).length,
+              itemBuilder: (_, index) {
+                final s = symptoms[index];
+                return GestureDetector(
+                  onTap: () => context.push(
+                    '/main/doctors/by-symptom/${s.id}',
+                    extra: s.nameRu,
+                  ),
+                  child: _SymptomCard(label: s.nameRu, index: index),
+                );
+              },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        PhosphorIconsFill.heartbeat,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Найти врача по симптому',
-                      style: AppTextStyles.headingMedium
-                          .copyWith(color: Colors.white),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 8,
-                    crossAxisSpacing: 8,
-                    childAspectRatio: 3.2,
-                  ),
-                  itemCount: symptoms.length,
-                  itemBuilder: (_, index) =>
-                      _SymptomChip(label: symptoms[index]),
-                ),
-                const SizedBox(height: 14),
-                GestureDetector(
-                  onTap: () => context.push('/main/doctors'),
-                  child: Row(
-                    children: [
-                      Text(
-                        'Все симптомы',
-                        style: AppTextStyles.labelBold
-                            .copyWith(color: Colors.white),
-                      ),
-                      const SizedBox(width: 4),
-                      const Icon(PhosphorIconsRegular.arrowRight,
-                          color: Colors.white, size: 16),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 24),
+      ],
     );
   }
 
   Widget _buildSpecializationsSection(BuildContext context) {
-    final specs = AppConstants.specializations.take(10).toList();
+    final specs = AppConstants.specializations.take(8).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SectionHeader(
           title: 'Специализации',
-          onTapAll: () => context.push('/main/doctors'),
+          onTapAll: () => context.push('/main/specializations'),
         ),
         SizedBox(
-          height: 96,
+          height: 116,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: specs.length,
-            itemBuilder: (_, index) => _SpecCard(
-              label: specs[index],
-              index: index,
+            itemBuilder: (_, index) => GestureDetector(
+              onTap: () => context.push(
+                '/main/doctors/by-specialization',
+                extra: specs[index],
+              ),
+              child: _SpecCard(label: specs[index], index: index),
             ),
           ),
         ),
@@ -350,7 +322,7 @@ class HomeScreen extends ConsumerWidget {
   }
 
   Widget _buildDoctorsSection(BuildContext context, WidgetRef ref) {
-    final doctorsAsync = ref.watch(doctorsProvider(DoctorFilter.all));
+    final doctorsAsync = ref.watch(doctorsProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -382,18 +354,41 @@ class HomeScreen extends ConsumerWidget {
                     ),
                     child: Row(
                       children: [
-                        Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            gradient: AppColors.btnGradient,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Icon(
-                            PhosphorIconsFill.userCircle,
-                            color: Colors.white,
-                            size: 32,
-                          ),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: d.photoUrl != null
+                              ? Image.network(
+                                  AppConstants.fixUrl(d.photoUrl!),
+                                  width: 60,
+                                  height: 60,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, _) => Container(
+                                    width: 60,
+                                    height: 60,
+                                    decoration: BoxDecoration(
+                                      gradient: AppColors.btnGradient,
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: const Icon(
+                                      PhosphorIconsFill.userCircle,
+                                      color: Colors.white,
+                                      size: 32,
+                                    ),
+                                  ),
+                                )
+                              : Container(
+                                  width: 60,
+                                  height: 60,
+                                  decoration: BoxDecoration(
+                                    gradient: AppColors.btnGradient,
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: const Icon(
+                                    PhosphorIconsFill.userCircle,
+                                    color: Colors.white,
+                                    size: 32,
+                                  ),
+                                ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -403,7 +398,9 @@ class HomeScreen extends ConsumerWidget {
                             children: [
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 3),
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
                                 decoration: BoxDecoration(
                                   color: AppColors.backgroundChip,
                                   borderRadius: BorderRadius.circular(6),
@@ -422,30 +419,36 @@ class HomeScreen extends ConsumerWidget {
                               const SizedBox(height: 6),
                               Text(
                                 d.fullName,
-                                style: AppTextStyles.labelBold
-                                    .copyWith(color: AppColors.textPrimary),
+                                style: AppTextStyles.labelBold.copyWith(
+                                  color: AppColors.textPrimary,
+                                ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 6),
                               Row(
                                 children: [
-                                  const Icon(Icons.star_rounded,
-                                      color: Color(0xFFFFB300), size: 14),
+                                  const Icon(
+                                    Icons.star_rounded,
+                                    color: Color(0xFFFFB300),
+                                    size: 14,
+                                  ),
                                   const SizedBox(width: 3),
                                   Text(
                                     d.rating.toStringAsFixed(1),
                                     style: AppTextStyles.bodySmall.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.textPrimary),
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textPrimary,
+                                    ),
                                   ),
                                   const SizedBox(width: 8),
                                   if (d.offlinePrice != null)
                                     Text(
                                       '${d.offlinePrice!.toInt()} сом',
                                       style: AppTextStyles.bodySmall.copyWith(
-                                          color: AppColors.success,
-                                          fontWeight: FontWeight.w600),
+                                        color: AppColors.success,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                 ],
                               ),
@@ -475,10 +478,10 @@ class HomeScreen extends ConsumerWidget {
           onTapAll: () => context.push('/main/clinics'),
         ),
         clinicsAsync.when(
-          loading: () => const _HorizontalShimmer(height: 120, width: 190),
+          loading: () => const _HorizontalShimmer(height: 96, width: 220),
           error: (e, st) => const SizedBox.shrink(),
           data: (clinics) => SizedBox(
-            height: 120,
+            height: 96,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -488,64 +491,86 @@ class HomeScreen extends ConsumerWidget {
                 return GestureDetector(
                   onTap: () => context.push('/main/clinics/${c.id}'),
                   child: Container(
-                    width: 190,
+                    width: 220,
                     margin: const EdgeInsets.only(right: 12),
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: AppColors.backgroundCard,
                       borderRadius: BorderRadius.circular(18),
                       boxShadow: AppColors.cardShadow,
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 38,
-                              height: 38,
-                              decoration: BoxDecoration(
-                                color: AppColors.accentBlue
-                                    .withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Icon(
-                                PhosphorIconsFill.hospital,
-                                color: AppColors.accentBlue,
-                                size: 20,
-                              ),
-                            ),
-                            const Spacer(),
-                            Row(children: [
-                              const Icon(Icons.star_rounded,
-                                  color: Color(0xFFFFB300), size: 13),
-                              const SizedBox(width: 2),
-                              Text(c.rating.toStringAsFixed(1),
-                                  style: AppTextStyles.bodySmall.copyWith(
-                                      fontWeight: FontWeight.w700)),
-                            ]),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          c.name,
-                          style: AppTextStyles.labelBold
-                              .copyWith(color: AppColors.textPrimary),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (c.category != null) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            c.category!,
-                            style: AppTextStyles.bodySmall.copyWith(
-                              fontSize: 11,
-                              color: AppColors.textSecondary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                        // логотип
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14),
+                            color: AppColors.accentBlue.withValues(alpha: 0.08),
                           ),
-                        ],
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
+                            child: c.logoUrl != null
+                                ? Image.network(
+                                    AppConstants.fixUrl(c.logoUrl!),
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, _) =>
+                                        const _ClinicLogoPlaceholder(),
+                                  )
+                                : const _ClinicLogoPlaceholder(),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // информация
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                c.name,
+                                style: AppTextStyles.labelBold.copyWith(
+                                  fontSize: 13,
+                                  color: AppColors.textPrimary,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (c.category != null) ...[
+                                const SizedBox(height: 3),
+                                Text(
+                                  c.category!,
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    fontSize: 11,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.star_rounded,
+                                    color: Color(0xFFFFB300),
+                                    size: 13,
+                                  ),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    c.rating.toStringAsFixed(1),
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -560,7 +585,7 @@ class HomeScreen extends ConsumerWidget {
   }
 
   Widget _buildPharmaciesSection(BuildContext context, WidgetRef ref) {
-    final pharmaciesAsync = ref.watch(pharmaciesProvider);
+    final branchesAsync = ref.watch(branchesProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -568,16 +593,18 @@ class HomeScreen extends ConsumerWidget {
           title: 'Аптеки',
           onTapAll: () => context.push('/main/pharmacies'),
         ),
-        pharmaciesAsync.when(
+        branchesAsync.when(
           loading: () => const _VerticalShimmer(count: 3),
           error: (e, st) => const SizedBox.shrink(),
-          data: (pharmacies) => ListView.builder(
+          data: (branches) => ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: pharmacies.take(3).length,
-            itemBuilder: (_, index) => PharmacyCard(
-              pharmacy: pharmacies[index],
+            itemCount: branches.take(3).length,
+            itemBuilder: (_, index) => GestureDetector(
+              onTap: () =>
+                  context.push('/main/pharmacies/branch/${branches[index].id}'),
+              child: PharmacyBranchCard(branch: branches[index]),
             ),
           ),
         ),
@@ -608,8 +635,9 @@ class _SectionHeader extends StatelessWidget {
               children: [
                 Text(
                   'Все',
-                  style: AppTextStyles.labelBold
-                      .copyWith(color: AppColors.primaryBlue),
+                  style: AppTextStyles.labelBold.copyWith(
+                    color: AppColors.primaryBlue,
+                  ),
                 ),
                 const SizedBox(width: 2),
                 const Icon(
@@ -688,33 +716,64 @@ class _VerticalShimmer extends StatelessWidget {
   }
 }
 
-// ─── Symptom chip ──────────────────────────────────────────────────────────
+// ─── Symptom card ─────────────────────────────────────────────────────────
 
-class _SymptomChip extends StatelessWidget {
+const _symptomEmojis = ['❤️', '🛡️', '🌸', '💑', '🦴', '💊', '🔙', '🩸'];
+const _symptomAccents = [
+  Color(0xFFE53935),
+  Color(0xFF43A047),
+  Color(0xFF8E24AA),
+  Color(0xFFD81B60),
+  Color(0xFF1565C0),
+  Color(0xFFFF8C42),
+  Color(0xFF00897B),
+  Color(0xFFFFB300),
+];
+const _symptomBgs = [
+  Color(0xFFFFEBEE),
+  Color(0xFFE8F5E9),
+  Color(0xFFF3E5F5),
+  Color(0xFFFCE4EC),
+  Color(0xFFE3F0FF),
+  Color(0xFFFFF3E0),
+  Color(0xFFE0F2F1),
+  Color(0xFFFFF8E1),
+];
+
+class _SymptomCard extends StatelessWidget {
   final String label;
-  const _SymptomChip({required this.label});
+  final int index;
+  const _SymptomCard({required this.label, required this.index});
 
   @override
   Widget build(BuildContext context) {
+    final accent = _symptomAccents[index % _symptomAccents.length];
+    final bg = _symptomBgs[index % _symptomBgs.length];
+    final emoji = _symptomEmojis[index % _symptomEmojis.length];
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      width: 100,
+      margin: const EdgeInsets.only(right: 10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.2),
-          width: 1,
-        ),
+        color: bg,
+        borderRadius: BorderRadius.circular(18),
       ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 28)),
+          Text(
+            label,
+            style: AppTextStyles.bodySmall.copyWith(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: accent,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
   }
@@ -722,30 +781,28 @@ class _SymptomChip extends StatelessWidget {
 
 // ─── Spec card ─────────────────────────────────────────────────────────────
 
-const _specIcons = [
-  PhosphorIconsRegular.stethoscope,
-  PhosphorIconsRegular.tooth,
-  PhosphorIconsRegular.eye,
-  PhosphorIconsRegular.heartbeat,
-  PhosphorIconsRegular.brain,
-  PhosphorIconsRegular.bone,
-  PhosphorIconsRegular.baby,
-  PhosphorIconsRegular.syringe,
-  PhosphorIconsRegular.firstAid,
-  PhosphorIconsRegular.stethoscope,
-];
+const _specEmojis = ['🩺', '❤️', '🤰', '🫁', '👂', '🧬', '💧', '🥗'];
 
-const _specColors = [
-  AppColors.primaryBlue,
-  AppColors.accentBlue,
-  AppColors.success,
+const _specAccents = [
+  Color(0xFF1565C0),
   Color(0xFFE53935),
   Color(0xFF8E24AA),
-  AppColors.warning,
-  AppColors.primaryBlue,
-  AppColors.success,
-  AppColors.accentBlue,
-  AppColors.warning,
+  Color(0xFF00897B),
+  Color(0xFFFF8C42),
+  Color(0xFF5E35B1),
+  Color(0xFF039BE5),
+  Color(0xFF43A047),
+];
+
+const _specBgs = [
+  Color(0xFFE3F0FF),
+  Color(0xFFFFEBEE),
+  Color(0xFFF3E5F5),
+  Color(0xFFE0F2F1),
+  Color(0xFFFFF3E0),
+  Color(0xFFEDE7F6),
+  Color(0xFFE1F5FE),
+  Color(0xFFE8F5E9),
 ];
 
 class _SpecCard extends StatelessWidget {
@@ -755,41 +812,149 @@ class _SpecCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _specColors[index % _specColors.length];
-    final icon = _specIcons[index % _specIcons.length];
+    final accent = _specAccents[index % _specAccents.length];
+    final bg = _specBgs[index % _specBgs.length];
+    final emoji = _specEmojis[index % _specEmojis.length];
     return Container(
-      width: 84,
+      width: 100,
       margin: const EdgeInsets.only(right: 10),
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.backgroundCard,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: AppColors.cardShadow,
+        color: bg,
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(height: 6),
+          Text(emoji, style: const TextStyle(fontSize: 28)),
           Text(
             label,
             style: AppTextStyles.bodySmall.copyWith(
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: accent,
             ),
-            textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Clinic logo placeholder ───────────────────────────────────────────────
+
+class _ClinicLogoPlaceholder extends StatelessWidget {
+  const _ClinicLogoPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 52,
+      height: 52,
+      decoration: BoxDecoration(
+        color: AppColors.accentBlue.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: const Icon(
+        PhosphorIconsFill.hospital,
+        color: AppColors.accentBlue,
+        size: 26,
+      ),
+    );
+  }
+}
+
+class _RoleBadge extends StatelessWidget {
+  final String role;
+
+  const _RoleBadge({required this.role});
+
+  @override
+  Widget build(BuildContext context) {
+    final (IconData icon, String label, Color color) = switch (role) {
+      'doctor' => (PhosphorIconsFill.stethoscope, 'Врач', AppColors.primaryBlue),
+      'clinic' => (PhosphorIconsFill.hospital, 'Клиника', AppColors.accentBlue),
+      'pharmacy' => (PhosphorIconsFill.pill, 'Аптека', AppColors.warning),
+      'admin' => (PhosphorIconsFill.shieldCheck, 'Админ', const Color(0xFF6B21A8)),
+      _ => (PhosphorIconsFill.user, 'Пациент', AppColors.textSecondary),
+    };
+
+    if (role == 'patient') return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BellButton extends StatelessWidget {
+  final int unreadCount;
+
+  const _BellButton({required this.unreadCount});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.push('/main/notifications'),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: AppColors.backgroundCard,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: AppColors.cardShadow,
+            ),
+            child: const Icon(
+              PhosphorIconsRegular.bell,
+              color: AppColors.textPrimary,
+              size: 22,
+            ),
+          ),
+          if (unreadCount > 0)
+            Positioned(
+              top: -4,
+              right: -4,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.error,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  unreadCount > 9 ? '9+' : '$unreadCount',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

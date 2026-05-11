@@ -49,8 +49,8 @@ class DoctorCard extends StatelessWidget {
                     ? CachedNetworkImage(
                         imageUrl: doctor.photoUrl!,
                         fit: BoxFit.cover,
-                        placeholder: (_, __) => const _AvatarPlaceholder(),
-                        errorWidget: (_, __, ___) => const _AvatarPlaceholder(),
+                        placeholder: (_, _) => const _AvatarPlaceholder(),
+                        errorWidget: (_, _, _) => const _AvatarPlaceholder(),
                       )
                     : const _AvatarPlaceholder(),
               ),

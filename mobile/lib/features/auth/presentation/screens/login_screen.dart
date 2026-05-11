@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/gradient_button.dart';
 import '../../providers/auth_provider.dart';
+import '../../../profile/providers/profile_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -52,11 +53,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     if (!_formKey.currentState!.validate()) return;
 
     final phone = '+996${_phoneController.text.trim()}';
-    final password = _passwordController.text;
-
     final role = await ref
         .read(authProvider.notifier)
-        .login(phone: phone, password: password);
+        .login(phone: phone, password: _passwordController.text);
 
     if (!mounted) return;
 
@@ -69,33 +68,45 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _navigateByRole(String role) async {
+    await ref.read(profileProvider.notifier).refresh();
+    if (!mounted) return;
     if (role == 'patient' || role == 'admin') {
       context.go('/main');
       return;
     }
 
-    // Для провайдеров — проверить есть ли профиль
+    if (role == 'doctor') {
+      final status = await ref.read(authProvider.notifier).getDoctorStatus();
+      if (!mounted) return;
+      switch (status) {
+        case null:
+        case 'rejected':
+        case 'removed':
+          context.go('/provider/setup');
+        default:
+          context.go('/main');
+      }
+      return;
+    }
+
     final hasProfile =
         await ref.read(authProvider.notifier).hasProviderProfile(role);
     if (!mounted) return;
 
     if (hasProfile) {
-      // Профиль уже создан — проверим статус через pending или home
-      final setupRoute = switch (role) {
-        'doctor' => '/provider/pending',
-        'clinic' => '/provider/pending-clinic',
-        'pharmacy' => '/provider/pending-pharmacy',
+      final dest = switch (role) {
+        'clinic' => '/clinic/manage',
+        'pharmacy' => '/main',
         _ => '/main',
       };
-      context.go(setupRoute);
+      context.go(dest);
     } else {
-      final setupRoute = switch (role) {
-        'doctor' => '/provider/setup',
-        'clinic' => '/provider/clinic-setup',
+      final dest = switch (role) {
+        'clinic' => '/provider/clinic-intro',
         'pharmacy' => '/provider/pharmacy-setup',
         _ => '/main',
       };
-      context.go(setupRoute);
+      context.go(dest);
     }
   }
 
@@ -113,14 +124,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isLoading =
-        ref.watch(authProvider).status == AuthStatus.loading;
+    final isLoading = ref.watch(authProvider).status == AuthStatus.loading;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundApp,
       body: Stack(
         children: [
-          // Верхний градиентный декор
           Positioned(
             top: -60,
             right: -60,
@@ -150,7 +159,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Назад
                         IconButton(
                           onPressed: () => context.pop(),
                           icon: const Icon(
@@ -162,7 +170,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         ),
                         const SizedBox(height: 32),
 
-                        // Иконка-логотип
                         Container(
                           width: 60,
                           height: 60,
@@ -179,7 +186,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         ),
                         const SizedBox(height: 24),
 
-                        Text('Добро\nпожаловать!', style: AppTextStyles.headingLarge),
+                        Text('Добро\nпожаловать!',
+                            style: AppTextStyles.headingLarge),
                         const SizedBox(height: 8),
                         Text(
                           'Войдите в свой аккаунт MedFind',
@@ -188,19 +196,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         ),
                         const SizedBox(height: 40),
 
-                        // Поле телефона
                         _buildLabel('Номер телефона'),
                         const SizedBox(height: 8),
                         _buildPhoneField(),
                         const SizedBox(height: 20),
 
-                        // Поле пароля
                         _buildLabel('Пароль'),
                         const SizedBox(height: 8),
                         _buildPasswordField(),
                         const SizedBox(height: 40),
 
-                        // Кнопка войти
                         GradientButton(
                           text: 'Войти',
                           onPressed: isLoading ? null : _login,
@@ -208,7 +213,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         ),
                         const SizedBox(height: 24),
 
-                        // Ссылка на регистрацию
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -239,12 +243,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
-  Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: AppTextStyles.labelBold.copyWith(color: AppColors.textPrimary),
-    );
-  }
+  Widget _buildLabel(String text) => Text(
+        text,
+        style: AppTextStyles.labelBold.copyWith(color: AppColors.textPrimary),
+      );
 
   Widget _buildPhoneField() {
     return Container(
@@ -267,24 +269,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         },
         decoration: InputDecoration(
           hintText: '700 000 000',
-          hintStyle: AppTextStyles.bodySmall
-              .copyWith(color: AppColors.textSecondary),
+          hintStyle:
+              AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
           prefixText: '+996 ',
-          prefixStyle: AppTextStyles.bodyLarge
-              .copyWith(fontWeight: FontWeight.w600),
+          prefixStyle:
+              AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600),
           prefixIcon: Padding(
             padding: const EdgeInsets.only(left: 16, right: 8),
-            child: Icon(
-              PhosphorIconsRegular.phone,
-              color: AppColors.primaryBlue,
-              size: 20,
-            ),
+            child: Icon(PhosphorIconsRegular.phone,
+                color: AppColors.primaryBlue, size: 20),
           ),
           prefixIconConstraints: const BoxConstraints(),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 18,
-          ),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
           border: InputBorder.none,
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
@@ -312,22 +309,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         obscureText: _obscurePassword,
         style: AppTextStyles.bodyLarge,
         validator: (v) {
-          if (v == null || v.length < 6) {
-            return 'Минимум 6 символов';
-          }
+          if (v == null || v.length < 6) return 'Минимум 6 символов';
           return null;
         },
         decoration: InputDecoration(
           hintText: '••••••••',
-          hintStyle: AppTextStyles.bodySmall
-              .copyWith(color: AppColors.textSecondary),
+          hintStyle:
+              AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
           prefixIcon: Padding(
             padding: const EdgeInsets.only(left: 16, right: 8),
-            child: Icon(
-              PhosphorIconsRegular.lock,
-              color: AppColors.primaryBlue,
-              size: 20,
-            ),
+            child: Icon(PhosphorIconsRegular.lock,
+                color: AppColors.primaryBlue, size: 20),
           ),
           prefixIconConstraints: const BoxConstraints(),
           suffixIcon: IconButton(
@@ -341,10 +333,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               size: 20,
             ),
           ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 18,
-          ),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
           border: InputBorder.none,
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),

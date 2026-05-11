@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "813078433193",
+    "project_id": "medfind-115b6",
+    "storage_bucket": "medfind-115b6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:813078433193:android:e89180c4193e8db6d0c8b8",
+        "android_client_info": {
+          "package_name": "com.medfind.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBtmUKuyvmpLH9B1lGKIHRasnQym8g6K1g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,12 +1,41 @@
-import 'dart:io';
-
 class AppConstants {
   AppConstants._();
 
-  /// Android эмулятор: 10.0.2.2 → localhost хоста
-  /// iOS симулятор и физическое устройство в одной сети: поменяйте на IP машины
-  static String get baseUrl =>
-      Platform.isAndroid ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
+  /// IP машины с бэкендом в локальной сети.
+  /// Узнать на Mac: `ipconfig getifaddr en0`. Поменяй при смене сети.
+  /// Используется для ВСЕХ платформ — localhost НЕ работает на физических устройствах.
+  static const String _lanHost = '192.168.50.177';
+
+  /// Переопределить при запуске: `flutter run --dart-define=API_BASE=http://10.0.0.5:8000`
+  static const String _override =
+      String.fromEnvironment('API_BASE', defaultValue: '');
+
+  /// Всегда LAN IP — работает и на симуляторе iOS, и на Android, и на физических устройствах.
+  /// localhost работает ТОЛЬКО в iOS-симуляторе, на реальном iPhone он недоступен.
+  static String get baseUrl {
+    if (_override.isNotEmpty) return _override;
+    return 'http://$_lanHost:8000';
+  }
+
+  /// Нормализует URL картинки из БД под текущий baseUrl.
+  /// URL мог быть сохранён с другого хоста (localhost, 10.0.2.2, IP другой сессии)
+  /// или как относительный путь `/uploads/...` — приводим всё к актуальному хосту.
+  /// Идемпотентна: повторный вызов на уже исправленном URL ничего не меняет.
+  static String fixUrl(String url) {
+    if (url.isEmpty) return url;
+    // Относительный путь — просто добавляем baseUrl
+    if (url.startsWith('/')) return '$baseUrl$url';
+    // Любой http(s)://<host>[:port]/uploads/... → текущий baseUrl + /uploads/...
+    final idx = url.indexOf('/uploads/');
+    if (idx >= 0 && (url.startsWith('http://') || url.startsWith('https://'))) {
+      return '$baseUrl${url.substring(idx)}';
+    }
+    return url;
+  }
+
+  /// Версия для nullable-полей в моделях.
+  static String? fixUrlOrNull(String? url) =>
+      (url == null || url.isEmpty) ? url : fixUrl(url);
 
   static const List<String> symptoms = [
     'Проблемы с сердцем',
