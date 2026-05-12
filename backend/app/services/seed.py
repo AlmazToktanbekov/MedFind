@@ -316,91 +316,32 @@ async def seed():
                     is_available=True,
                 ))
 
-        # ─── Аптеки (10 штук) ──────────────────────────────────────────
-        pharmacies = [
-            Pharmacy(
-                name_ru="Аптека Юг-Фарм", name_kg="Юг-Фарм Аптекасы", name_en="Yug-Farm Pharmacy",
-                address_ru="г. Бишкек, ул. Токтогула, 98",
-                phone="+996 312 880 880",
-                latitude=42.8712, longitude=74.5963,
-                is_open_24h=True, status="active",
-                working_hours_ru="Круглосуточно",
-            ),
-            Pharmacy(
-                name_ru="Аптека Ден-Сат", name_kg="Ден-Сат Аптекасы", name_en="Den-Sat Pharmacy",
-                address_ru="г. Бишкек, ул. Московская, 139",
-                phone="+996 312 445 445",
-                latitude=42.8768, longitude=74.5810,
-                is_open_24h=False, status="active",
-                working_hours_ru="Пн-Пт 08:00-22:00, Сб-Вс 09:00-21:00",
-            ),
-            Pharmacy(
-                name_ru="Аптека Неман", name_kg="Неман Аптекасы", name_en="Neman Pharmacy",
-                address_ru="г. Бишкек, пр. Чуй, 150",
-                phone="+996 312 660 770",
-                latitude=42.8734, longitude=74.5880,
-                is_open_24h=True, status="active",
-                working_hours_ru="Круглосуточно",
-            ),
-            Pharmacy(
-                name_ru="Фарм-Сервис", name_kg="Фарм-Сервис Аптекасы", name_en="Pharm-Service",
-                address_ru="г. Бишкек, ул. Ахунбаева, 132",
-                phone="+996 312 550 660",
-                latitude=42.8645, longitude=74.5740,
-                is_open_24h=False, status="active",
-                working_hours_ru="Ежедневно 08:00-22:00",
-            ),
-            Pharmacy(
-                name_ru="Аптека Гиппократ", name_kg="Гиппократ Аптекасы", name_en="Hippocrates Pharmacy",
-                address_ru="г. Бишкек, ул. Байтик Баатыра, 45",
-                phone="+996 312 740 740",
-                latitude=42.8822, longitude=74.5915,
-                is_open_24h=False, status="active",
-                working_hours_ru="Пн-Пт 09:00-20:00, Сб 10:00-18:00",
-            ),
-            Pharmacy(
-                name_ru="Аптека 36.6", name_kg="36.6 Аптекасы", name_en="Pharmacy 36.6",
-                address_ru="г. Бишкек, ул. Манаса, 42",
-                phone="+996 312 380 380",
-                latitude=42.8798, longitude=74.5762,
-                is_open_24h=True, status="active",
-                working_hours_ru="Круглосуточно",
-            ),
-            Pharmacy(
-                name_ru="Аптека Эко-Фарм", name_kg="Эко-Фарм Аптекасы", name_en="Eco-Farm Pharmacy",
-                address_ru="г. Бишкек, ул. Горького, 99",
-                phone="+996 312 490 490",
-                latitude=42.8680, longitude=74.6020,
-                is_open_24h=False, status="active",
-                working_hours_ru="Ежедневно 08:00-21:00",
-            ),
-            Pharmacy(
-                name_ru="Аптека Виталия", name_kg="Виталия Аптекасы", name_en="Vitalia Pharmacy",
-                address_ru="г. Бишкек, ул. Киевская, 55",
-                phone="+996 312 660 990",
-                latitude=42.8750, longitude=74.5680,
-                is_open_24h=False, status="active",
-                working_hours_ru="Пн-Вс 09:00-22:00",
-            ),
-            Pharmacy(
-                name_ru="Аптека при Кардиоцентре", name_kg="Кардиоцентр аптекасы", name_en="Cardio Pharmacy",
-                address_ru="г. Бишкек, пр. Манаса, 56 (при клинике)",
-                phone="+996 312 900 901",
-                latitude=42.8802, longitude=74.5755,
-                is_open_24h=False, status="active",
-                working_hours_ru="Пн-Пт 08:00-18:00",
-            ),
-            Pharmacy(
-                name_ru="Аптека Здоровье", name_kg="Ден соолук Аптекасы", name_en="Health Pharmacy",
-                address_ru="г. Бишкек, пр. Жибек Жолу, 280",
-                phone="+996 312 220 220",
-                latitude=42.8690, longitude=74.5800,
-                is_open_24h=True, status="active",
-                working_hours_ru="Круглосуточно",
-            ),
+        # ─── Аптеки (10 компаний + филиалы) ───────────────────────────
+        pharmacy_data = [
+            ("Аптека Юг-Фарм",         "+996 312 880 880", "г. Бишкек, ул. Токтогула, 98",      42.8712, 74.5963, "Круглосуточно"),
+            ("Аптека Ден-Сат",          "+996 312 445 445", "г. Бишкек, ул. Московская, 139",    42.8768, 74.5810, "Пн-Пт 08:00-22:00, Сб-Вс 09:00-21:00"),
+            ("Аптека Неман",            "+996 312 660 770", "г. Бишкек, пр. Чуй, 150",           42.8734, 74.5880, "Круглосуточно"),
+            ("Фарм-Сервис",             "+996 312 550 660", "г. Бишкек, ул. Ахунбаева, 132",     42.8645, 74.5740, "Ежедневно 08:00-22:00"),
+            ("Аптека Гиппократ",        "+996 312 740 740", "г. Бишкек, ул. Байтик Баатыра, 45", 42.8822, 74.5915, "Пн-Пт 09:00-20:00, Сб 10:00-18:00"),
+            ("Аптека 36.6",             "+996 312 380 380", "г. Бишкек, ул. Манаса, 42",          42.8798, 74.5762, "Круглосуточно"),
+            ("Аптека Эко-Фарм",         "+996 312 490 490", "г. Бишкек, ул. Горького, 99",        42.8680, 74.6020, "Ежедневно 08:00-21:00"),
+            ("Аптека Виталия",          "+996 312 660 990", "г. Бишкек, ул. Киевская, 55",        42.8750, 74.5680, "Пн-Вс 09:00-22:00"),
+            ("Аптека при Кардиоцентре", "+996 312 900 901", "г. Бишкек, пр. Манаса, 56",          42.8802, 74.5755, "Пн-Пт 08:00-18:00"),
+            ("Аптека Здоровье",         "+996 312 220 220", "г. Бишкек, пр. Жибек Жолу, 280",    42.8690, 74.5800, "Круглосуточно"),
         ]
-        for p in pharmacies:
-            db.add(p)
+        for name, phone, address, lat, lon, hours in pharmacy_data:
+            company = PharmacyCompany(name=name, main_phone=phone)
+            db.add(company)
+            await db.flush()
+            db.add(PharmacyBranch(
+                company_id=company.id,
+                address=address,
+                latitude=lat,
+                longitude=lon,
+                phone=phone,
+                working_hours=hours,
+                is_active=True,
+            ))
 
         # ─── Симптомы с маппингом специализаций ───────────────────────
         from app.models.symptom import Symptom, SymptomSpecialization
