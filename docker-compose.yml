@@ -1,3 +1,7 @@
+# Вариант для сервера с НЕСКОЛЬКИМИ проектами:
+# на хосте уже стоит nginx (или apache) — он и работает реверс-прокси + TLS.
+# Этот compose поднимает только БД и бэкенд; бэкенд доступен на 127.0.0.1:8010
+# (8000 на хосте занят другим проектом).
 services:
   db:
     image: postgres:16-alpine
@@ -20,41 +24,15 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     env_file: ./backend/.env
+    ports:
+      - "127.0.0.1:8010:8000"   # доступен только локально — наружу проксирует хостовый nginx
     volumes:
-      - uploads:/app/uploads
+      - ./backend/uploads:/app/uploads   # bind-mount: хостовый nginx раздаёт /uploads/ из этой папки
     depends_on:
       db:
         condition: service_healthy
     command: >
       sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
 
-  nginx:
-    image: nginx:alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    environment:
-      DOMAIN: ${DOMAIN}
-    volumes:
-      - ./nginx/templates:/etc/nginx/templates:ro
-      - uploads:/app/uploads:ro
-      - certbot_www:/var/www/certbot:ro
-      - certbot_conf:/etc/letsencrypt:ro
-    depends_on:
-      - backend
-
-  certbot:
-    image: certbot/certbot
-    restart: unless-stopped
-    volumes:
-      - certbot_www:/var/www/certbot
-      - certbot_conf:/etc/letsencrypt
-    # Перевыпуск раз в 12 часов (Let's Encrypt реально продлевает, только если осталось <30 дней)
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --quiet; sleep 12h & wait $${!}; done;'"
-
 volumes:
   postgres_data:
-  uploads:
-  certbot_www:
-  certbot_conf:

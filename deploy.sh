@@ -1,15 +1,21 @@
 #!/bin/bash
-# Скрипт первичной установки на сервере (Ubuntu 22.04+)
-# Запускать один раз: bash deploy.sh
+# Первичная установка MedFind на сервере с НЕСКОЛЬКИМИ проектами (Ubuntu 22.04+).
+# На хосте уже стоит nginx + certbot — они работают реверс-прокси и TLS для всех *.softjol.site.
+# Этот compose поднимает только БД + бэкенд; бэкенд слушает 127.0.0.1:8010.
+# Запускать из каталога проекта: bash deploy.sh
 set -e
 
-REPO="https://github.com/AlmazToktanbekov/MedFind.git"
-APP_DIR="/opt/medfind"
+APP_DIR="/srv/MedFind"
+DOMAIN="medfind.softjol.site"
+BACKEND_PORT="8010"
 
-echo "── 1. Установка Docker ──────────────────────────────────"
+cd "$(dirname "$0")"
+
+echo "── 1. Проверка Docker ──────────────────────────────────"
 if ! command -v docker &>/dev/null; then
+  echo "Docker не установлен. Установка..."
   apt-get update -qq
-  apt-get install -y ca-certificates curl gnupg openssl
+  apt-get install -y ca-certificates curl gnupg
   install -m 0755 -d /etc/apt/keyrings
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
     gpg --dearmor -o /etc/apt/keyrings/docker.gpg
@@ -19,21 +25,11 @@ if ! command -v docker &>/dev/null; then
   apt-get update -qq
   apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
   systemctl enable docker
-  echo "Docker установлен"
 else
   echo "Docker уже установлен"
 fi
 
-echo "── 2. Клонирование репозитория ─────────────────────────"
-if [ -d "$APP_DIR" ]; then
-  echo "Директория уже существует, обновляем..."
-  git -C "$APP_DIR" pull origin master
-else
-  git clone "$REPO" "$APP_DIR"
-fi
-cd "$APP_DIR"
-
-echo "── 3. Создание конфигов (.env) ─────────────────────────"
+echo "── 2. Конфиги (.env) ───────────────────────────────────"
 NEED_EDIT=0
 if [ ! -f .env ]; then
   cp .env.example .env
@@ -45,35 +41,35 @@ if [ ! -f backend/.env ]; then
 fi
 if [ "$NEED_EDIT" = "1" ]; then
   echo ""
-  echo "⚠️  ВАЖНО: отредактируй конфиги перед запуском:"
-  echo "   nano $APP_DIR/.env            # POSTGRES_PASSWORD, DOMAIN, CERTBOT_EMAIL"
-  echo "   nano $APP_DIR/backend/.env    # тот же пароль БД, SECRET_KEY, DEV_MODE=false"
-  echo ""
-  echo "   В backend/.env синхронизируй с .env:"
-  echo "   - DATABASE_URL / SYNC_DATABASE_URL — пароль = POSTGRES_PASSWORD, хост = db"
-  echo "   - SECRET_KEY — python3 -c 'import secrets; print(secrets.token_hex(32))'"
-  echo "   - DEV_MODE=false"
-  echo "   - (опц.) положи serviceAccountKey.json в backend/ для push-уведомлений"
-  echo ""
-  echo "После редактирования запусти снова: bash deploy.sh"
+  echo "⚠️  Заполни конфиги и запусти скрипт снова:"
+  echo "   nano $APP_DIR/.env"
+  echo "       POSTGRES_PASSWORD=<сильный пароль БД>"
+  echo "   nano $APP_DIR/backend/.env"
+  echo "       DATABASE_URL=postgresql+asyncpg://medfind_user:<тот же пароль>@db:5432/medfind_db"
+  echo "       SYNC_DATABASE_URL=postgresql://medfind_user:<тот же пароль>@db:5432/medfind_db"
+  echo "       SECRET_KEY=<python3 -c 'import secrets; print(secrets.token_hex(32))'>"
+  echo "       DEV_MODE=false"
+  echo "   (опц.) положи backend/serviceAccountKey.json для push-уведомлений"
   exit 0
-else
-  echo "Конфиги уже существуют"
 fi
+echo "Конфиги на месте"
 
-echo "── 4. Запуск сервисов ──────────────────────────────────"
+echo "── 3. Сборка и запуск (db + backend на 127.0.0.1:$BACKEND_PORT) ──"
 docker compose up -d --build
 
-echo "── 5. Применение миграций ──────────────────────────────"
+echo "── 4. Миграции ─────────────────────────────────────────"
 sleep 5
 docker compose exec -T backend alembic upgrade head
 
 echo ""
-echo "✅ Бэкенд запущен на 80 порту: http://$(hostname -I | awk '{print $1}')"
+echo "✅ Бэкенд работает: http://127.0.0.1:$BACKEND_PORT  (проверь: curl -s localhost:$BACKEND_PORT/health)"
 echo ""
-echo "── 6. Настройка HTTPS ──────────────────────────────────"
-echo "   Убедись, что DNS домена (DOMAIN из .env) указывает на этот сервер, затем:"
-echo "   bash init-letsencrypt.sh"
+echo "── 5. Хостовый nginx ───────────────────────────────────"
+echo "   sudo cp $APP_DIR/nginx/medfind.conf /etc/nginx/sites-available/$DOMAIN"
+echo "   sudo ln -s /etc/nginx/sites-available/$DOMAIN /etc/nginx/sites-enabled/"
+echo "   sudo nginx -t && sudo systemctl reload nginx"
 echo ""
-echo "   (сначала можно проверить тестовым сертификатом: STAGING=1 bash init-letsencrypt.sh)"
-echo "   Дальнейшее продление сертификата — автоматически сервисом certbot."
+echo "── 6. HTTPS (Let's Encrypt через хостовый certbot) ─────"
+echo "   Убедись, что DNS $DOMAIN указывает на этот сервер, затем:"
+echo "   sudo certbot --nginx -d $DOMAIN"
+echo "   Продление — автоматически (systemd-таймер certbot)."

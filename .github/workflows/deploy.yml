@@ -17,7 +17,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
-            cd /opt/medfind
+            cd /srv/MedFind
 
             echo "── Pull latest code ──"
             git pull origin master
