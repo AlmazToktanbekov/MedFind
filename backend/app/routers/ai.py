@@ -7,8 +7,8 @@ from app.core.config import settings
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
-_AI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
-_MODEL = "gemini-1.5-flash"
+_GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+_GROQ_MODEL = "llama3-8b-8192"
 
 # ─── Системный промпт ──────────────────────────────────────────────────────────
 
@@ -36,7 +36,7 @@ _SYSTEM_PROMPT = """Ты — ИИ-ассистент приложения MedFin
 # ─── Схемы ────────────────────────────────────────────────────────────────────
 
 class ChatMessage(BaseModel):
-    role: str   # "user" или "model"
+    role: str   # "user" или "assistant"
     text: str
 
 class ChatRequest(BaseModel):
@@ -55,14 +55,13 @@ async def ai_chat(body: ChatRequest):
     if not body.messages:
         raise HTTPException(status_code=422, detail="messages не может быть пустым")
 
-    # Groq использует роль "assistant" вместо "model" (формат OpenAI)
     messages = [{"role": "system", "content": _SYSTEM_PROMPT}]
     for msg in body.messages:
-        role = "assistant" if msg.role == "model" else "user"
+        role = "assistant" if msg.role in ("model", "assistant") else "user"
         messages.append({"role": role, "content": msg.text})
 
     payload = {
-        "model": _MODEL,
+        "model": _GROQ_MODEL,
         "messages": messages,
         "temperature": 0.7,
         "max_tokens": 1024,
@@ -71,7 +70,7 @@ async def ai_chat(body: ChatRequest):
     try:
         async with httpx.AsyncClient(timeout=30) as client:
             response = await client.post(
-                _AI_URL,
+                _GROQ_URL,
                 headers={"Authorization": f"Bearer {settings.GROQ_API_KEY}"},
                 json=payload,
             )
