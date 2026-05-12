@@ -7,8 +7,8 @@ from app.core.config import settings
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
-_GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-_MODEL = "llama-3.3-70b-versatile"
+_AI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+_MODEL = "gemini-1.5-flash"
 
 # ─── Системный промпт ──────────────────────────────────────────────────────────
 
@@ -71,7 +71,7 @@ async def ai_chat(body: ChatRequest):
     try:
         async with httpx.AsyncClient(timeout=30) as client:
             response = await client.post(
-                _GROQ_URL,
+                _AI_URL,
                 headers={"Authorization": f"Bearer {settings.GROQ_API_KEY}"},
                 json=payload,
             )
@@ -80,7 +80,7 @@ async def ai_chat(body: ChatRequest):
             err = response.json().get("error", {})
             raise HTTPException(
                 status_code=502,
-                detail=f"Ошибка Groq: {err.get('message', response.text)}",
+                detail=f"Ошибка AI: {err.get('message', response.text)}",
             )
 
         data = response.json()
