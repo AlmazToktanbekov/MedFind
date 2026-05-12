@@ -8,7 +8,7 @@ from app.core.config import settings
 router = APIRouter(prefix="/ai", tags=["ai"])
 
 _GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-_GROQ_MODEL = "llama3-8b-8192"
+_GROQ_MODEL = "llama-3.1-8b-instant"
 
 # ─── Системный промпт ──────────────────────────────────────────────────────────
 
