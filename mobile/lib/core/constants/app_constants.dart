@@ -1,20 +1,16 @@
 class AppConstants {
   AppConstants._();
 
-  /// IP машины с бэкендом в локальной сети.
-  /// Узнать на Mac: `ipconfig getifaddr en0`. Поменяй при смене сети.
-  /// Используется для ВСЕХ платформ — localhost НЕ работает на физических устройствах.
-  static const String _lanHost = '192.168.50.177';
+  /// Production URL (сервер medfind.softjol.site).
+  /// Для локальной разработки переопределить: `flutter run --dart-define=API_BASE=http://192.168.x.x:8000`
+  static const String _prodUrl = 'https://medfind.softjol.site';
 
-  /// Переопределить при запуске: `flutter run --dart-define=API_BASE=http://10.0.0.5:8000`
   static const String _override =
       String.fromEnvironment('API_BASE', defaultValue: '');
 
-  /// Всегда LAN IP — работает и на симуляторе iOS, и на Android, и на физических устройствах.
-  /// localhost работает ТОЛЬКО в iOS-симуляторе, на реальном iPhone он недоступен.
   static String get baseUrl {
     if (_override.isNotEmpty) return _override;
-    return 'http://$_lanHost:8000';
+    return _prodUrl;
   }
 
   /// Нормализует URL картинки из БД под текущий baseUrl.
