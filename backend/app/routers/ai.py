@@ -7,8 +7,8 @@ from app.core.config import settings
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
-_GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-_GROQ_MODEL = "llama-3.1-8b-instant"
+_OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+_OPENROUTER_MODEL = "meta-llama/llama-3.3-70b-instruct:free"
 
 # ─── Системный промпт ──────────────────────────────────────────────────────────
 
@@ -49,7 +49,7 @@ class ChatResponse(BaseModel):
 
 @router.post("/chat", response_model=ChatResponse)
 async def ai_chat(body: ChatRequest):
-    if not settings.GROQ_API_KEY:
+    if not settings.OPENROUTER_API_KEY:
         raise HTTPException(status_code=503, detail="AI сервис не настроен")
 
     if not body.messages:
@@ -61,7 +61,7 @@ async def ai_chat(body: ChatRequest):
         messages.append({"role": role, "content": msg.text})
 
     payload = {
-        "model": _GROQ_MODEL,
+        "model": _OPENROUTER_MODEL,
         "messages": messages,
         "temperature": 0.7,
         "max_tokens": 1024,
@@ -70,8 +70,8 @@ async def ai_chat(body: ChatRequest):
     try:
         async with httpx.AsyncClient(timeout=30) as client:
             response = await client.post(
-                _GROQ_URL,
-                headers={"Authorization": f"Bearer {settings.GROQ_API_KEY}"},
+                _OPENROUTER_URL,
+                headers={"Authorization": f"Bearer {settings.OPENROUTER_API_KEY}"},
                 json=payload,
             )
 

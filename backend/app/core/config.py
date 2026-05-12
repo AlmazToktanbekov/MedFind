@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     SMS_SENDER: str = "MedFind"
 
     GROQ_API_KEY: str = ""
+    OPENROUTER_API_KEY: str = ""
 
     FIREBASE_PROJECT_ID: str = ""          # Firebase project ID
     FIREBASE_SERVICE_ACCOUNT_PATH: str = ""  # path to serviceAccountKey.json
