@@ -77,11 +77,7 @@ async def ai_chat(body: ChatRequest):
             )
 
         if response.status_code != 200:
-            err = response.json().get("error", {})
-            raise HTTPException(
-                status_code=502,
-                detail=f"Ошибка AI: {err.get('message', response.text)}",
-            )
+            raise HTTPException(status_code=502, detail=f"Ошибка AI: {response.text}")
 
         data = response.json()
         reply = data["choices"][0]["message"]["content"]
