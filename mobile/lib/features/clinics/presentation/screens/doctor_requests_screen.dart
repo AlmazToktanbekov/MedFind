@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -919,10 +920,10 @@ class _UpdateDetailsSheet extends StatelessWidget {
                           ),
                           child: photoUrl != null
                               ? ClipOval(
-                                  child: Image.network(
-                                    _resolveUrl(photoUrl),
+                                  child: CachedNetworkImage(
+                                    imageUrl: _resolveUrl(photoUrl),
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, _, _) => const Icon(
+                                    errorWidget: (_, _, _) => const Icon(
                                         PhosphorIconsRegular.userCircle,
                                         color: Colors.white,
                                         size: 36),
@@ -1497,10 +1498,10 @@ class _DoctorProfileSheet extends StatelessWidget {
                             ),
                             child: photoUrl != null
                                 ? ClipOval(
-                                    child: Image.network(
-                                      _resolveUrl(photoUrl),
+                                    child: CachedNetworkImage(
+                                      imageUrl: _resolveUrl(photoUrl),
                                       fit: BoxFit.cover,
-                                      errorBuilder: (context, error, _) => const Icon(
+                                      errorWidget: (context, url, error) => const Icon(
                                           PhosphorIconsRegular.userCircle,
                                           color: Colors.white,
                                           size: 36),

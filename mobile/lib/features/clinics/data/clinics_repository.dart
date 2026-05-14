@@ -24,22 +24,6 @@ class ClinicsRepository {
     return ClinicModel.fromJson(response.data as Map<String, dynamic>);
   }
 
-  Future<List<ClinicModel>> getNearbyClinics({
-    required double lat,
-    required double lon,
-    double radiusKm = 5.0,
-  }) async {
-    final response = await _dio.get('/clinics/nearby', queryParameters: {
-      'lat': lat,
-      'lon': lon,
-      'radius_km': radiusKm,
-    });
-    final list = response.data as List<dynamic>;
-    return list
-        .map((e) => ClinicModel.fromJson(e as Map<String, dynamic>))
-        .toList();
-  }
-
   Future<ClinicModel?> getMyClinic() async {
     try {
       final response = await _dio.get('/clinics/my');

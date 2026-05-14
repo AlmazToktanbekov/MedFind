@@ -204,7 +204,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         _buildLabel('Пароль'),
                         const SizedBox(height: 8),
                         _buildPasswordField(),
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 12),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: GestureDetector(
+                            onTap: () => context.push('/forgot-password'),
+                            child: Text(
+                              'Забыли пароль?',
+                              style: AppTextStyles.labelBold
+                                  .copyWith(color: AppColors.primaryBlue),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 28),
 
                         GradientButton(
                           text: 'Войти',

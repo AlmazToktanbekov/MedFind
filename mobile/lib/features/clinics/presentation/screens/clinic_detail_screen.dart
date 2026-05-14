@@ -10,6 +10,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/models/clinic_model.dart';
 import '../../../../shared/widgets/gradient_button.dart';
 import '../../../../shared/widgets/rating_stars.dart';
+import '../../../../shared/providers/favorites_provider.dart';
 import '../../providers/clinics_provider.dart';
 import '../../../clinics/data/clinics_repository.dart';
 import '../../../doctors/providers/reviews_provider.dart';
@@ -45,6 +46,7 @@ class ClinicDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final id = int.tryParse(clinicId) ?? 0;
     final clinicAsync = ref.watch(clinicByIdProvider(id));
+    final isFavorite = ref.watch(favoritesProvider).contains('clinic:$id');
 
     return clinicAsync.when(
       loading: () => const _ClinicDetailShimmer(),
@@ -76,6 +78,9 @@ class ClinicDetailScreen extends ConsumerWidget {
       ),
       data: (clinic) => _ClinicTabScaffold(
         clinic: clinic,
+        isFavorite: isFavorite,
+        onFavoriteToggle: () =>
+            ref.read(favoritesProvider.notifier).toggle('clinic', id),
         onCall: clinic.phone != null ? () => _call(clinic.phone!) : null,
         onMaps: clinic.mapUrl != null ? () => _openMaps(clinic.mapUrl!) : null,
         onWhatsApp: clinic.whatsapp != null
@@ -108,6 +113,8 @@ class ClinicDetailScreen extends ConsumerWidget {
 
 class _ClinicTabScaffold extends StatelessWidget {
   final ClinicModel clinic;
+  final bool isFavorite;
+  final VoidCallback? onFavoriteToggle;
   final VoidCallback? onCall;
   final VoidCallback? onMaps;
   final VoidCallback? onWhatsApp;
@@ -118,6 +125,8 @@ class _ClinicTabScaffold extends StatelessWidget {
 
   const _ClinicTabScaffold({
     required this.clinic,
+    this.isFavorite = false,
+    this.onFavoriteToggle,
     this.onCall,
     this.onMaps,
     this.onWhatsApp,
@@ -167,6 +176,18 @@ class _ClinicTabScaffold extends StatelessWidget {
         icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
         onPressed: () => context.pop(),
       ),
+      actions: [
+        if (onFavoriteToggle != null)
+          IconButton(
+            icon: Icon(
+              isFavorite
+                  ? PhosphorIconsFill.heart
+                  : PhosphorIconsRegular.heart,
+              color: isFavorite ? const Color(0xFFE53935) : Colors.white,
+            ),
+            onPressed: onFavoriteToggle,
+          ),
+      ],
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: const EdgeInsets.only(left: 5, right: 5, bottom: 18),
         title: Text(

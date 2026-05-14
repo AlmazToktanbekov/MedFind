@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -28,10 +29,19 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen>
     super.initState();
     _tab = TabController(length: 3, vsync: this);
     _tab.addListener(() => setState(() {}));
+    WidgetsBinding.instance.addPostFrameCallback((_) => _markSeen());
+  }
+
+  void _markSeen() {
+    if (!mounted) return;
+    ref
+        .read(seenFavoritesProvider.notifier)
+        .markAllSeen(ref.read(favoritesProvider));
   }
 
   @override
   void dispose() {
+    _markSeen();
     _tab.dispose();
     super.dispose();
   }
@@ -305,8 +315,8 @@ class _FavoriteCard extends StatelessWidget {
               ),
               clipBehavior: Clip.antiAlias,
               child: imageUrl != null
-                  ? Image.network(imageUrl!, fit: BoxFit.cover,
-                      errorBuilder: (context, e, _) => const Icon(
+                  ? CachedNetworkImage(imageUrl: imageUrl!, fit: BoxFit.cover,
+                      errorWidget: (context, url, e) => const Icon(
                         Icons.local_hospital_outlined,
                         color: AppColors.primaryBlue,
                       ))

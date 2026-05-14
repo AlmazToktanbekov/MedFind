@@ -9,20 +9,32 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../shared/models/clinic_model.dart';
 import '../../../../shared/widgets/filter_chip_widget.dart';
+import '../../../../shared/widgets/custom_search_bar.dart';
+import '../../../../shared/providers/favorites_provider.dart';
 import '../../providers/clinics_provider.dart';
 import '../../../search/providers/search_provider.dart';
 
-class ClinicsScreen extends ConsumerWidget {
+class ClinicsScreen extends ConsumerStatefulWidget {
   const ClinicsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final mode = ref.watch(clinicListModeProvider);
+  ConsumerState<ClinicsScreen> createState() => _ClinicsScreenState();
+}
+
+class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
+  final _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final category = ref.watch(clinicCategoryProvider);
-    final isNearby = mode == ClinicListMode.nearby;
-    final clinicsAsync = isNearby
-        ? ref.watch(nearbyClinicsProvider)
-        : ref.watch(clinicsProvider(category));
+    final clinicsAsync = ref.watch(clinicsProvider(category));
 
     return Scaffold(
       backgroundColor: AppColors.backgroundApp,
@@ -38,94 +50,79 @@ class ClinicsScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          // Переключатель Все / Ближайшие
+          // Поиск по названию
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: FilterChipWidget(
-                    label: 'Все клиники',
-                    isActive: !isNearby,
-                    onTap: () => ref
-                        .read(clinicListModeProvider.notifier)
-                        .state = ClinicListMode.all,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: FilterChipWidget(
-                    label: 'Ближайшие',
-                    isActive: isNearby,
-                    onTap: () => ref
-                        .read(clinicListModeProvider.notifier)
-                        .state = ClinicListMode.nearby,
-                  ),
-                ),
-              ],
+            child: CustomSearchBar(
+              controller: _searchController,
+              hint: 'Поиск клиники по названию...',
+              onChanged: (v) =>
+                  setState(() => _query = v.trim().toLowerCase()),
             ),
           ),
           const SizedBox(height: 12),
 
-          // Фильтр по категориям (только в режиме «Все»)
-          if (!isNearby)
-            Builder(builder: (context) {
-              final categoriesAsync = ref.watch(clinicCategoriesProvider);
-              final cats = categoriesAsync.maybeWhen(
-                data: (list) => list.isNotEmpty ? list : AppConstants.clinicCategories,
-                orElse: () => AppConstants.clinicCategories,
-              );
-              return SizedBox(
-                height: 40,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  children: [
-                    Padding(
+          // Фильтр по категориям
+          Builder(builder: (context) {
+            final categoriesAsync = ref.watch(clinicCategoriesProvider);
+            final cats = categoriesAsync.maybeWhen(
+              data: (list) =>
+                  list.isNotEmpty ? list : AppConstants.clinicCategories,
+              orElse: () => AppConstants.clinicCategories,
+            );
+            return SizedBox(
+              height: 40,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: FilterChipWidget(
+                      label: 'Все',
+                      isActive: category == null,
+                      onTap: () =>
+                          ref.read(clinicCategoryProvider.notifier).state =
+                              null,
+                    ),
+                  ),
+                  ...cats.map(
+                    (cat) => Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: FilterChipWidget(
-                        label: 'Все',
-                        isActive: category == null,
+                        label: cat,
+                        isActive: category == cat,
                         onTap: () =>
                             ref.read(clinicCategoryProvider.notifier).state =
-                                null,
+                                cat,
                       ),
                     ),
-                    ...cats.map(
-                      (cat) => Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: FilterChipWidget(
-                          label: cat,
-                          isActive: category == cat,
-                          onTap: () =>
-                              ref.read(clinicCategoryProvider.notifier).state =
-                                  cat,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }),
-          if (!isNearby) const SizedBox(height: 12),
+                  ),
+                ],
+              ),
+            );
+          }),
+          const SizedBox(height: 12),
 
           Expanded(
             child: clinicsAsync.when(
               loading: () => const _ClinicsShimmer(),
               error: (e, _) => _ErrorView(
-                message: e.toString().contains('геолокац')
-                    ? 'Нет доступа к геолокации'
-                    : 'Не удалось загрузить клиники',
-                onRetry: () => isNearby
-                    ? ref.refresh(nearbyClinicsProvider)
-                    : ref.refresh(clinicsProvider(category)),
+                onRetry: () => ref.refresh(clinicsProvider(category)),
               ),
               data: (clinics) {
-                if (clinics.isEmpty) return const _EmptyView();
+                final filtered = _query.isEmpty
+                    ? clinics
+                    : clinics
+                        .where((c) => c.name.toLowerCase().contains(_query))
+                        .toList();
+                if (filtered.isEmpty) return const _EmptyView();
+                final favorites = ref.watch(favoritesProvider);
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: clinics.length,
+                  itemCount: filtered.length,
                   itemBuilder: (_, index) {
+                    final clinic = filtered[index];
                     return TweenAnimationBuilder<double>(
                       tween: Tween(begin: 0, end: 1),
                       duration: Duration(milliseconds: 250 + index * 50),
@@ -138,9 +135,13 @@ class ClinicsScreen extends ConsumerWidget {
                         ),
                       ),
                       child: ClinicCard(
-                        clinic: clinics[index],
+                        clinic: clinic,
+                        isFavorite: favorites.contains('clinic:${clinic.id}'),
+                        onFavoriteToggle: () => ref
+                            .read(favoritesProvider.notifier)
+                            .toggle('clinic', clinic.id),
                         onTap: () =>
-                            context.push('/main/clinics/${clinics[index].id}'),
+                            context.push('/main/clinics/${clinic.id}'),
                       ),
                     );
                   },
@@ -159,8 +160,16 @@ class ClinicsScreen extends ConsumerWidget {
 class ClinicCard extends StatelessWidget {
   final ClinicModel clinic;
   final VoidCallback onTap;
+  final bool isFavorite;
+  final VoidCallback? onFavoriteToggle;
 
-  const ClinicCard({super.key, required this.clinic, required this.onTap});
+  const ClinicCard({
+    super.key,
+    required this.clinic,
+    required this.onTap,
+    this.isFavorite = false,
+    this.onFavoriteToggle,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -249,15 +258,38 @@ class ClinicCard extends StatelessWidget {
                 ],
               ),
             ),
-            Container(
-              width: 36,
-              height: 36,
-              decoration: const BoxDecoration(
-                color: AppColors.primaryBlue,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(PhosphorIconsRegular.arrowRight,
-                  color: Colors.white, size: 18),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (onFavoriteToggle != null)
+                  GestureDetector(
+                    onTap: onFavoriteToggle,
+                    behavior: HitTestBehavior.opaque,
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(
+                        isFavorite
+                            ? PhosphorIconsFill.heart
+                            : PhosphorIconsRegular.heart,
+                        color: isFavorite
+                            ? const Color(0xFFE53935)
+                            : AppColors.textSecondary,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 8),
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryBlue,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(PhosphorIconsRegular.arrowRight,
+                      color: Colors.white, size: 18),
+                ),
+              ],
             ),
           ],
         ),
@@ -299,9 +331,8 @@ class _ClinicsShimmer extends StatelessWidget {
 }
 
 class _ErrorView extends StatelessWidget {
-  final String message;
   final VoidCallback onRetry;
-  const _ErrorView({this.message = 'Не удалось загрузить клиники', required this.onRetry});
+  const _ErrorView({required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -312,9 +343,9 @@ class _ErrorView extends StatelessWidget {
           const Icon(Icons.wifi_off_rounded,
               size: 56, color: AppColors.textSecondary),
           const SizedBox(height: 12),
-          Text(message,
-              style:
-                  AppTextStyles.bodyLarge.copyWith(color: AppColors.textSecondary)),
+          Text('Не удалось загрузить клиники',
+              style: AppTextStyles.bodyLarge
+                  .copyWith(color: AppColors.textSecondary)),
           TextButton(
             onPressed: onRetry,
             child: Text('Повторить', style: AppTextStyles.labelBold),

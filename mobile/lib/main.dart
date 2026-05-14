@@ -33,6 +33,7 @@ void main() async {
   // При 401 (невалидный токен + неудачный рефреш) — очищаем сессию и на /login
   ApiClient.onUnauthorized = () async {
     await const FlutterSecureStorage().deleteAll();
+    ApiClient().clearAuthCache();
     appRouter.go('/login');
   };
 

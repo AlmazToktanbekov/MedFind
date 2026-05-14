@@ -200,6 +200,70 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Запросить код для сброса пароля. true — успех (даже если номер не существует,
+  /// бэкенд из соображений приватности всегда отвечает одинаково).
+  Future<bool> forgotPassword({required String phone}) async {
+    state = state.copyWith(
+      status: AuthStatus.loading,
+      errorMessage: null,
+      pendingDevCode: null,
+    );
+    try {
+      final data = await _repo.forgotPassword(phone: phone);
+      state = state.copyWith(
+        status: AuthStatus.initial,
+        pendingDevCode: data['dev_code'] as String?,
+      );
+      return true;
+    } on DioException catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: _extractError(e),
+      );
+      return false;
+    } catch (_) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: 'Не удалось отправить код. Проверьте соединение.',
+      );
+      return false;
+    }
+  }
+
+  /// Сбросить пароль по OTP-коду. Возвращает роль при успехе, null при ошибке.
+  /// После успеха пользователь автоматически авторизован.
+  Future<String?> resetPassword({
+    required String phone,
+    required String code,
+    required String newPassword,
+  }) async {
+    state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
+    try {
+      final data = await _repo.resetPassword(
+        phone: phone,
+        code: code,
+        newPassword: newPassword,
+      );
+      final userRole = data['role'] as String;
+      _resetUserScopedState();
+      state = state.copyWith(status: AuthStatus.authenticated, role: userRole);
+      NotificationService.instance.init();
+      return userRole;
+    } on DioException catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: _extractError(e),
+      );
+      return null;
+    } catch (_) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: 'Ошибка сброса пароля. Попробуйте позже.',
+      );
+      return null;
+    }
+  }
+
   /// Выход из аккаунта
   Future<void> logout() async {
     await _repo.logout();

@@ -94,3 +94,39 @@ final favoritesProvider =
     StateNotifierProvider<FavoritesNotifier, Set<String>>(
   (_) => FavoritesNotifier(),
 );
+
+// ─── "Seen" tracking ───────────────────────────────────────────────────────
+// Remembers which favorites the user has already viewed on the Favorites
+// screen, so the profile badge can show only the count of new ones.
+
+class SeenFavoritesNotifier extends StateNotifier<Set<String>> {
+  static const _prefsKey = 'favorites_seen';
+
+  SeenFavoritesNotifier() : super({}) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    state = Set.from(prefs.getStringList(_prefsKey) ?? []);
+  }
+
+  Future<void> markAllSeen(Set<String> current) async {
+    if (state.length == current.length && state.containsAll(current)) return;
+    state = Set.from(current);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_prefsKey, state.toList());
+  }
+}
+
+final seenFavoritesProvider =
+    StateNotifierProvider<SeenFavoritesNotifier, Set<String>>(
+  (_) => SeenFavoritesNotifier(),
+);
+
+/// Number of favorites the user hasn't viewed on the Favorites screen yet.
+final unseenFavoritesCountProvider = Provider<int>((ref) {
+  final favorites = ref.watch(favoritesProvider);
+  final seen = ref.watch(seenFavoritesProvider);
+  return favorites.difference(seen).length;
+});

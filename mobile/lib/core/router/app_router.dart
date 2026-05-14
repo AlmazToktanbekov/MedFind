@@ -5,6 +5,8 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/register_form_screen.dart';
 import '../../features/auth/presentation/screens/otp_screen.dart';
+import '../../features/auth/presentation/screens/forgot_password_screen.dart';
+import '../../features/auth/presentation/screens/reset_password_screen.dart';
 import '../../features/home/presentation/screens/main_screen.dart';
 import '../../features/doctors/presentation/screens/doctors_screen.dart';
 import '../../features/doctors/presentation/screens/doctor_detail_screen.dart';
@@ -69,6 +71,20 @@ final appRouter = GoRouter(
       builder: (context, state) {
         final role = state.extra as String? ?? 'patient';
         return RegisterFormScreen(role: role);
+      },
+    ),
+    GoRoute(
+      path: '/forgot-password',
+      builder: (_, s) => const ForgotPasswordScreen(),
+    ),
+    GoRoute(
+      path: '/reset-password',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        return ResetPasswordScreen(
+          phone: extra['phone'] as String? ?? '',
+          devCode: extra['devCode'] as String?,
+        );
       },
     ),
     GoRoute(

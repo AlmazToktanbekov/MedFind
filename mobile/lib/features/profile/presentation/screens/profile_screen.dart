@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,13 +22,12 @@ class ProfileScreen extends ConsumerWidget {
     final l = AppLocalizations.of(context);
     final profile = ref.watch(profileProvider);
     final favorites = ref.watch(favoritesProvider);
+    final unseenFavorites = ref.watch(unseenFavoritesCountProvider);
     final searchState = ref.watch(searchProvider);
     final locale = ref.watch(localeProvider);
     final myDoctorAsync = ref.watch(myDoctorProvider);
     final role = profile.role;
 
-    final doctorCount = favorites.where((k) => k.startsWith('doctor:')).length;
-    final clinicCount = favorites.where((k) => k.startsWith('clinic:')).length;
     final pharmacyCount = favorites
         .where((k) => k.startsWith('pharmacy:'))
         .length;
@@ -73,17 +73,9 @@ class ProfileScreen extends ConsumerWidget {
                         icon: PhosphorIconsRegular.heart,
                         iconColor: const Color.fromARGB(255, 255, 0, 0),
                         title: l.profileFavorites,
-                        badge: doctorCount > 0 ? '$doctorCount' : null,
+                        badge: unseenFavorites > 0 ? '$unseenFavorites' : null,
                         onTap: () => context.push('/main/favorites'),
                       ),
-                      if (clinicCount > 0)
-                        _NavRow(
-                          icon: PhosphorIconsRegular.hospital,
-                          iconColor: AppColors.accentBlue,
-                          title: l.profileFavoriteClinics,
-                          badge: '$clinicCount',
-                          onTap: () => context.push('/main/clinics'),
-                        ),
                       if (pharmacyCount > 0)
                         _NavRow(
                           icon: PhosphorIconsRegular.pill,
@@ -158,12 +150,12 @@ class _AvatarSection extends StatelessWidget {
                 ),
                 child: profile.photoUrl != null
                     ? ClipOval(
-                        child: Image.network(
-                          AppConstants.fixUrl(profile.photoUrl!),
+                        child: CachedNetworkImage(
+                          imageUrl: AppConstants.fixUrl(profile.photoUrl!),
                           fit: BoxFit.cover,
                           width: 80,
                           height: 80,
-                          errorBuilder: (context, e, _) => Center(
+                          errorWidget: (context, url, e) => Center(
                             child: Text(
                               profile.initials,
                               style: const TextStyle(

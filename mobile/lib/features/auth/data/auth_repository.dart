@@ -72,6 +72,29 @@ class AuthRepository {
     return response.data as Map<String, dynamic>;
   }
 
+  /// Запросить код для сброса пароля
+  Future<Map<String, dynamic>> forgotPassword({required String phone}) async {
+    final response = await _dio.post('/auth/password/forgot', data: {
+      'phone': phone,
+    });
+    return response.data as Map<String, dynamic>;
+  }
+
+  /// Сбросить пароль по OTP-коду — автоматический вход после успеха
+  Future<Map<String, dynamic>> resetPassword({
+    required String phone,
+    required String code,
+    required String newPassword,
+  }) async {
+    final response = await _dio.post('/auth/password/reset', data: {
+      'phone': phone,
+      'code': code,
+      'new_password': newPassword,
+    });
+    await _saveSession(response.data as Map<String, dynamic>);
+    return response.data as Map<String, dynamic>;
+  }
+
   /// Выход
   Future<void> logout() async {
     try {
@@ -79,6 +102,7 @@ class AuthRepository {
     } catch (_) {}
     await _storage.deleteAll();
     await _clearLocalUserCache();
+    ApiClient().clearAuthCache();
   }
 
   /// Очищает локальные кэши, привязанные к аккаунту (избранное, история поиска).
@@ -94,12 +118,14 @@ class AuthRepository {
     await _storage.deleteAll();
     await _clearLocalUserCache();
 
-    await _storage.write(key: 'access_token', value: data['access_token'] as String);
+    final accessToken = data['access_token'] as String;
+    await _storage.write(key: 'access_token', value: accessToken);
     await _storage.write(key: 'refresh_token', value: data['refresh_token'] as String);
     await _storage.write(key: 'user_role', value: data['role'] as String);
     await _storage.write(key: 'user_id', value: data['user_id'].toString());
     await _storage.write(key: 'full_name', value: data['full_name'] as String? ?? '');
     await _storage.write(key: 'user_phone', value: data['phone'] as String? ?? '');
+    ApiClient().setAccessToken(accessToken);
   }
 
   Future<bool> isLoggedIn() async {

@@ -83,3 +83,25 @@ class OTPVerifyRequest(BaseModel):
 
 class FCMTokenRequest(BaseModel):
     fcm_token: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    phone: str
+
+
+class ForgotPasswordResponse(BaseModel):
+    message: str
+    dev_code: Optional[str] = None  # only in DEV_MODE and only if user exists
+
+
+class ResetPasswordRequest(BaseModel):
+    phone: str
+    code: str
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password(cls, v: str) -> str:
+        if len(v) < 6:
+            raise ValueError("Пароль должен быть не короче 6 символов")
+        return v

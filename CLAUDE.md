@@ -69,6 +69,8 @@ GoRouter, начальный маршрут `/splash`.
 | `/splash` | SplashScreen |
 | `/onboarding` | OnboardingScreen |
 | `/login` | LoginScreen |
+| `/forgot-password` | ForgotPasswordScreen |
+| `/reset-password` | ResetPasswordScreen (extra: `{phone, devCode?}`) |
 | `/otp` | OtpScreen (extra: `{phone, devCode?}`) |
 | `/main` | MainScreen (bottom nav: Home / Search / Health / Profile) |
 | `/main/doctors` | DoctorsScreen |
@@ -124,6 +126,15 @@ Backend находится в `backend/`.
 ### DEV_MODE
 
 В `.env` / `app/core/config.py`: `DEV_MODE=true` — OTP-код возвращается в теле ответа (поле `dev_code`) без реальной отправки SMS. Flutter отображает его на экране OTP.
+
+### SMS-сервис
+
+Единая точка отправки SMS — `app/services/sms.py`, функция `send_sms(phone, text)`. В DEV_MODE — заглушка, логирует код в консоль. Для подключения провайдера (SMS.kg / Nikita.kg) — заменить тело функции на HTTP-запрос; остальной код приложения не трогать. Используется в `/auth/otp/send` и `/auth/password/forgot`.
+
+### Восстановление пароля
+
+- `POST /auth/password/forgot` — принимает `{phone}`, отправляет OTP-код через `send_sms`. Из соображений приватности всегда возвращает одинаковое сообщение, даже если номер не зарегистрирован (`dev_code` возвращается только если юзер существует и `DEV_MODE=true`).
+- `POST /auth/password/reset` — принимает `{phone, code, new_password}` (мин. 6 символов), валидирует OTP (переиспользует таблицу `OTPCode`), обновляет `password_hash`, ротирует `refresh_token` и возвращает `TokenResponse` (автологин).
 
 ### Статусы провайдеров
 

@@ -37,6 +37,25 @@ class ApiClient {
   late final Dio _dio;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
+  // ── In-memory кэш access-токена ──────────────────────────────────────────
+  // Чтение из FlutterSecureStorage делает диск/keychain-операцию на КАЖДЫЙ
+  // запрос — на экранах с несколькими запросами это заметно тормозит.
+  // Держим токен в памяти; обновляем при логине / рефреше / логауте.
+  String? _accessToken;
+  bool _tokenLoaded = false;
+
+  /// Положить в кэш свежий access-токен (вызывать после логина/регистрации).
+  void setAccessToken(String? token) {
+    _accessToken = token;
+    _tokenLoaded = true;
+  }
+
+  /// Сбросить кэш токена (вызывать при логауте).
+  void clearAuthCache() {
+    _accessToken = null;
+    _tokenLoaded = true; // logged-out — больше не дёргаем storage впустую
+  }
+
   // Callback вызывается при неудачном рефреше → разлогиниться
   static Future<void> Function()? onUnauthorized;
 
@@ -48,9 +67,12 @@ class ApiClient {
   InterceptorsWrapper _authInterceptor() {
     return InterceptorsWrapper(
       onRequest: (options, handler) async {
-        final token = await _storage.read(key: 'access_token');
-        if (token != null) {
-          options.headers['Authorization'] = 'Bearer $token';
+        if (!_tokenLoaded) {
+          _accessToken = await _storage.read(key: 'access_token');
+          _tokenLoaded = true;
+        }
+        if (_accessToken != null) {
+          options.headers['Authorization'] = 'Bearer $_accessToken';
         }
         handler.next(options);
       },
@@ -154,9 +176,11 @@ class ApiClient {
 
       await _storage.write(key: 'access_token', value: newAccess);
       await _storage.write(key: 'refresh_token', value: newRefresh);
+      setAccessToken(newAccess);
       return newAccess;
     } catch (_) {
       await _storage.deleteAll();
+      clearAuthCache();
       return null;
     }
   }

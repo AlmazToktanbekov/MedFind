@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -69,10 +70,10 @@ class HomeScreen extends ConsumerWidget {
             ),
             child: profile.photoUrl != null
                 ? ClipOval(
-                    child: Image.network(
-                      profile.photoUrl!,
+                    child: CachedNetworkImage(
+                      imageUrl: profile.photoUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, e, _) => Center(
+                      errorWidget: (context, url, e) => Center(
                         child: Text(
                           profile.initials,
                           style: const TextStyle(
@@ -357,12 +358,12 @@ class HomeScreen extends ConsumerWidget {
                         ClipRRect(
                           borderRadius: BorderRadius.circular(16),
                           child: d.photoUrl != null
-                              ? Image.network(
-                                  AppConstants.fixUrl(d.photoUrl!),
+                              ? CachedNetworkImage(
+                                  imageUrl: AppConstants.fixUrl(d.photoUrl!),
                                   width: 60,
                                   height: 60,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, _) => Container(
+                                  errorWidget: (context, url, error) => Container(
                                     width: 60,
                                     height: 60,
                                     decoration: BoxDecoration(
@@ -512,10 +513,10 @@ class HomeScreen extends ConsumerWidget {
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(14),
                             child: c.logoUrl != null
-                                ? Image.network(
-                                    AppConstants.fixUrl(c.logoUrl!),
+                                ? CachedNetworkImage(
+                                    imageUrl: AppConstants.fixUrl(c.logoUrl!),
                                     fit: BoxFit.cover,
-                                    errorBuilder: (context, error, _) =>
+                                    errorWidget: (context, url, error) =>
                                         const _ClinicLogoPlaceholder(),
                                   )
                                 : const _ClinicLogoPlaceholder(),

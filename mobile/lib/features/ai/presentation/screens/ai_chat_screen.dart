@@ -136,10 +136,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'ИИ-Симптом Чекер',
+                  'ИИ-помощник',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -147,7 +150,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   ),
                 ),
                 Text(
-                  'Llama 3.3 · MedFind',
+                  'Симптом-чекер · MedFind',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color: Colors.white.withValues(alpha: 0.7),
@@ -227,18 +232,18 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           ),
           const SizedBox(height: 20),
           Text(
-            'Здравствуйте! Я ИИ-помощник\nMedFind.',
+            'Здравствуйте! Я ИИ-помощник MedFind',
             textAlign: TextAlign.center,
             style: AppTextStyles.headingMedium,
           ),
           const SizedBox(height: 8),
           Text(
-            'Опишите ваши симптомы, и я помогу\nразобраться и найти нужного врача.',
+            'Опишите ваши симптомы — я помогу разобраться и найти нужного врача',
             textAlign: TextAlign.center,
             style: AppTextStyles.bodyLarge
                 .copyWith(color: AppColors.textSecondary),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
@@ -251,11 +256,14 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 Icon(PhosphorIconsRegular.warning,
                     color: AppColors.warning, size: 14),
                 const SizedBox(width: 6),
-                Text(
-                  'Не является медицинским диагнозом',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.warning,
-                    fontWeight: FontWeight.w600,
+                Flexible(
+                  child: Text(
+                    'Не является медицинским диагнозом',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.warning,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
@@ -297,6 +305,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                     Expanded(
                       child: Text(s, style: AppTextStyles.bodyLarge),
                     ),
+                    const SizedBox(width: 8),
                     const Icon(
                       PhosphorIconsRegular.arrowRight,
                       color: AppColors.textSecondary,
@@ -367,9 +376,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         left: 16,
         right: 16,
         top: 12,
-        bottom: MediaQuery.of(context).viewInsets.bottom +
-            MediaQuery.of(context).padding.bottom +
-            12,
+        bottom: MediaQuery.of(context).padding.bottom + 12,
       ),
       decoration: BoxDecoration(
         color: AppColors.backgroundCard,
@@ -631,8 +638,15 @@ class _HistorySheet extends ConsumerWidget {
                 const Icon(PhosphorIconsRegular.clockCounterClockwise,
                     color: AppColors.primaryBlue, size: 20),
                 const SizedBox(width: 10),
-                Text('История чатов', style: AppTextStyles.headingMedium),
-                const Spacer(),
+                Expanded(
+                  child: Text(
+                    'История чатов',
+                    style: AppTextStyles.headingMedium,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 8),
                 historyAsync.maybeWhen(
                   data: (list) => list.isNotEmpty
                       ? GestureDetector(

@@ -27,7 +27,11 @@ from app.schemas.auth import (
     OTPSendResponse,
     OTPVerifyRequest,
     FCMTokenRequest,
+    ForgotPasswordRequest,
+    ForgotPasswordResponse,
+    ResetPasswordRequest,
 )
+from app.services.sms import send_sms
 
 
 def _make_refresh_token() -> str:
@@ -168,9 +172,7 @@ async def otp_send(body: OTPSendRequest, db: AsyncSession = Depends(get_db)):
     db.add(otp)
     await db.flush()
 
-    if not settings.DEV_MODE and settings.SMS_API_KEY:
-        # Production: send SMS via SMS provider (stub — integrate actual SMS API here)
-        pass
+    await send_sms(body.phone, f"Ваш код подтверждения MedFind: {code}")
 
     return OTPSendResponse(
         message="Код отправлен",
@@ -212,6 +214,83 @@ async def otp_verify(body: OTPVerifyRequest, db: AsyncSession = Depends(get_db))
         )
         db.add(user)
         await db.flush()
+
+    token = create_access_token({"sub": str(user.id)})
+    return _token_response(user, token, refresh)
+
+
+# ── Восстановление пароля ─────────────────────────────────────────────────────
+
+@router.post("/password/forgot", response_model=ForgotPasswordResponse)
+async def password_forgot(
+    body: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)
+):
+    """Запросить код для сброса пароля. Код приходит SMS-кой на телефон.
+
+    Из соображений приватности всегда возвращаем одинаковое сообщение,
+    независимо от того, существует пользователь или нет (чтобы нельзя было
+    через API проверить, зарегистрирован ли номер).
+    """
+    user_result = await db.execute(select(User).where(User.phone == body.phone))
+    user = user_result.scalar_one_or_none()
+
+    dev_code: Optional[str] = None
+    if user:
+        code = str(random.randint(100000, 999999))
+        expires = datetime.now(timezone.utc) + timedelta(
+            minutes=settings.OTP_EXPIRE_MINUTES
+        )
+        otp = OTPCode(phone=body.phone, code=code, expires_at=expires)
+        db.add(otp)
+        await db.flush()
+
+        await send_sms(
+            body.phone,
+            f"Код для сброса пароля MedFind: {code}",
+        )
+        if settings.DEV_MODE:
+            dev_code = code
+
+    return ForgotPasswordResponse(
+        message="Если номер зарегистрирован, мы отправили код",
+        dev_code=dev_code,
+    )
+
+
+@router.post("/password/reset", response_model=TokenResponse)
+async def password_reset(
+    body: ResetPasswordRequest, db: AsyncSession = Depends(get_db)
+):
+    """Сбросить пароль по OTP-коду и автоматически войти."""
+    now = datetime.now(timezone.utc)
+
+    otp_result = await db.execute(
+        select(OTPCode)
+        .where(
+            OTPCode.phone == body.phone,
+            OTPCode.code == body.code,
+            OTPCode.is_used == False,
+            OTPCode.expires_at > now,
+        )
+        .order_by(OTPCode.created_at.desc())
+        .limit(1)
+    )
+    otp = otp_result.scalar_one_or_none()
+    if not otp:
+        raise HTTPException(status_code=400, detail="Неверный или истёкший код")
+
+    user_result = await db.execute(
+        select(User).where(User.phone == body.phone, User.is_active == True)
+    )
+    user = user_result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=400, detail="Неверный или истёкший код")
+
+    otp.is_used = True
+    user.password_hash = hash_password(body.new_password)
+    refresh = _make_refresh_token()
+    user.refresh_token = refresh
+    await db.flush()
 
     token = create_access_token({"sub": str(user.id)})
     return _token_response(user, token, refresh)
