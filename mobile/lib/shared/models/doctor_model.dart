@@ -20,6 +20,26 @@ class DoctorContactModel {
   }
 }
 
+class DoctorServiceModel {
+  final int id;
+  final String name;
+  final double? price;
+
+  const DoctorServiceModel({
+    required this.id,
+    required this.name,
+    this.price,
+  });
+
+  factory DoctorServiceModel.fromJson(Map<String, dynamic> json) {
+    return DoctorServiceModel(
+      id: json['id'] as int,
+      name: json['name_ru'] as String? ?? '',
+      price: (json['price'] as num?)?.toDouble(),
+    );
+  }
+}
+
 class DoctorModel {
   final int id;
   final String fullName;
@@ -42,6 +62,7 @@ class DoctorModel {
   final int? offlineDurationMin;
   final String status;
   final List<DoctorContactModel> contacts;
+  final List<DoctorServiceModel> services;
 
   const DoctorModel({
     required this.id,
@@ -65,6 +86,7 @@ class DoctorModel {
     this.offlineDurationMin,
     this.status = 'active',
     this.contacts = const [],
+    this.services = const [],
   });
 
   String? get whatsapp => _contactValue('whatsapp');
@@ -82,6 +104,7 @@ class DoctorModel {
 
   factory DoctorModel.fromJson(Map<String, dynamic> json) {
     final contactsJson = json['contacts'] as List<dynamic>? ?? [];
+    final servicesJson = json['services'] as List<dynamic>? ?? [];
     return DoctorModel(
       id: json['id'] as int,
       fullName: json['full_name_ru'] as String? ?? '',
@@ -105,6 +128,8 @@ class DoctorModel {
       status: json['status'] as String? ?? 'active',
       contacts:
           contactsJson.map((c) => DoctorContactModel.fromJson(c as Map<String, dynamic>)).toList(),
+      services:
+          servicesJson.map((s) => DoctorServiceModel.fromJson(s as Map<String, dynamic>)).toList(),
     );
   }
 }

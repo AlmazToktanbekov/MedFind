@@ -332,7 +332,7 @@ class _AboutTab extends StatelessWidget {
           ],
 
           const SizedBox(height: 24),
-          Text('Тип визита', style: AppTextStyles.headingMedium),
+          Text('Консультация', style: AppTextStyles.headingMedium),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -359,6 +359,55 @@ class _AboutTab extends StatelessWidget {
                 ),
             ],
           ),
+
+          if (doctor.services.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            Text('Услуги', style: AppTextStyles.headingMedium),
+            const SizedBox(height: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.backgroundCard,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: AppColors.cardShadow,
+              ),
+              child: Column(
+                children: [
+                  for (var i = 0; i < doctor.services.length; i++) ...[
+                    if (i > 0)
+                      Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: AppColors.backgroundApp,
+                        indent: 16,
+                        endIndent: 16,
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              doctor.services[i].name,
+                              style: AppTextStyles.bodyLarge,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          if (doctor.services[i].price != null)
+                            Text(
+                              '${doctor.services[i].price!.toInt()} сом',
+                              style: AppTextStyles.labelBold.copyWith(
+                                color: AppColors.primaryBlue,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
 
           if (doctor.contacts.isNotEmpty) ...[
             const SizedBox(height: 24),
@@ -776,15 +825,19 @@ class _VisitTypeCard extends StatelessWidget {
                   fontSize: 22,
                 ),
               ),
-            if (price != null)
-              Text(
-                '${price!.toInt()} сом',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: isActive
-                      ? Colors.white.withValues(alpha: 0.8)
-                      : AppColors.textSecondary,
-                ),
+            Text(
+              (price == null || price == 0) ? 'Бесплатно' : '${price!.toInt()} сом',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: isActive
+                    ? Colors.white.withValues(alpha: 0.8)
+                    : (price == null || price == 0)
+                        ? AppColors.success
+                        : AppColors.textSecondary,
+                fontWeight: (price == null || price == 0)
+                    ? FontWeight.w600
+                    : FontWeight.w400,
               ),
+            ),
           ],
         ),
       ),

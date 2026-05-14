@@ -3,18 +3,29 @@ import secrets
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.core.config import settings
 from app.core.database import get_db
+from app.core.rate_limit import limiter
 from app.core.security import (
     create_access_token,
     hash_password,
     verify_password,
     get_current_user,
+)
+from app.core.security_limits import (
+    IP_LIMIT_AUTH,
+    IP_LIMIT_SMS,
+    OTP_MAX_VERIFY_ATTEMPTS,
+    assert_sms_allowed,
+    check_user_lockout,
+    invalidate_active_otps,
+    register_login_failure,
+    reset_login_failures,
 )
 from app.models.user import User, OTPCode
 from app.schemas.auth import (
@@ -53,7 +64,8 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=TokenResponse, status_code=201)
-async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit(IP_LIMIT_AUTH)
+async def register(request: Request, body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     """Регистрация нового пользователя по номеру телефона и паролю."""
     result = await db.execute(select(User).where(User.phone == body.phone))
     if result.scalar_one_or_none():
@@ -78,7 +90,8 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit(IP_LIMIT_AUTH)
+async def login(request: Request, body: LoginRequest, db: AsyncSession = Depends(get_db)):
     """Вход по номеру телефона и паролю."""
     result = await db.execute(
         select(User).where(User.phone == body.phone, User.is_active == True)
@@ -90,12 +103,18 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Неверный номер телефона или пароль",
         )
+
+    # Если юзер уже заблокирован — отвечаем 423 до сверки пароля
+    await check_user_lockout(user)
+
     if not verify_password(body.password, user.password_hash):
+        await register_login_failure(db, user)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Неверный номер телефона или пароль",
         )
 
+    await reset_login_failures(db, user)
     refresh = _make_refresh_token()
     user.refresh_token = refresh
     token = create_access_token({"sub": str(user.id)})
@@ -103,7 +122,8 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh_token(body: RefreshRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit(IP_LIMIT_AUTH)
+async def refresh_token(request: Request, body: RefreshRequest, db: AsyncSession = Depends(get_db)):
     """Обновление access токена по refresh токену."""
     result = await db.execute(
         select(User).where(
@@ -163,8 +183,12 @@ async def update_me(
 # ── OTP ───────────────────────────────────────────────────────────────────────
 
 @router.post("/otp/send", response_model=OTPSendResponse)
-async def otp_send(body: OTPSendRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit(IP_LIMIT_SMS)
+async def otp_send(request: Request, body: OTPSendRequest, db: AsyncSession = Depends(get_db)):
     """Отправить OTP-код на номер телефона."""
+    await assert_sms_allowed(db, body.phone)
+    await invalidate_active_otps(db, body.phone)
+
     code = str(random.randint(100000, 999999))
     expires = datetime.now(timezone.utc) + timedelta(minutes=settings.OTP_EXPIRE_MINUTES)
 
@@ -181,20 +205,28 @@ async def otp_send(body: OTPSendRequest, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/otp/verify", response_model=TokenResponse)
-async def otp_verify(body: OTPVerifyRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit(IP_LIMIT_AUTH)
+async def otp_verify(request: Request, body: OTPVerifyRequest, db: AsyncSession = Depends(get_db)):
     """Проверить OTP и войти / зарегистрировать пользователя."""
     now = datetime.now(timezone.utc)
 
-    otp_result = await db.execute(
+    # Берём последний живой код для номера (без сверки кода — чтобы инкрементить attempts при неверном вводе)
+    latest_q = await db.execute(
         select(OTPCode).where(
             OTPCode.phone == body.phone,
-            OTPCode.code == body.code,
             OTPCode.is_used == False,
             OTPCode.expires_at > now,
         ).order_by(OTPCode.created_at.desc()).limit(1)
     )
-    otp = otp_result.scalar_one_or_none()
+    otp = latest_q.scalar_one_or_none()
     if not otp:
+        raise HTTPException(status_code=400, detail="Неверный или истёкший код")
+
+    if otp.code != body.code:
+        otp.attempts = (otp.attempts or 0) + 1
+        if otp.attempts >= OTP_MAX_VERIFY_ATTEMPTS:
+            otp.is_used = True
+        await db.flush()
         raise HTTPException(status_code=400, detail="Неверный или истёкший код")
 
     otp.is_used = True
@@ -222,8 +254,9 @@ async def otp_verify(body: OTPVerifyRequest, db: AsyncSession = Depends(get_db))
 # ── Восстановление пароля ─────────────────────────────────────────────────────
 
 @router.post("/password/forgot", response_model=ForgotPasswordResponse)
+@limiter.limit(IP_LIMIT_SMS)
 async def password_forgot(
-    body: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)
+    request: Request, body: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)
 ):
     """Запросить код для сброса пароля. Код приходит SMS-кой на телефон.
 
@@ -236,6 +269,11 @@ async def password_forgot(
 
     dev_code: Optional[str] = None
     if user:
+        # Проверяем лимиты только если юзер реален. Атакующий перебирающий чужие номера
+        # одинаково увидит «Если номер зарегистрирован, мы отправили код».
+        await assert_sms_allowed(db, body.phone)
+        await invalidate_active_otps(db, body.phone)
+
         code = str(random.randint(100000, 999999))
         expires = datetime.now(timezone.utc) + timedelta(
             minutes=settings.OTP_EXPIRE_MINUTES
@@ -258,25 +296,32 @@ async def password_forgot(
 
 
 @router.post("/password/reset", response_model=TokenResponse)
+@limiter.limit(IP_LIMIT_AUTH)
 async def password_reset(
-    body: ResetPasswordRequest, db: AsyncSession = Depends(get_db)
+    request: Request, body: ResetPasswordRequest, db: AsyncSession = Depends(get_db)
 ):
     """Сбросить пароль по OTP-коду и автоматически войти."""
     now = datetime.now(timezone.utc)
 
-    otp_result = await db.execute(
+    latest_q = await db.execute(
         select(OTPCode)
         .where(
             OTPCode.phone == body.phone,
-            OTPCode.code == body.code,
             OTPCode.is_used == False,
             OTPCode.expires_at > now,
         )
         .order_by(OTPCode.created_at.desc())
         .limit(1)
     )
-    otp = otp_result.scalar_one_or_none()
+    otp = latest_q.scalar_one_or_none()
     if not otp:
+        raise HTTPException(status_code=400, detail="Неверный или истёкший код")
+
+    if otp.code != body.code:
+        otp.attempts = (otp.attempts or 0) + 1
+        if otp.attempts >= OTP_MAX_VERIFY_ATTEMPTS:
+            otp.is_used = True
+        await db.flush()
         raise HTTPException(status_code=400, detail="Неверный или истёкший код")
 
     user_result = await db.execute(
@@ -288,6 +333,8 @@ async def password_reset(
 
     otp.is_used = True
     user.password_hash = hash_password(body.new_password)
+    user.failed_login_attempts = 0
+    user.locked_until = None
     refresh = _make_refresh_token()
     user.refresh_token = refresh
     await db.flush()

@@ -488,7 +488,7 @@ class _Step2State extends ConsumerState<_Step2> {
           ),
 
           const SizedBox(height: 28),
-          Text('Тип приёма', style: AppTextStyles.labelBold),
+          Text('Консультация', style: AppTextStyles.labelBold),
           const SizedBox(height: 12),
 
           _ToggleRow(
@@ -498,14 +498,25 @@ class _Step2State extends ConsumerState<_Step2> {
           ),
           if (hasOffline) ...[
             const SizedBox(height: 8),
-            _FormField(
-              label: 'Цена (сом) *',
-              hint: '1000',
-              controller: _offlinePriceCtrl,
-              onChanged: n.setOfflinePrice,
-              keyboard: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            _FreeToggle(
+              isFree: _offlinePriceCtrl.text.trim() == '0',
+              onChanged: (free) {
+                final newPrice = free ? '0' : '';
+                _offlinePriceCtrl.text = newPrice;
+                n.setOfflinePrice(newPrice);
+                setState(() {});
+              },
             ),
+            const SizedBox(height: 8),
+            if (_offlinePriceCtrl.text.trim() != '0')
+              _FormField(
+                label: 'Цена (сом) *',
+                hint: '1000',
+                controller: _offlinePriceCtrl,
+                onChanged: n.setOfflinePrice,
+                keyboard: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              ),
           ],
 
           const SizedBox(height: 12),
@@ -516,14 +527,25 @@ class _Step2State extends ConsumerState<_Step2> {
           ),
           if (hasOnline) ...[
             const SizedBox(height: 8),
-            _FormField(
-              label: 'Цена онлайн (сом) *',
-              hint: '800',
-              controller: _onlinePriceCtrl,
-              onChanged: n.setOnlinePrice,
-              keyboard: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            _FreeToggle(
+              isFree: _onlinePriceCtrl.text.trim() == '0',
+              onChanged: (free) {
+                final newPrice = free ? '0' : '';
+                _onlinePriceCtrl.text = newPrice;
+                n.setOnlinePrice(newPrice);
+                setState(() {});
+              },
             ),
+            const SizedBox(height: 8),
+            if (_onlinePriceCtrl.text.trim() != '0')
+              _FormField(
+                label: 'Цена онлайн (сом) *',
+                hint: '800',
+                controller: _onlinePriceCtrl,
+                onChanged: n.setOnlinePrice,
+                keyboard: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              ),
           ],
         ],
       ),
@@ -1348,6 +1370,41 @@ class _ToggleRow extends StatelessWidget {
             activeThumbColor: AppColors.primaryBlue,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FreeToggle extends StatelessWidget {
+  final bool isFree;
+  final ValueChanged<bool> onChanged;
+
+  const _FreeToggle({required this.isFree, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onChanged(!isFree),
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 22,
+              height: 22,
+              child: Checkbox(
+                value: isFree,
+                onChanged: (v) => onChanged(v ?? false),
+                activeColor: AppColors.primaryBlue,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text('Бесплатно', style: AppTextStyles.bodyLarge),
+          ],
+        ),
       ),
     );
   }

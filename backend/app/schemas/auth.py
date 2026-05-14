@@ -1,25 +1,27 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 
 
+_ALLOWED_ROLES = {"patient", "doctor", "clinic", "pharmacy"}
+
+
 class RegisterRequest(BaseModel):
-    phone: str
-    password: str
-    full_name: str
+    phone: str = Field(min_length=10, max_length=20)
+    password: str = Field(min_length=6, max_length=128)
+    full_name: str = Field(min_length=1, max_length=120)
     role: str = "patient"
 
     @field_validator("role")
     @classmethod
     def validate_role(cls, v: str) -> str:
-        allowed = {"patient", "doctor", "clinic", "pharmacy"}
-        if v not in allowed:
-            raise ValueError(f"Роль должна быть одной из: {allowed}")
+        if v not in _ALLOWED_ROLES:
+            raise ValueError(f"Роль должна быть одной из: {_ALLOWED_ROLES}")
         return v
 
 
 class LoginRequest(BaseModel):
-    phone: str
-    password: str
+    phone: str = Field(min_length=10, max_length=20)
+    password: str = Field(min_length=1, max_length=128)
 
 
 class TokenResponse(BaseModel):
@@ -33,7 +35,7 @@ class TokenResponse(BaseModel):
 
 
 class RefreshRequest(BaseModel):
-    refresh_token: str
+    refresh_token: str = Field(min_length=20, max_length=256)
 
 
 class UserOut(BaseModel):
@@ -48,16 +50,15 @@ class UserOut(BaseModel):
 
 
 class OTPSendRequest(BaseModel):
-    phone: str
-    full_name: Optional[str] = None
+    phone: str = Field(min_length=10, max_length=20)
+    full_name: Optional[str] = Field(default=None, max_length=120)
     role: str = "patient"
 
     @field_validator("role")
     @classmethod
     def validate_role(cls, v: str) -> str:
-        allowed = {"patient", "doctor", "clinic", "pharmacy"}
-        if v not in allowed:
-            raise ValueError(f"Роль должна быть одной из: {allowed}")
+        if v not in _ALLOWED_ROLES:
+            raise ValueError(f"Роль должна быть одной из: {_ALLOWED_ROLES}")
         return v
 
 
@@ -67,26 +68,25 @@ class OTPSendResponse(BaseModel):
 
 
 class OTPVerifyRequest(BaseModel):
-    phone: str
-    code: str
-    full_name: Optional[str] = None
+    phone: str = Field(min_length=10, max_length=20)
+    code: str = Field(min_length=4, max_length=10)
+    full_name: Optional[str] = Field(default=None, max_length=120)
     role: str = "patient"
 
     @field_validator("role")
     @classmethod
     def validate_role(cls, v: str) -> str:
-        allowed = {"patient", "doctor", "clinic", "pharmacy"}
-        if v not in allowed:
-            raise ValueError(f"Роль должна быть одной из: {allowed}")
+        if v not in _ALLOWED_ROLES:
+            raise ValueError(f"Роль должна быть одной из: {_ALLOWED_ROLES}")
         return v
 
 
 class FCMTokenRequest(BaseModel):
-    fcm_token: str
+    fcm_token: str = Field(min_length=10, max_length=512)
 
 
 class ForgotPasswordRequest(BaseModel):
-    phone: str
+    phone: str = Field(min_length=10, max_length=20)
 
 
 class ForgotPasswordResponse(BaseModel):
@@ -95,13 +95,6 @@ class ForgotPasswordResponse(BaseModel):
 
 
 class ResetPasswordRequest(BaseModel):
-    phone: str
-    code: str
-    new_password: str
-
-    @field_validator("new_password")
-    @classmethod
-    def validate_new_password(cls, v: str) -> str:
-        if len(v) < 6:
-            raise ValueError("Пароль должен быть не короче 6 символов")
-        return v
+    phone: str = Field(min_length=10, max_length=20)
+    code: str = Field(min_length=4, max_length=10)
+    new_password: str = Field(min_length=6, max_length=128)

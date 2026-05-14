@@ -459,12 +459,21 @@ class _DoctorEditScreenState extends ConsumerState<DoctorEditScreen> {
             ),
             if (_hasOffline) ...[
               const SizedBox(height: 8),
-              _Field(
-                label: 'Цена очного приёма (сом)',
-                controller: _offlinePriceCtrl,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              _FreeCheckRow(
+                isFree: _offlinePriceCtrl.text.trim() == '0',
+                onChanged: (free) => setState(() {
+                  _offlinePriceCtrl.text = free ? '0' : '';
+                }),
               ),
+              if (_offlinePriceCtrl.text.trim() != '0') ...[
+                const SizedBox(height: 8),
+                _Field(
+                  label: 'Цена очного приёма (сом)',
+                  controller: _offlinePriceCtrl,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                ),
+              ],
             ],
             const SizedBox(height: 8),
             _CheckRow(
@@ -474,12 +483,21 @@ class _DoctorEditScreenState extends ConsumerState<DoctorEditScreen> {
             ),
             if (_hasOnline) ...[
               const SizedBox(height: 8),
-              _Field(
-                label: 'Цена онлайн (сом)',
-                controller: _onlinePriceCtrl,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              _FreeCheckRow(
+                isFree: _onlinePriceCtrl.text.trim() == '0',
+                onChanged: (free) => setState(() {
+                  _onlinePriceCtrl.text = free ? '0' : '';
+                }),
               ),
+              if (_onlinePriceCtrl.text.trim() != '0') ...[
+                const SizedBox(height: 8),
+                _Field(
+                  label: 'Цена онлайн (сом)',
+                  controller: _onlinePriceCtrl,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                ),
+              ],
             ],
           ],
         ),
@@ -1135,6 +1153,22 @@ class _CheckRow extends StatelessWidget {
           Text(label, style: AppTextStyles.bodyLarge),
         ],
       ),
+    );
+  }
+}
+
+class _FreeCheckRow extends StatelessWidget {
+  final bool isFree;
+  final ValueChanged<bool> onChanged;
+
+  const _FreeCheckRow({required this.isFree, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return _CheckRow(
+      label: 'Бесплатно',
+      value: isFree,
+      onChanged: onChanged,
     );
   }
 }
