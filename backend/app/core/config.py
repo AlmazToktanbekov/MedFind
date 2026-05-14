@@ -20,8 +20,11 @@ class Settings(BaseSettings):
     AWS_ACCESS_KEY_ID: str = ""
     AWS_SECRET_ACCESS_KEY: str = ""
 
-    SMS_API_KEY: str = ""
-    SMS_SENDER: str = "MedFind"
+    # Nikita.kg SMS gateway
+    SMS_LOGIN: str = ""            # логин личного кабинета Nikita.kg
+    SMS_PASSWORD: str = ""         # пароль API/SMPP (НЕ от кабинета — отдельный)
+    SMS_SENDER: str = "SMSPRO.KG"  # одобренное имя отправителя
+    SMS_API_KEY: str = ""          # резерв (для других провайдеров)
 
     GROQ_API_KEY: str = ""
     OPENROUTER_API_KEY: str = ""
