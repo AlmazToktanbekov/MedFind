@@ -15,6 +15,7 @@ import '../../providers/pharmacies_provider.dart';
 import '../../utils/pharmacy_hours.dart';
 import '../../../doctors/providers/reviews_provider.dart';
 import '../../../../shared/widgets/review_card.dart';
+import '../../../../core/analytics/analytics_tracker.dart';
 
 class PharmacyDetailScreen extends ConsumerWidget {
   final String pharmacyId;
@@ -50,7 +51,12 @@ class PharmacyDetailScreen extends ConsumerWidget {
           ),
         ),
       ),
-      data: (branch) => _BranchScaffold(branch: branch),
+      data: (branch) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          AnalyticsTracker().viewPharmacyBranch(branch.id);
+        });
+        return _BranchScaffold(branch: branch);
+      },
     );
   }
 }
@@ -66,6 +72,7 @@ class _BranchScaffold extends ConsumerWidget {
   Future<void> _call() async {
     final phone = _phone;
     if (phone == null) return;
+    AnalyticsTracker().clickCall('pharmacy_branch', branch.id);
     final uri = Uri.parse('tel:$phone');
     if (await canLaunchUrl(uri)) await launchUrl(uri);
   }
@@ -74,6 +81,7 @@ class _BranchScaffold extends ConsumerWidget {
     final lat = branch.latitude;
     final lon = branch.longitude;
     if (lat == null || lon == null) return;
+    AnalyticsTracker().clickRoute('pharmacy_branch', branch.id);
     final name = Uri.encodeComponent(branch.companyName ?? 'Аптека');
     final dgis = Uri.parse('dgis://2gis.ru/routeSearch/to/$lat,$lon');
     if (await canLaunchUrl(dgis)) {
@@ -87,6 +95,7 @@ class _BranchScaffold extends ConsumerWidget {
   Future<void> _openWhatsApp() async {
     final phone = branch.companyWhatsapp;
     if (phone == null) return;
+    AnalyticsTracker().clickWhatsapp('pharmacy_branch', branch.id);
     final clean = phone.replaceAll(RegExp(r'[^\d]'), '');
     final uri = Uri.parse('https://wa.me/$clean');
     if (await canLaunchUrl(uri)) {

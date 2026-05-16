@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../pharmacies/data/pharmacies_repository.dart';
 import '../../../../shared/models/pharmacy_model.dart';
+import '../../../subscription/providers/subscription_provider.dart';
 
 class _BranchCard extends StatelessWidget {
   final PharmacyBranchModel branch;
@@ -273,6 +274,30 @@ class PharmacyManageScreen extends ConsumerWidget {
 
               const SizedBox(height: 8),
 
+              _MenuItem(
+                icon: PhosphorIconsRegular.wallet,
+                title: 'Мой счёт',
+                subtitle: 'Баланс, пополнение, история операций',
+                color: AppColors.primaryBlue,
+                onTap: () => context.push('/wallet'),
+              ),
+
+              const SizedBox(height: 8),
+
+              _MenuItem(
+                icon: PhosphorIconsRegular.crown,
+                title: 'Подписка',
+                subtitle: 'Тарифный план, пробный период, лимиты',
+                color: AppColors.primaryBlue,
+                onTap: () => context.push('/subscription'),
+              ),
+
+              const SizedBox(height: 8),
+
+              const _PharmacyReportsMenuItem(),
+
+              const SizedBox(height: 8),
+
               // ── Заголовок филиалов ───────────────────────────────────
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -400,6 +425,53 @@ class _MenuItem extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Пункт «Отчёты» с замочком для аптеки. Premium → /pharmacy/analytics.
+class _PharmacyReportsMenuItem extends ConsumerStatefulWidget {
+  const _PharmacyReportsMenuItem();
+
+  @override
+  ConsumerState<_PharmacyReportsMenuItem> createState() =>
+      _PharmacyReportsMenuItemState();
+}
+
+class _PharmacyReportsMenuItemState
+    extends ConsumerState<_PharmacyReportsMenuItem> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(subscriptionProvider.notifier).load();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sub = ref.watch(subscriptionProvider).subscription;
+    final isPremium = sub?.plan == 'premium';
+
+    return _MenuItem(
+      icon: isPremium ? PhosphorIconsRegular.chartBar : PhosphorIconsFill.lock,
+      title: 'Отчёты',
+      subtitle: isPremium
+          ? 'Просмотры, звонки, активность по филиалам'
+          : 'Доступно в Premium',
+      color: const Color(0xFFFFB300),
+      onTap: () {
+        if (isPremium) {
+          context.push('/pharmacy/analytics');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Отчёты доступны на тарифе Premium (\$40/мес)'),
+            ),
+          );
+          context.push('/subscription');
+        }
+      },
     );
   }
 }

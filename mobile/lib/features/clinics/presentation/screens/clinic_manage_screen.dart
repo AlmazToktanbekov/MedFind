@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../clinics/data/clinics_repository.dart';
 import '../../../../shared/models/clinic_model.dart';
+import '../../../subscription/providers/subscription_provider.dart';
 
 // ─── Provider ──────────────────────────────────────────────────────────────
 
@@ -179,6 +180,13 @@ class ClinicManageScreen extends ConsumerWidget {
                 onTap: () =>
                     context.push('/clinic/${clinic.id}/doctor-requests'),
               ),
+              _MenuItem(
+                icon: PhosphorIconsRegular.crown,
+                title: 'Подписка',
+                subtitle: 'Тарифный план, пробный период, лимиты',
+                onTap: () => context.push('/subscription'),
+              ),
+              _ReportsMenuItem(clinic: clinic),
             ],
           );
         },
@@ -186,6 +194,103 @@ class ClinicManageScreen extends ConsumerWidget {
     );
   }
 }
+
+/// Пункт «Отчёты» с замочком: загружает текущую подписку, если не Premium —
+/// показывает кружок-замок и snackbar при тапе. Premium → переход на /clinic/analytics.
+class _ReportsMenuItem extends ConsumerStatefulWidget {
+  final ClinicModel clinic;
+  const _ReportsMenuItem({required this.clinic});
+
+  @override
+  ConsumerState<_ReportsMenuItem> createState() => _ReportsMenuItemState();
+}
+
+class _ReportsMenuItemState extends ConsumerState<_ReportsMenuItem> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(subscriptionProvider.notifier).load();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sub = ref.watch(subscriptionProvider).subscription;
+    final isPremium = sub?.plan == 'premium';
+
+    return GestureDetector(
+      onTap: () {
+        if (isPremium) {
+          context.push('/clinic/analytics');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Отчёты доступны на тарифе Premium (\$40/мес)'),
+            ),
+          );
+          context.push('/subscription');
+        }
+      },
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.backgroundCard,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: AppColors.cardShadow,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFB300).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(PhosphorIconsRegular.chartBar,
+                  color: Color(0xFFFFB300), size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text('Отчёты',
+                          style: AppTextStyles.bodyLarge
+                              .copyWith(fontWeight: FontWeight.w600)),
+                      const SizedBox(width: 6),
+                      if (!isPremium)
+                        const Icon(PhosphorIconsFill.lock,
+                            size: 14, color: AppColors.textSecondary)
+                      else
+                        const Icon(PhosphorIconsFill.crown,
+                            size: 14, color: Color(0xFFFFB300)),
+                    ],
+                  ),
+                  Text(
+                    isPremium
+                        ? 'Просмотры, звонки, активность пациентов'
+                        : 'Доступно в Premium',
+                    style: AppTextStyles.bodySmall
+                        .copyWith(color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(PhosphorIconsRegular.caretRight,
+                size: 16, color: AppColors.textSecondary),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 
 class _MenuItem extends StatelessWidget {
   final IconData icon;

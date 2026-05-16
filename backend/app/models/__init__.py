@@ -7,6 +7,9 @@ from app.models.review import Review
 from app.models.article import Article
 from app.models.favorite import Favorite
 from app.models.notification import Notification
+from app.models.subscription import Subscription, TrialUsage
+from app.models.analytics import AnalyticsEvent
+from app.models.wallet import Wallet, WalletTransaction
 
 __all__ = [
     "User", "OTPCode",
@@ -18,4 +21,7 @@ __all__ = [
     "Article",
     "Favorite",
     "Notification",
+    "Subscription", "TrialUsage",
+    "AnalyticsEvent",
+    "Wallet", "WalletTransaction",
 ]

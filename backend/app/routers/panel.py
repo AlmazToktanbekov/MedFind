@@ -19,8 +19,11 @@ from app.models.doctor import Doctor, DoctorContact, DoctorService, DoctorSchedu
 from app.models.clinic import Clinic
 from app.models.pharmacy import PharmacyCompany
 from app.models.article import Article
+from app.models.wallet import Wallet, WalletTransaction
+from app.services import wallet_service as wallets
 from sqlalchemy.orm import selectinload
 from jose import JWTError
+from decimal import Decimal
 
 # Jinja2 шаблоны
 _TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
@@ -406,3 +409,104 @@ async def toggle_article(
         await db.commit()
 
     return RedirectResponse(request.headers.get("referer", "/panel/articles"), status_code=302)
+
+
+# ── Wallet topup requests ────────────────────────────────────────────────────
+
+async def _topup_pending_count(db: AsyncSession) -> int:
+    r = await db.execute(
+        select(func.count()).where(
+            WalletTransaction.type == "topup",
+            WalletTransaction.status == "pending",
+        )
+    )
+    return r.scalar() or 0
+
+
+@router.get("/wallet/topups", response_class=HTMLResponse)
+async def panel_wallet_topups(
+    request: Request,
+    status: str = "pending",
+    db: AsyncSession = Depends(get_db),
+):
+    admin = await _get_admin(request, db)
+    if not admin:
+        return _redirect_login()
+
+    q = select(WalletTransaction, Wallet).join(
+        Wallet, WalletTransaction.wallet_id == Wallet.id
+    ).where(WalletTransaction.type == "topup")
+    if status != "all":
+        q = q.where(WalletTransaction.status == status)
+    q = q.order_by(WalletTransaction.created_at.desc())
+    rows = (await db.execute(q)).all()
+
+    # Резолвим имя владельца (клиники/аптеки) для красоты
+    items = []
+    for tx, w in rows:
+        owner_name = None
+        if w.owner_type == "clinic":
+            r = await db.execute(select(Clinic.name_ru).where(Clinic.id == w.owner_id))
+            owner_name = r.scalar_one_or_none()
+        elif w.owner_type == "pharmacy":
+            r = await db.execute(select(PharmacyCompany.name).where(PharmacyCompany.id == w.owner_id))
+            owner_name = r.scalar_one_or_none()
+        items.append({
+            "id": tx.id,
+            "owner_type": w.owner_type,
+            "owner_id": w.owner_id,
+            "owner_name": owner_name,
+            "amount_usd": float(tx.amount_usd),
+            "payment_code": tx.payment_code,
+            "status": tx.status,
+            "comment": tx.comment,
+            "created_at": tx.created_at,
+        })
+
+    pc = await _pending_count(db)
+    topup_pc = await _topup_pending_count(db)
+    return templates.TemplateResponse(
+        "admin/wallet_topups.html",
+        _ctx(request, "wallet_topups", {
+            "items": items,
+            "status": status,
+            "pending_count": topup_pc,
+            "topup_pending_count": topup_pc,
+        }, pending_count=pc),
+    )
+
+
+@router.post("/wallet/topups/{tx_id}/confirm")
+async def panel_confirm_topup(
+    tx_id: int,
+    request: Request,
+    actual_amount_usd: float = Form(...),
+    db: AsyncSession = Depends(get_db),
+):
+    admin = await _get_admin(request, db)
+    if not admin:
+        return _redirect_login()
+    try:
+        await wallets.confirm_topup(db, tx_id, Decimal(str(actual_amount_usd)), admin_user_id=admin.id)
+        await db.commit()
+    except wallets.WalletError:
+        pass  # silently — для простоты, можно flash-сообщения добавить
+    return RedirectResponse("/panel/wallet/topups", status_code=302)
+
+
+@router.post("/wallet/topups/{tx_id}/cancel")
+async def panel_cancel_topup(
+    tx_id: int,
+    request: Request,
+    reason: str = Form(""),
+    db: AsyncSession = Depends(get_db),
+):
+    admin = await _get_admin(request, db)
+    if not admin:
+        return _redirect_login()
+    try:
+        await wallets.cancel_topup(db, tx_id, reason or "Без причины", admin_user_id=admin.id)
+        await db.commit()
+    except wallets.WalletError:
+        pass
+    return RedirectResponse("/panel/wallet/topups", status_code=302)

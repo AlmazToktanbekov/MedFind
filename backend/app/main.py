@@ -9,10 +9,23 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from contextlib import asynccontextmanager
+
 from app.core.config import settings
 from app.core.rate_limit import limiter
 from app.routers import auth, doctors, clinics, pharmacies, search, reviews, content, admin
-from app.routers import upload, panel, ai, symptoms, favorites, notifications
+from app.routers import upload, panel, ai, symptoms, favorites, notifications, subscriptions, analytics, wallet
+from app.services import scheduler as _scheduler
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: запуск APScheduler (ежедневные cron-задачи)
+    _scheduler.start_scheduler()
+    yield
+    # Shutdown
+    _scheduler.shutdown_scheduler()
+
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -20,6 +33,7 @@ app = FastAPI(
     description="MedFind — медицинское приложение Кыргызстана",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # ── Rate limiting (slowapi) ──────────────────────────────────────────────────
@@ -76,6 +90,9 @@ app.include_router(ai.router)
 app.include_router(symptoms.router)
 app.include_router(favorites.router)
 app.include_router(notifications.router)
+app.include_router(subscriptions.router)
+app.include_router(analytics.router)
+app.include_router(wallet.router)
 
 
 _uploads_dir = Path("uploads")

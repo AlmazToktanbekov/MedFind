@@ -8,6 +8,8 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../clinics/data/clinics_repository.dart';
+import '../../../../core/network/plan_limit_exception.dart';
+import '../../../../shared/widgets/plan_limit_reached_dialog.dart';
 
 // ─── Provider ──────────────────────────────────────────────────────────────
 
@@ -63,12 +65,26 @@ class _DoctorRequestsScreenState extends ConsumerState<DoctorRequestsScreen>
     String successMsg,
   ) async {
     bool success = false;
+    PlanLimitException? planLimit;
     try {
       await fn();
       success = true;
-    } catch (_) {}
+    } catch (e) {
+      planLimit = PlanLimitException.tryFromDio(e);
+    }
 
     if (!mounted) return;
+
+    if (planLimit != null) {
+      await PlanLimitReachedDialog.show(
+        context,
+        limitType: planLimit.limitType,
+        limit: planLimit.limit,
+        currentPlan: planLimit.currentPlan,
+      );
+      ref.invalidate(_doctorRequestsProvider(widget.clinicId));
+      return;
+    }
     // Always refresh both lists — even on 404 the state may have changed
     ref.invalidate(_doctorRequestsProvider(widget.clinicId));
     ref.invalidate(_doctorUpdateRequestsProvider(widget.clinicId));

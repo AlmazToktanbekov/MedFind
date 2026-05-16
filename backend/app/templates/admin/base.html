@@ -224,6 +224,12 @@
     <a href="/panel/users" class="nav-item {% if active == 'users' %}active{% endif %}">
       <span class="nav-icon">👥</span> Пользователи
     </a>
+    <a href="/panel/wallet/topups" class="nav-item {% if active == 'wallet_topups' %}active{% endif %}">
+      <span class="nav-icon">💰</span> Пополнения
+      {% if topup_pending_count and topup_pending_count > 0 %}
+        <span class="nav-badge">{{ topup_pending_count }}</span>
+      {% endif %}
+    </a>
   </nav>
 
   <div class="sidebar-footer">

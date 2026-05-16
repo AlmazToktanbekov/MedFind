@@ -13,6 +13,8 @@ import '../../../../shared/providers/favorites_provider.dart';
 import '../../providers/profile_provider.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../clinics/presentation/screens/clinic_manage_screen.dart' show myClinicProvider;
+import '../../../subscription/providers/subscription_provider.dart';
+import '../../../wallet/providers/wallet_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -698,14 +700,31 @@ class _ProviderManagementSection extends ConsumerWidget {
 }
 
 // Inline-разделы управления клиникой (вместо одной кнопки «Управление клиникой»)
-class _ClinicManagement extends StatelessWidget {
+class _ClinicManagement extends ConsumerStatefulWidget {
   final WidgetRef ref;
   const _ClinicManagement({required this.ref});
+
+  @override
+  ConsumerState<_ClinicManagement> createState() => _ClinicManagementState();
+}
+
+class _ClinicManagementState extends ConsumerState<_ClinicManagement> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(subscriptionProvider.notifier).load();
+      ref.read(walletProvider.notifier).load();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final clinicAsync = ref.watch(myClinicProvider);
     final clinic = clinicAsync.valueOrNull;
+    final sub = ref.watch(subscriptionProvider).subscription;
+    final wallet = ref.watch(walletProvider).wallet;
+    final isPremium = sub?.plan == 'premium';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -742,6 +761,51 @@ class _ClinicManagement extends StatelessWidget {
             title: 'Заявки врачей',
             subtitle: 'Ожидают / активны / отклонены / обновления',
             onTap: () => context.push('/clinic/${clinic.id}/doctor-requests'),
+          ),
+          const SizedBox(height: 10),
+          _NavCard(
+            icon: PhosphorIconsRegular.wallet,
+            color: AppColors.primaryBlue,
+            title: 'Мой счёт',
+            subtitle: wallet == null
+                ? 'Пополнение, история операций'
+                : 'Баланс: \$${wallet.balanceUsd.toStringAsFixed(2)} • ≈ ${wallet.balanceKgs.toStringAsFixed(0)} ₸',
+            onTap: () => context.push('/wallet'),
+          ),
+          const SizedBox(height: 10),
+          _NavCard(
+            icon: PhosphorIconsRegular.crown,
+            color: AppColors.primaryBlue,
+            title: 'Подписка',
+            subtitle: sub == null
+                ? 'Тарифный план, лимиты'
+                : sub.isTrial
+                    ? 'Пробный Pro • осталось ${sub.daysLeft ?? 0} дн.'
+                    : 'Тариф: ${sub.plan.toUpperCase()}',
+            onTap: () => context.push('/subscription'),
+          ),
+          const SizedBox(height: 10),
+          _NavCard(
+            icon: isPremium
+                ? PhosphorIconsRegular.chartBar
+                : PhosphorIconsFill.lock,
+            color: const Color(0xFFFFB300),
+            title: 'Отчёты',
+            subtitle: isPremium
+                ? 'Просмотры, звонки, активность пациентов'
+                : 'Доступно в Premium',
+            onTap: () {
+              if (isPremium) {
+                context.push('/clinic/analytics');
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Отчёты доступны на тарифе Premium (\$40/мес)'),
+                  ),
+                );
+                context.push('/subscription');
+              }
+            },
           ),
         ],
       ],

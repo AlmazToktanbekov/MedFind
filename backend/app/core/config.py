@@ -35,6 +35,51 @@ class Settings(BaseSettings):
 
     BACKEND_CORS_ORIGINS: List[str] = ["*"]
 
+    # Подписки и тарифы
+    CLINIC_FREE_DOCTOR_LIMIT: int = 4
+    PHARMACY_FREE_BRANCH_LIMIT: int = 9
+    TRIAL_DAYS: int = 30
+    PLAN_PRO_PRICE_USD: int = 20
+    PLAN_PREMIUM_PRICE_USD: int = 40
+    PLAN_YEAR_DISCOUNT_MONTHS: int = 2   # 2 месяца в подарок при годовой оплате
+    USD_TO_KGS_RATE: float = 89.0        # курс для отображения в кабинете
+    PREMIUM_REPORTS_RETENTION_DAYS: int = 30  # доступ к отчётам после отмены Premium
+
+    # ─── Кошелёк / личный счёт ───────────────────────────────────────────
+    # Реквизиты MedFind для переводов клиник/аптек (хардкод сейчас, в админку — потом)
+    COMPANY_NAME: str = "ОсОО MedFind"
+    COMPANY_INN: str = "—"
+    BANK_NAME: str = "Mbank"
+    BANK_ACCOUNT: str = "—"
+    BANK_BIK: str = "—"
+    SUPPORT_PHONE: str = "+996700000000"
+
+    # Лимиты пополнения (USD)
+    WALLET_MIN_TOPUP_USD: int = 10
+    WALLET_MAX_TOPUP_USD: int = 1000
+    # Срок жизни pending-заявки в днях (потом автоотмена — Этап 4 cron)
+    WALLET_TOPUP_REQUEST_TTL_DAYS: int = 7
+
+    # Стратегия подтверждения пополнений:
+    # "manual"     — админ подтверждает в админке (сейчас)
+    # "mbank_auto" — webhook от Mbank Business API + матчинг по payment_code (потом)
+    WALLET_CONFIRM_STRATEGY: str = "manual"
+    MBANK_WEBHOOK_SECRET: str = ""
+
+    # ─── Scheduler (APScheduler, ежедневно в 09:00) ──────────────────────
+    SCHEDULER_ENABLED: bool = True
+    SCHEDULER_HOUR: int = 9    # час запуска ежедневных задач
+    SCHEDULER_MINUTE: int = 0
+    SCHEDULER_TIMEZONE: str = "Asia/Bishkek"
+
+    # Напоминания о подписке (за сколько дней до окончания слать push)
+    SUBSCRIPTION_REMINDER_DAYS: List[int] = [7, 3, 1]
+    # Срок жизни pending-заявки на пополнение (потом автоотмена)
+    TOPUP_PENDING_TTL_DAYS: int = 7
+    # Порог жалоб для авто-предупреждения клиники
+    COMPLAINTS_WARNING_THRESHOLD: int = 100
+    COMPLAINTS_WINDOW_DAYS: int = 10
+
     class Config:
         env_file = ".env"
         extra = "ignore"

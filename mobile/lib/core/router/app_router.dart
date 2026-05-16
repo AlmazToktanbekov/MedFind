@@ -40,6 +40,12 @@ import '../../features/pharmacies/presentation/screens/add_branch_screen.dart';
 import '../../features/pharmacies/presentation/screens/edit_pharmacy_company_screen.dart';
 import '../../features/pharmacies/presentation/screens/edit_branch_screen.dart';
 import '../../features/provider/presentation/screens/doctor_edit_screen.dart';
+import '../../features/subscription/presentation/screens/subscription_screen.dart';
+import '../../features/analytics/presentation/screens/clinic_analytics_screen.dart';
+import '../../features/analytics/presentation/screens/pharmacy_branch_analytics_screen.dart';
+import '../../features/wallet/presentation/screens/wallet_screen.dart';
+import '../../features/wallet/presentation/screens/topup_screen.dart';
+import '../../features/wallet/presentation/screens/purchase_confirm_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 
@@ -277,6 +283,40 @@ final appRouter = GoRouter(
       builder: (_, state) => EditBranchScreen(
         branchId: int.parse(state.pathParameters['id']!),
       ),
+    ),
+
+    // ─── Subscription ─────────────────────────────────────────────────────
+    GoRoute(
+      path: '/subscription',
+      builder: (_, s) => const SubscriptionScreen(),
+    ),
+
+    // ─── Analytics (Premium) ──────────────────────────────────────────────
+    GoRoute(
+      path: '/clinic/analytics',
+      builder: (_, s) => const ClinicAnalyticsScreen(),
+    ),
+    GoRoute(
+      path: '/pharmacy/analytics',
+      builder: (_, s) => const PharmacyBranchAnalyticsScreen(),
+    ),
+
+    // ─── Wallet & purchase ────────────────────────────────────────────────
+    GoRoute(
+      path: '/wallet',
+      builder: (_, s) => const WalletScreen(),
+    ),
+    GoRoute(
+      path: '/wallet/topup',
+      builder: (_, s) => const TopupScreen(),
+    ),
+    GoRoute(
+      path: '/subscription/purchase',
+      builder: (_, state) {
+        final plan = state.uri.queryParameters['plan'] ?? 'pro';
+        final period = state.uri.queryParameters['period'] ?? 'month';
+        return PurchaseConfirmScreen(plan: plan, period: period);
+      },
     ),
   ],
 );

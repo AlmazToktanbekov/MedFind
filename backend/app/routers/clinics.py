@@ -16,6 +16,7 @@ from app.models.user import User
 from app.schemas.clinic import ClinicOut, ClinicCreate, ClinicUpdate, ClinicPhotoOut, DoctorInClinicOut, DoctorRequestsOut
 from app.schemas.doctor import DoctorProfileUpdateOut
 from app.services.fcm import send_push
+from app.services import subscription_service as subs
 
 router = APIRouter(prefix="/clinics", tags=["clinics"])
 
@@ -155,6 +156,8 @@ async def create_clinic(
     clinic = Clinic(**body.model_dump(), user_id=current_user.id, status="active")
     db.add(clinic)
     await db.flush()
+    # Автоматический Pro-триал на 30 дней при регистрации клиники
+    await subs.start_trial(db, "clinic", clinic.id)
     return await _load_clinic(clinic.id, db)
 
 
@@ -283,6 +286,25 @@ async def approve_doctor(
     doctor = await _get_doctor_in_clinic(doctor_id, clinic_id, db)
     if doctor.status != "pending":
         raise HTTPException(status_code=400, detail="Doctor is not in pending status")
+
+    # Проверка лимита тарифа: Free = 4 активных врача
+    plan = await subs.get_plan(db, "clinic", clinic_id)
+    limit = subs.get_doctor_limit(plan)
+    if limit is not None:
+        active_count = await subs.count_active_doctors(db, clinic_id)
+        if active_count >= limit:
+            raise HTTPException(
+                status_code=402,
+                detail={
+                    "code": "plan_limit_reached",
+                    "limit_type": "doctors",
+                    "current_plan": plan,
+                    "limit": limit,
+                    "current": active_count,
+                    "message": "Достигнут лимит врачей на бесплатном тарифе. Оформите подписку Pro или Premium.",
+                },
+            )
+
     doctor.status = "active"
     fcm = await _doctor_fcm_token(doctor, db)
     await send_push(
@@ -355,6 +377,25 @@ async def activate_doctor(
     doctor = await _get_doctor_in_clinic(doctor_id, clinic_id, db)
     if doctor.status != "deactivated":
         raise HTTPException(status_code=400, detail="Doctor is not deactivated")
+
+    # Проверка лимита тарифа при возврате из deactivated
+    plan = await subs.get_plan(db, "clinic", clinic_id)
+    limit = subs.get_doctor_limit(plan)
+    if limit is not None:
+        active_count = await subs.count_active_doctors(db, clinic_id)
+        if active_count >= limit:
+            raise HTTPException(
+                status_code=402,
+                detail={
+                    "code": "plan_limit_reached",
+                    "limit_type": "doctors",
+                    "current_plan": plan,
+                    "limit": limit,
+                    "current": active_count,
+                    "message": "Достигнут лимит врачей на бесплатном тарифе. Оформите подписку Pro или Premium.",
+                },
+            )
+
     doctor.status = "active"
     fcm = await _doctor_fcm_token(doctor, db)
     await send_push(
