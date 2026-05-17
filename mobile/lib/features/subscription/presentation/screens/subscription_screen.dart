@@ -36,6 +36,16 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/main');
+            }
+          },
+        ),
         title: Text(
           'Подписка',
           style: GoogleFonts.inter(
