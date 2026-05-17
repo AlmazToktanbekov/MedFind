@@ -21,11 +21,12 @@ from app.services.jobs import (
 )
 
 
-async def test_complaints_warning_returns_not_implemented(db):
-    """Заглушка возвращает {warned:0, status:not_implemented}."""
+async def test_complaints_warning_no_data(db):
+    """Без жалоб — warned=0."""
     result = await complaints_warning.run(db)
     assert result["warned"] == 0
-    assert result["status"] == "not_implemented"
+    assert result["threshold"] > 0
+    assert result["window_days"] > 0
 
 
 async def test_topup_cleanup_cancels_old_pending(db, manual_confirm, make_clinic):

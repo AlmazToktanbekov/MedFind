@@ -1,0 +1,56 @@
+{% extends "admin/base.html" %}
+{% block title %}История {{ user.full_name or user.phone }} — MedFind Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>📜 История действий</h1>
+  <p>Пользователь: <b>{{ user.full_name or user.phone }}</b> (ID #{{ user.id }})</p>
+  <a href="/panel/users" class="btn btn-sm btn-ghost">← К списку</a>
+</div>
+
+<div class="card" style="margin-bottom:20px;">
+  <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:16px;">
+    <div><div style="font-size:12px; color:var(--text2);">Телефон</div><div style="font-weight:600;">{{ user.phone }}</div></div>
+    <div><div style="font-size:12px; color:var(--text2);">Email</div><div style="font-weight:600;">{{ user.email or '—' }}</div></div>
+    <div><div style="font-size:12px; color:var(--text2);">Роль</div><div style="font-weight:600;">{{ user.role }}</div></div>
+    <div><div style="font-size:12px; color:var(--text2);">Статус</div>
+      <div style="font-weight:600;">
+        {% if user.deleted_at %}🗑 Удалён{% elif user.is_active %}✓ Активен{% else %}🚫 Заблокирован{% endif %}
+      </div>
+    </div>
+    <div><div style="font-size:12px; color:var(--text2);">Регистрация</div><div>{{ user.created_at.strftime('%d.%m.%Y %H:%M') }}</div></div>
+    <div><div style="font-size:12px; color:var(--text2);">Последняя активность</div>
+      <div>{{ user.last_active_at.strftime('%d.%m.%Y %H:%M') if user.last_active_at else '—' }}</div>
+    </div>
+    <div><div style="font-size:12px; color:var(--text2);">Город</div><div>{{ user.city or '—' }}</div></div>
+    <div><div style="font-size:12px; color:var(--text2);">Сменить пароль</div>
+      <div>{{ '🔑 Да' if user.must_change_password else '—' }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h3 style="font-size:16px; font-weight:700; margin-bottom:16px;">Действия администраторов над этим пользователем</h3>
+  {% if items %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Когда</th><th>Админ</th><th>Действие</th><th>Детали</th></tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td style="font-size:13px; color:var(--text2);">{{ item.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+          <td>{{ item.admin_name }}</td>
+          <td><code style="background:#EEF2FF; padding:2px 8px; border-radius:6px;">{{ item.action }}</code></td>
+          <td style="font-size:13px;">{{ item.details or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="empty-state"><div class="empty-icon">📭</div><p>Действий не было</p></div>
+  {% endif %}
+</div>
+{% endblock %}

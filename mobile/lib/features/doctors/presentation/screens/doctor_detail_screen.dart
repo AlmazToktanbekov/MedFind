@@ -12,6 +12,7 @@ import '../../../../shared/models/doctor_model.dart';
 import '../../../../shared/widgets/gradient_button.dart';
 import '../../../../shared/widgets/rating_stars.dart';
 import '../../../../shared/widgets/review_card.dart';
+import '../../../../shared/widgets/report_dialog.dart';
 import '../../providers/doctors_provider.dart';
 import '../../providers/reviews_provider.dart';
 import '../../../../core/analytics/analytics_tracker.dart';
@@ -145,6 +146,16 @@ class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen>
         IconButton(
           icon: const Icon(PhosphorIconsRegular.shareNetwork, color: Colors.white),
           onPressed: () {},
+        ),
+        IconButton(
+          icon: const Icon(PhosphorIconsRegular.flag, color: Colors.white),
+          tooltip: 'Пожаловаться',
+          onPressed: () => ReportDialog.show(
+            context,
+            targetType: 'doctor',
+            targetId: doctor.id,
+            targetTitle: doctor.fullName,
+          ),
         ),
       ],
       flexibleSpace: FlexibleSpaceBar(
@@ -463,7 +474,15 @@ class _AboutTab extends StatelessWidget {
           ],
 
           const SizedBox(height: 32),
-          GradientButton(text: 'Записаться', onPressed: () {}),
+          GradientButton(
+            text: 'Позвонить',
+            onPressed: doctor.phone == null
+                ? () {}
+                : () {
+                    AnalyticsTracker().clickCall('doctor', doctor.id);
+                    onOpenUrl('tel:${doctor.phone}');
+                  },
+          ),
           const SizedBox(height: 24),
         ],
       ),

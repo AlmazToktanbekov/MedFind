@@ -14,7 +14,7 @@ from contextlib import asynccontextmanager
 from app.core.config import settings
 from app.core.rate_limit import limiter
 from app.routers import auth, doctors, clinics, pharmacies, search, reviews, content, admin
-from app.routers import upload, panel, ai, symptoms, favorites, notifications, subscriptions, analytics, wallet
+from app.routers import upload, panel, ai, symptoms, favorites, notifications, subscriptions, analytics, wallet, complaints
 from app.services import scheduler as _scheduler
 
 
@@ -93,6 +93,7 @@ app.include_router(notifications.router)
 app.include_router(subscriptions.router)
 app.include_router(analytics.router)
 app.include_router(wallet.router)
+app.include_router(complaints.router)
 
 
 _uploads_dir = Path("uploads")

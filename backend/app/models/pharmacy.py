@@ -20,6 +20,9 @@ class PharmacyCompany(Base):
     whatsapp: Mapped[Optional[str]] = mapped_column(String(30))
     instagram: Mapped[Optional[str]] = mapped_column(String(255))
 
+    is_frozen: Mapped[bool] = mapped_column(Boolean, default=False)
+    frozen_reason: Mapped[Optional[str]] = mapped_column(Text)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

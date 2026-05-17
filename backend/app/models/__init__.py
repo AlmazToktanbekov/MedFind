@@ -11,6 +11,9 @@ from app.models.subscription import Subscription, TrialUsage
 from app.models.analytics import AnalyticsEvent
 from app.models.wallet import Wallet, WalletTransaction
 from app.models.admin_log import AdminLog
+from app.models.complaint import Complaint
+from app.models.search_log import SearchLog
+from app.models.broadcast import Broadcast, BroadcastDelivery
 
 __all__ = [
     "User", "OTPCode",
@@ -26,4 +29,7 @@ __all__ = [
     "AnalyticsEvent",
     "Wallet", "WalletTransaction",
     "AdminLog",
+    "Complaint",
+    "SearchLog",
+    "Broadcast", "BroadcastDelivery",
 ]

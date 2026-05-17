@@ -233,8 +233,26 @@
     <a href="/panel/finance" class="nav-item {% if active == 'finance' %}active{% endif %}">
       <span class="nav-icon">💳</span> Финансы
     </a>
+    <a href="/panel/transactions" class="nav-item {% if active == 'transactions' %}active{% endif %}">
+      <span class="nav-icon">💸</span> Транзакции
+    </a>
+    <a href="/panel/analytics" class="nav-item {% if active == 'analytics' %}active{% endif %}">
+      <span class="nav-icon">📈</span> Аналитика
+    </a>
+    <a href="/panel/broadcasts" class="nav-item {% if active == 'broadcasts' %}active{% endif %}">
+      <span class="nav-icon">📨</span> Рассылки
+    </a>
     <a href="/panel/subscriptions" class="nav-item {% if active == 'subscriptions' %}active{% endif %}">
       <span class="nav-icon">⭐</span> Подписки
+    </a>
+    <a href="/panel/reviews" class="nav-item {% if active == 'reviews' %}active{% endif %}">
+      <span class="nav-icon">💬</span> Отзывы
+    </a>
+    <a href="/panel/complaints" class="nav-item {% if active == 'complaints' %}active{% endif %}">
+      <span class="nav-icon">🚩</span> Жалобы
+      {% if complaints_new_count and complaints_new_count > 0 %}
+        <span class="nav-badge">{{ complaints_new_count }}</span>
+      {% endif %}
     </a>
     <a href="/panel/admin-logs" class="nav-item {% if active == 'admin_logs' %}active{% endif %}">
       <span class="nav-icon">🔒</span> Логи действий

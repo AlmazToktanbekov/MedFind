@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from typing import Optional
-from sqlalchemy import String, DateTime, Float, Integer, Text, ForeignKey
+from sqlalchemy import String, DateTime, Float, Integer, Text, ForeignKey, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
@@ -44,6 +44,8 @@ class Clinic(Base):
     reviews_count: Mapped[int] = mapped_column(Integer, default=0)
 
     status: Mapped[str] = mapped_column(String(20), default="active")
+    is_frozen: Mapped[bool] = mapped_column(Boolean, default=False)
+    frozen_reason: Mapped[Optional[str]] = mapped_column(Text)
 
     working_hours_ru: Mapped[Optional[str]] = mapped_column(String(255))
 

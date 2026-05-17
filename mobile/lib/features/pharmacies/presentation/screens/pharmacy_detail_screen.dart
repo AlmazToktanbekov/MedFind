@@ -15,6 +15,7 @@ import '../../providers/pharmacies_provider.dart';
 import '../../utils/pharmacy_hours.dart';
 import '../../../doctors/providers/reviews_provider.dart';
 import '../../../../shared/widgets/review_card.dart';
+import '../../../../shared/widgets/report_dialog.dart';
 import '../../../../core/analytics/analytics_tracker.dart';
 
 class PharmacyDetailScreen extends ConsumerWidget {
@@ -176,6 +177,17 @@ class _BranchScaffold extends ConsumerWidget {
                   onPressed: () => ref
                       .read(favoritesProvider.notifier)
                       .toggle('pharmacy_branch', branch.id),
+                ),
+                IconButton(
+                  icon: const Icon(PhosphorIconsRegular.flag,
+                      color: Colors.white),
+                  tooltip: 'Пожаловаться',
+                  onPressed: () => ReportDialog.show(
+                    context,
+                    targetType: 'pharmacy_branch',
+                    targetId: branch.id,
+                    targetTitle: branch.address,
+                  ),
                 ),
               ],
               flexibleSpace: FlexibleSpaceBar(

@@ -1,0 +1,141 @@
+{% extends "admin/base.html" %}
+{% block title %}Жалобы — MedFind Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>🚩 Жалобы пользователей</h1>
+  <p>Модерация жалоб на врачей, клиники, филиалы аптек и отзывы</p>
+</div>
+
+<div class="card" style="margin-bottom: 20px;">
+  <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+    <a href="?status=new" class="btn btn-sm {% if status == 'new' %}btn-primary{% else %}btn-ghost{% endif %}">
+      🆕 Новые ({{ stats.get('new', 0) }})
+    </a>
+    <a href="?status=in_review" class="btn btn-sm {% if status == 'in_review' %}btn-primary{% else %}btn-ghost{% endif %}">
+      👀 На рассмотрении ({{ stats.get('in_review', 0) }})
+    </a>
+    <a href="?status=resolved" class="btn btn-sm {% if status == 'resolved' %}btn-primary{% else %}btn-ghost{% endif %}">
+      ✓ Закрытые ({{ stats.get('resolved', 0) }})
+    </a>
+    <a href="?status=rejected" class="btn btn-sm {% if status == 'rejected' %}btn-primary{% else %}btn-ghost{% endif %}">
+      ✗ Отклонённые ({{ stats.get('rejected', 0) }})
+    </a>
+    <a href="?status=all" class="btn btn-sm {% if status == 'all' %}btn-primary{% else %}btn-ghost{% endif %}">
+      Все
+    </a>
+  </div>
+</div>
+
+{% if not items %}
+<div class="card">
+  <div class="empty-state">
+    <div class="empty-icon">🎉</div>
+    <p>Жалоб нет</p>
+  </div>
+</div>
+{% else %}
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>На что</th>
+          <th>Причина</th>
+          <th>Автор</th>
+          <th>Комментарий</th>
+          <th>Дата</th>
+          <th>Статус</th>
+          <th>Действия</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in items %}
+        <tr>
+          <td>
+            <div style="font-weight:600;">
+              {% if c.target_type == 'doctor' %}👨‍⚕️ Врач
+              {% elif c.target_type == 'clinic' %}🏥 Клиника
+              {% elif c.target_type == 'pharmacy_branch' %}💊 Филиал
+              {% elif c.target_type == 'review' %}💬 Отзыв
+              {% endif %}
+              #{{ c.target_id }}
+            </div>
+            {% if c.target_title %}
+              <div style="font-size:12px; color:var(--text2); margin-top:4px;">
+                {{ c.target_title }}
+              </div>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge" style="background:#FFEBEE; color:var(--error);">
+              {{ reason_labels.get(c.reason, c.reason) }}
+            </span>
+          </td>
+          <td>
+            <div style="font-size:13px;">{{ c.author_name or 'Без имени' }}</div>
+            {% if c.author_phone %}
+              <div style="font-size:11px; color:var(--text2);">{{ c.author_phone }}</div>
+            {% endif %}
+          </td>
+          <td style="max-width:300px;">
+            {% if c.comment %}
+              <div style="font-size:13px; white-space:pre-wrap;">{{ c.comment }}</div>
+            {% else %}
+              <span style="color:var(--text2);">—</span>
+            {% endif %}
+          </td>
+          <td style="font-size:13px; color:var(--text2);">
+            {{ c.created_at.strftime('%d.%m.%Y %H:%M') }}
+          </td>
+          <td>
+            {% if c.status == 'new' %}
+              <span class="badge" style="background:#FFF7E6; color:var(--warning);"><span class="badge-dot"></span>Новая</span>
+            {% elif c.status == 'in_review' %}
+              <span class="badge" style="background:#E3F2FD; color:var(--primary);"><span class="badge-dot"></span>Рассматривается</span>
+            {% elif c.status == 'resolved' %}
+              <span class="badge active"><span class="badge-dot"></span>Закрыта</span>
+            {% elif c.status == 'rejected' %}
+              <span class="badge" style="background:#FFEBEE; color:var(--error);"><span class="badge-dot"></span>Отклонена</span>
+            {% endif %}
+            {% if c.resolution_note %}
+              <div style="font-size:11px; color:var(--text2); margin-top:4px; max-width:200px;">{{ c.resolution_note }}</div>
+            {% endif %}
+          </td>
+          <td>
+            {% if c.status in ('new', 'in_review') %}
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              {% if c.status == 'new' %}
+              <form method="POST" action="/panel/complaints/{{ c.id }}/status" style="display:inline;">
+                <input type="hidden" name="status" value="in_review">
+                <button type="submit" class="btn btn-sm btn-ghost">👀 В работу</button>
+              </form>
+              {% endif %}
+              <form method="POST" action="/panel/complaints/{{ c.id }}/status" style="display:inline;"
+                    onsubmit="this.querySelector('[name=resolution_note]').value = prompt('Комментарий к закрытию:', '') || ''; return true;">
+                <input type="hidden" name="status" value="resolved">
+                <input type="hidden" name="resolution_note">
+                <button type="submit" class="btn btn-sm btn-success">✓ Закрыть</button>
+              </form>
+              <form method="POST" action="/panel/complaints/{{ c.id }}/status" style="display:inline;"
+                    onsubmit="this.querySelector('[name=resolution_note]').value = prompt('Причина отклонения:', '') || ''; return this.querySelector('[name=resolution_note]').value !== '';">
+                <input type="hidden" name="status" value="rejected">
+                <input type="hidden" name="resolution_note">
+                <button type="submit" class="btn btn-sm" style="background:#FFEBEE; color:var(--error);">✗ Отклонить</button>
+              </form>
+            </div>
+            {% else %}
+              <form method="POST" action="/panel/complaints/{{ c.id }}/delete" style="display:inline;"
+                    onsubmit="return confirm('Удалить жалобу безвозвратно?');">
+                <button type="submit" class="btn btn-sm btn-ghost">🗑 Удалить</button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

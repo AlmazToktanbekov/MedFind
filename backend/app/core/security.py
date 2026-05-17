@@ -8,10 +8,13 @@ from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from app.core.config import settings
 from app.core.database import get_db
+
+# Throttle: писать last_active_at не чаще раза в N секунд на пользователя
+_LAST_ACTIVE_THROTTLE_SECONDS = 300
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -62,6 +65,19 @@ async def get_current_user(
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if user.deleted_at is not None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="account_deleted")
+    if not user.is_active:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="account_blocked")
+
+    # Throttled update of last_active_at
+    now = datetime.now(timezone.utc)
+    if user.last_active_at is None or (now - user.last_active_at).total_seconds() > _LAST_ACTIVE_THROTTLE_SECONDS:
+        await db.execute(
+            update(User).where(User.id == user.id).values(last_active_at=now)
+        )
+        user.last_active_at = now
+        await db.commit()
     return user
 
 

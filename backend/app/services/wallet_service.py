@@ -314,3 +314,60 @@ async def find_topup_by_code(
         )
     )
     return r.scalar_one_or_none()
+
+
+# ─── Refund (возврат админом) ────────────────────────────────────────────
+
+async def refund_purchase(
+    db: AsyncSession,
+    tx_id: int,
+    reason: str,
+    admin_user_id: int,
+) -> WalletTransaction:
+    """Создаёт refund: возвращает amount_usd оригинальной purchase на баланс кошелька.
+
+    Идемпотентность: на каждую purchase можно сделать не более одного refund (проверяем по
+    related_subscription_id и наличию refund-транзакции, ссылающейся на ту же подписку).
+    """
+    r = await db.execute(select(WalletTransaction).where(WalletTransaction.id == tx_id))
+    tx = r.scalar_one_or_none()
+    if tx is None:
+        raise WalletError("not_found", "Транзакция не найдена", http_status=404)
+    if tx.type != "purchase":
+        raise WalletError("wrong_type", "Возврат можно сделать только для покупки")
+    if tx.status != "success":
+        raise WalletError("not_succeeded", "Транзакция не успешна")
+
+    # Проверка дубля: если уже есть refund на эту же подписку — отказ
+    if tx.related_subscription_id is not None:
+        dup = await db.execute(
+            select(WalletTransaction).where(
+                WalletTransaction.type == "refund",
+                WalletTransaction.related_subscription_id == tx.related_subscription_id,
+            )
+        )
+        if dup.scalar_one_or_none():
+            raise WalletError("already_refunded", "Возврат по этой подписке уже сделан", http_status=409)
+
+    wallet_r = await db.execute(
+        select(Wallet).where(Wallet.id == tx.wallet_id).with_for_update()
+    )
+    wallet = wallet_r.scalar_one()
+
+    new_balance = wallet.balance_usd + tx.amount_usd
+    wallet.balance_usd = new_balance
+
+    refund_tx = WalletTransaction(
+        wallet_id=wallet.id,
+        type="refund",
+        amount_usd=tx.amount_usd,
+        balance_after_usd=new_balance,
+        status="success",
+        related_subscription_id=tx.related_subscription_id,
+        comment=f"Refund для tx #{tx.id}: {reason}",
+        admin_user_id=admin_user_id,
+        completed_at=datetime.now(timezone.utc),
+    )
+    db.add(refund_tx)
+    await db.flush()
+    return refund_tx

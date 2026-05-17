@@ -1,0 +1,66 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ bcast.title }} — MedFind Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>📨 {{ bcast.title }}</h1>
+  <p>ID #{{ bcast.id }} · статус: <b>{{ bcast.status }}</b></p>
+  <a href="/panel/broadcasts" class="btn btn-sm btn-ghost">← К списку</a>
+</div>
+
+<div class="card" style="margin-bottom:20px;">
+  <h3 style="font-size:16px; font-weight:700; margin-bottom:12px;">Содержимое</h3>
+  <div style="font-weight:600; font-size:15px;">{{ bcast.title }}</div>
+  <div style="margin:10px 0; white-space:pre-wrap;">{{ bcast.body }}</div>
+  {% if bcast.image_url %}
+    <div style="font-size:12px; color:var(--text2);">Картинка:</div>
+    <img src="{{ bcast.image_url }}" style="max-width:300px; border-radius:8px; margin-top:6px;">
+  {% endif %}
+</div>
+
+<div class="card" style="margin-bottom:20px;">
+  <h3 style="font-size:16px; font-weight:700; margin-bottom:12px;">Сегмент</h3>
+  {% if bcast.segment %}
+    <pre style="background:#F8FAFF; padding:12px; border-radius:8px; font-size:13px; overflow:auto;">{{ bcast.segment | tojson(indent=2) }}</pre>
+  {% else %}
+    <p style="color:var(--text2);">Без фильтров — все активные пользователи</p>
+  {% endif %}
+</div>
+
+<div class="card" style="margin-bottom:20px;">
+  <h3 style="font-size:16px; font-weight:700; margin-bottom:12px;">Статистика</h3>
+  <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:16px;">
+    <div><div style="font-size:24px; font-weight:700;">{{ bcast.sent_count }}</div><div style="font-size:12px; color:var(--text2);">Доставлено</div></div>
+    <div><div style="font-size:24px; font-weight:700; color:var(--error);">{{ bcast.failed_count }}</div><div style="font-size:12px; color:var(--text2);">Ошибок</div></div>
+    <div><div style="font-size:14px;">{{ bcast.created_at.strftime('%d.%m.%Y %H:%M') }}</div><div style="font-size:12px; color:var(--text2);">Создана</div></div>
+    <div><div style="font-size:14px;">{{ bcast.sent_at.strftime('%d.%m.%Y %H:%M') if bcast.sent_at else '—' }}</div><div style="font-size:12px; color:var(--text2);">Отправлена</div></div>
+  </div>
+  {% if bcast.status in ['draft', 'failed'] %}
+    <form method="POST" action="/panel/broadcasts/{{ bcast.id }}/send" style="margin-top:16px;"
+          onsubmit="return confirm('Отправить рассылку?');">
+      <button class="btn btn-sm btn-primary">📤 Отправить сейчас</button>
+    </form>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h3 style="font-size:16px; font-weight:700; margin-bottom:12px;">Лог доставок (последние 200)</h3>
+  {% if deliveries %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>User ID</th><th>Статус</th><th>Когда</th><th>Ошибка</th></tr></thead>
+      <tbody>
+        {% for d in deliveries %}
+        <tr>
+          <td>{{ d.user_id }}</td>
+          <td>{{ d.status }}</td>
+          <td style="font-size:12px; color:var(--text2);">{{ d.created_at.strftime('%d.%m %H:%M') }}</td>
+          <td style="font-size:12px;">{{ d.error or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}<p style="color:var(--text2);">Доставок не было</p>{% endif %}
+</div>
+{% endblock %}

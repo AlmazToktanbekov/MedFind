@@ -4,9 +4,11 @@ from sqlalchemy import select, distinct
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
+from app.core.security import get_current_user_optional
 from app.models.doctor import Doctor
 from app.models.clinic import Clinic
 from app.models.pharmacy import PharmacyBranch, PharmacyCompany
+from app.models.search_log import SearchLog
 from app.schemas.search import SearchResults
 from app.schemas.pharmacy import CompanyOut
 
@@ -23,7 +25,11 @@ async def _get_specializations(db: AsyncSession) -> list[str]:
 
 
 @router.get("", response_model=SearchResults)
-async def search(q: str = Query(..., min_length=1), db: AsyncSession = Depends(get_db)):
+async def search(
+    q: str = Query(..., min_length=1),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user_optional),
+):
     pattern = f"%{q}%"
 
     doctors_result = await db.execute(
@@ -54,9 +60,23 @@ async def search(q: str = Query(..., min_length=1), db: AsyncSession = Depends(g
     all_specs = await _get_specializations(db)
     matched_specs = [s for s in all_specs if q.lower() in s.lower()]
 
+    doctors_list = list(doctors_result.scalars().all())
+    clinics_list = list(clinics_result.scalars().all())
+
+    # Логируем запрос (fire-and-forget — не падаем при ошибке)
+    try:
+        results_count = len(doctors_list) + len(clinics_list) + len(branches) + len(matched_specs)
+        db.add(SearchLog(
+            user_id=current_user.id if current_user else None,
+            query=q.strip()[:255],
+            results_count=results_count,
+        ))
+    except Exception:
+        pass
+
     return SearchResults(
-        doctors=doctors_result.scalars().all(),
-        clinics=clinics_result.scalars().all(),
+        doctors=doctors_list,
+        clinics=clinics_list,
         pharmacies=branches,
         specializations=matched_specs,
     )

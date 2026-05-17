@@ -10,6 +10,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/models/clinic_model.dart';
 import '../../../../shared/widgets/gradient_button.dart';
 import '../../../../shared/widgets/rating_stars.dart';
+import '../../../../shared/widgets/report_dialog.dart';
 import '../../../../shared/providers/favorites_provider.dart';
 import '../../providers/clinics_provider.dart';
 import '../../../clinics/data/clinics_repository.dart';
@@ -200,6 +201,16 @@ class _ClinicTabScaffold extends StatelessWidget {
             ),
             onPressed: onFavoriteToggle,
           ),
+        IconButton(
+          icon: const Icon(PhosphorIconsRegular.flag, color: Colors.white),
+          tooltip: 'Пожаловаться',
+          onPressed: () => ReportDialog.show(
+            context,
+            targetType: 'clinic',
+            targetId: clinic.id,
+            targetTitle: clinic.name,
+          ),
+        ),
       ],
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: const EdgeInsets.only(left: 5, right: 5, bottom: 18),

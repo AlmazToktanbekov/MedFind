@@ -7,6 +7,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../providers/current_user_provider.dart';
 import '../../features/doctors/data/reviews_repository.dart';
+import 'report_dialog.dart';
 
 class ReviewCard extends ConsumerWidget {
   final ReviewModel review;
@@ -124,41 +125,60 @@ class ReviewCard extends ConsumerWidget {
                   ),
                 ],
               ),
-              if (isOwn && (onUpdate != null || onDelete != null)) ...[
-                const SizedBox(width: 4),
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert_rounded,
-                      size: 18, color: AppColors.textSecondary),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                  onSelected: (val) {
-                    if (val == 'edit') _showEditSheet(context);
-                    if (val == 'delete') _confirmDelete(context);
-                  },
-                  itemBuilder: (_) => [
-                    if (onUpdate != null)
-                      const PopupMenuItem(
-                        value: 'edit',
-                        child: Row(children: [
-                          Icon(Icons.edit_outlined, size: 18),
-                          SizedBox(width: 8),
-                          Text('Изменить'),
-                        ]),
-                      ),
-                    if (onDelete != null)
-                      PopupMenuItem(
-                        value: 'delete',
-                        child: Row(children: [
-                          Icon(Icons.delete_outline,
-                              size: 18, color: AppColors.error),
-                          const SizedBox(width: 8),
-                          Text('Удалить',
-                              style: TextStyle(color: AppColors.error)),
-                        ]),
-                      ),
-                  ],
-                ),
-              ],
+              const SizedBox(width: 4),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert_rounded,
+                    size: 18, color: AppColors.textSecondary),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+                onSelected: (val) {
+                  if (val == 'edit') _showEditSheet(context);
+                  if (val == 'delete') _confirmDelete(context);
+                  if (val == 'report') {
+                    ReportDialog.show(
+                      context,
+                      targetType: 'review',
+                      targetId: review.id,
+                      targetTitle: review.authorName != null
+                          ? 'Отзыв от ${review.authorName}'
+                          : 'Отзыв',
+                    );
+                  }
+                },
+                itemBuilder: (_) => [
+                  if (isOwn && onUpdate != null)
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(children: [
+                        Icon(Icons.edit_outlined, size: 18),
+                        SizedBox(width: 8),
+                        Text('Изменить'),
+                      ]),
+                    ),
+                  if (isOwn && onDelete != null)
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(children: [
+                        Icon(Icons.delete_outline,
+                            size: 18, color: AppColors.error),
+                        SizedBox(width: 8),
+                        Text('Удалить',
+                            style: TextStyle(color: AppColors.error)),
+                      ]),
+                    ),
+                  if (!isOwn)
+                    const PopupMenuItem(
+                      value: 'report',
+                      child: Row(children: [
+                        Icon(Icons.flag_outlined,
+                            size: 18, color: AppColors.error),
+                        SizedBox(width: 8),
+                        Text('Пожаловаться',
+                            style: TextStyle(color: AppColors.error)),
+                      ]),
+                    ),
+                ],
+              ),
             ],
           ),
           if (review.text != null && review.text!.isNotEmpty) ...[
