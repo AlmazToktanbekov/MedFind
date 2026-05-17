@@ -12,7 +12,7 @@ import '../../../../features/search/providers/search_provider.dart';
 import '../../../../shared/providers/favorites_provider.dart';
 import '../../providers/profile_provider.dart';
 import '../../../../core/constants/app_constants.dart';
-import '../../../clinics/presentation/screens/clinic_manage_screen.dart' show myClinicProvider;
+import '../../../clinics/providers/clinics_provider.dart' show myClinicProvider;
 import '../../../subscription/providers/subscription_provider.dart';
 import '../../../wallet/providers/wallet_provider.dart';
 
@@ -769,7 +769,7 @@ class _ClinicManagementState extends ConsumerState<_ClinicManagement> {
             title: 'Мой счёт',
             subtitle: wallet == null
                 ? 'Пополнение, история операций'
-                : 'Баланс: \$${wallet.balanceUsd.toStringAsFixed(2)} • ≈ ${wallet.balanceKgs.toStringAsFixed(0)} ₸',
+                : 'Баланс: \$${wallet.balanceUsd.toStringAsFixed(2)}',
             onTap: () => context.push('/wallet'),
           ),
           const SizedBox(height: 10),

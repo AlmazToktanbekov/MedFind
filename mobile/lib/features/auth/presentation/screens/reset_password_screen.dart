@@ -119,7 +119,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     if (!mounted) return;
     if (hasProfile) {
       final dest = switch (role) {
-        'clinic' => '/clinic/manage',
+        'clinic' => '/main',
         'pharmacy' => '/main',
         _ => '/main',
       };

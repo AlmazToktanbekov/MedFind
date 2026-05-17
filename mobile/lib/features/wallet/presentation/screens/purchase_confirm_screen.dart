@@ -144,13 +144,6 @@ class _PurchaseConfirmScreenState extends ConsumerState<PurchaseConfirmScreen> {
                     color: AppColors.textPrimary,
                   ),
                 ),
-                Text(
-                  '≈ ${(price * 89).toStringAsFixed(0)} ₸',
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
               ],
             ),
           ),

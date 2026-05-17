@@ -10,6 +10,7 @@ from app.models.notification import Notification
 from app.models.subscription import Subscription, TrialUsage
 from app.models.analytics import AnalyticsEvent
 from app.models.wallet import Wallet, WalletTransaction
+from app.models.admin_log import AdminLog
 
 __all__ = [
     "User", "OTPCode",
@@ -24,4 +25,5 @@ __all__ = [
     "Subscription", "TrialUsage",
     "AnalyticsEvent",
     "Wallet", "WalletTransaction",
+    "AdminLog",
 ]

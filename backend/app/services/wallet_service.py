@@ -121,29 +121,47 @@ async def request_topup(
             f"Максимальная сумма одной заявки — ${settings.WALLET_MAX_TOPUP_USD}",
         )
 
-    # Проверка: нет ли уже pending-заявки
-    r = await db.execute(
-        select(WalletTransaction).where(
-            WalletTransaction.wallet_id == wallet.id,
-            WalletTransaction.type == "topup",
-            WalletTransaction.status == "pending",
+    # Проверка одной pending-заявки актуальна только для ручного/банковского подтверждения.
+    # В auto-режиме заявки сразу success, ограничение не нужно.
+    if settings.WALLET_CONFIRM_STRATEGY != "auto":
+        r = await db.execute(
+            select(WalletTransaction).where(
+                WalletTransaction.wallet_id == wallet.id,
+                WalletTransaction.type == "topup",
+                WalletTransaction.status == "pending",
+            )
         )
-    )
-    if r.scalar_one_or_none() is not None:
-        raise WalletError(
-            "pending_request_exists",
-            "У вас уже есть заявка на пополнение, ожидающая подтверждения",
-            http_status=409,
-        )
+        if r.scalar_one_or_none() is not None:
+            raise WalletError(
+                "pending_request_exists",
+                "У вас уже есть заявка на пополнение, ожидающая подтверждения",
+                http_status=409,
+            )
 
-    tx = WalletTransaction(
-        wallet_id=wallet.id,
-        type="topup",
-        amount_usd=amount_usd,
-        status="pending",
-        payment_code=_generate_payment_code(wallet.owner_id),
-        comment=comment,
-    )
+    # При стратегии "auto" — мгновенное автоподтверждение (MVP/демо-режим).
+    # При "manual" / "mbank_auto" — pending, ждёт админа или webhook.
+    if settings.WALLET_CONFIRM_STRATEGY == "auto":
+        new_balance = wallet.balance_usd + amount_usd
+        wallet.balance_usd = new_balance
+        tx = WalletTransaction(
+            wallet_id=wallet.id,
+            type="topup",
+            amount_usd=amount_usd,
+            balance_after_usd=new_balance,
+            status="success",
+            payment_code=_generate_payment_code(wallet.owner_id),
+            comment=comment,
+            completed_at=datetime.now(timezone.utc),
+        )
+    else:
+        tx = WalletTransaction(
+            wallet_id=wallet.id,
+            type="topup",
+            amount_usd=amount_usd,
+            status="pending",
+            payment_code=_generate_payment_code(wallet.owner_id),
+            comment=comment,
+        )
     db.add(tx)
     await db.flush()
     return tx

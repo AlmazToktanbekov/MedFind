@@ -61,9 +61,11 @@ class Settings(BaseSettings):
     WALLET_TOPUP_REQUEST_TTL_DAYS: int = 7
 
     # Стратегия подтверждения пополнений:
-    # "manual"     — админ подтверждает в админке (сейчас)
-    # "mbank_auto" — webhook от Mbank Business API + матчинг по payment_code (потом)
-    WALLET_CONFIRM_STRATEGY: str = "manual"
+    # "auto"       — мгновенное автоподтверждение в момент создания заявки
+    #                (для MVP / демо; в проде заменяется реальным платёжным шлюзом)
+    # "manual"     — админ подтверждает в админке
+    # "mbank_auto" — webhook от Mbank Business API + матчинг по payment_code
+    WALLET_CONFIRM_STRATEGY: str = "auto"
     MBANK_WEBHOOK_SECRET: str = ""
 
     # ─── Scheduler (APScheduler, ежедневно в 09:00) ──────────────────────

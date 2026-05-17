@@ -1,0 +1,105 @@
+{% extends "admin/base.html" %}
+{% block title %}Финансы — MedFind Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>💳 Финансы</h1>
+  <p>Все транзакции кошельков клиник и аптек</p>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon green">💵</div>
+    <div>
+      <div class="stat-value">${{ '%.2f'|format(summary.revenue_30d_usd) }}</div>
+      <div class="stat-label">Выручка за 30 дней</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon blue">⬆️</div>
+    <div>
+      <div class="stat-value">${{ '%.2f'|format(summary.topup_total_usd) }}</div>
+      <div class="stat-label">Всего пополнено</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon orange">💼</div>
+    <div>
+      <div class="stat-value">${{ '%.2f'|format(summary.balance_total_usd) }}</div>
+      <div class="stat-label">Балансы кошельков</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon red">⏳</div>
+    <div>
+      <div class="stat-value">{{ summary.pending_topups }}</div>
+      <div class="stat-label">Заявок в ожидании</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="tabs">
+    {% set types = [('all','Все'), ('topup','Пополнения'), ('purchase','Покупки'), ('refund','Возвраты')] %}
+    {% for code, label in types %}
+      <a class="tab-btn {% if current_type == code %}active{% endif %}"
+         href="/panel/finance?type={{ code }}&status={{ current_status }}">{{ label }}</a>
+    {% endfor %}
+  </div>
+
+  <div style="margin-bottom: 16px; display:flex; gap:8px; align-items:center;">
+    <span style="font-size:13px; color:var(--text2);">Статус:</span>
+    {% for s in ['all','pending','completed','cancelled'] %}
+      <a class="btn btn-sm {% if current_status == s %}btn-primary{% else %}btn-ghost{% endif %}"
+         href="/panel/finance?type={{ current_type }}&status={{ s }}">{{ s }}</a>
+    {% endfor %}
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Дата</th><th>Владелец</th><th>Тип</th><th>Сумма</th>
+          <th>Код</th><th>Статус</th><th>Комментарий</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for it in items %}
+        <tr>
+          <td style="color:var(--text2); font-size:13px;">{{ it.id }}</td>
+          <td style="font-size:13px; color:var(--text2);">{{ it.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+          <td>
+            <div style="font-weight:600; font-size:14px;">{{ it.owner_name }}</div>
+            <div style="font-size:12px; color:var(--text2);">{{ it.owner_type }} #{{ it.owner_id }}</div>
+          </td>
+          <td>
+            {% if it.type == 'topup' %}
+              <span class="badge active">⬆️ Пополнение</span>
+            {% elif it.type == 'purchase' %}
+              <span class="badge pending">🛒 Покупка</span>
+            {% elif it.type == 'refund' %}
+              <span class="badge rejected">↩️ Возврат</span>
+            {% else %}{{ it.type }}{% endif %}
+          </td>
+          <td style="font-weight:600;">${{ '%.2f'|format(it.amount_usd) }}</td>
+          <td style="font-family: monospace; font-size:12px;">{{ it.payment_code or '—' }}</td>
+          <td>
+            {% if it.status == 'completed' %}<span class="badge active">✓ {{ it.status }}</span>
+            {% elif it.status == 'pending' %}<span class="badge pending">⏳ {{ it.status }}</span>
+            {% else %}<span class="badge rejected">✕ {{ it.status }}</span>{% endif %}
+          </td>
+          <td style="font-size:13px; color:var(--text2); max-width:200px; overflow:hidden; text-overflow:ellipsis;">
+            {{ it.comment or '—' }}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8"><div class="empty-state"><div class="empty-icon">💳</div><p>Нет транзакций</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div style="padding-top:16px; border-top:1px solid #EEF1F8; font-size:13px; color:var(--text2);">
+    Показано: {{ items|length }} (последние 200)
+  </div>
+</div>
+{% endblock %}

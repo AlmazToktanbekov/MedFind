@@ -4,8 +4,15 @@ from decimal import Decimal
 
 import pytest
 
+from app.core.config import settings
 from app.services import subscription_service as subs
 from app.services import wallet_service as wallets
+
+
+@pytest.fixture
+def manual_confirm(monkeypatch):
+    """Manual-режим для тестов pending-flow."""
+    monkeypatch.setattr(settings, "WALLET_CONFIRM_STRATEGY", "manual")
 from app.services.jobs import (
     subscription_reminders,
     subscription_expiration,
@@ -21,7 +28,7 @@ async def test_complaints_warning_returns_not_implemented(db):
     assert result["status"] == "not_implemented"
 
 
-async def test_topup_cleanup_cancels_old_pending(db, make_clinic):
+async def test_topup_cleanup_cancels_old_pending(db, manual_confirm, make_clinic):
     """Заявки старше 7 дней автоматически отменяются."""
     clinic = await make_clinic()
     wallet = await wallets.get_or_create_wallet(db, "clinic", clinic.id)
@@ -44,7 +51,7 @@ async def test_topup_cleanup_cancels_old_pending(db, make_clinic):
     assert tx.status == "cancelled"
 
 
-async def test_topup_cleanup_does_not_touch_fresh_requests(db, make_clinic):
+async def test_topup_cleanup_does_not_touch_fresh_requests(db, manual_confirm, make_clinic):
     """Свежие заявки (моложе 7 дней) не трогаются."""
     clinic = await make_clinic()
     wallet = await wallets.get_or_create_wallet(db, "clinic", clinic.id)

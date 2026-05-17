@@ -142,7 +142,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 
     if (hasProfile) {
       final dest = switch (role) {
-        'clinic' => '/clinic/manage',
+        'clinic' => '/main',
         'pharmacy' => '/main',
         _ => '/main',
       };

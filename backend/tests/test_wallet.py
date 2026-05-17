@@ -3,8 +3,15 @@ from decimal import Decimal
 
 import pytest
 
+from app.core.config import settings
 from app.services import wallet_service as wallets
 from app.services import subscription_service as subs
+
+
+@pytest.fixture
+def manual_confirm(monkeypatch):
+    """Переключает стратегию подтверждения на 'manual' (для тестов админ-флоу)."""
+    monkeypatch.setattr(settings, "WALLET_CONFIRM_STRATEGY", "manual")
 
 
 async def test_get_or_create_wallet_creates_with_zero_balance(db, make_clinic):
@@ -23,17 +30,34 @@ async def test_get_or_create_wallet_idempotent(db, make_clinic):
     assert w1.id == w2.id
 
 
-async def test_request_topup_generates_unique_payment_code(db, make_clinic):
+async def test_request_topup_auto_confirms_and_credits_balance(db, make_clinic):
+    """В auto-режиме (default) заявка сразу success, баланс растёт."""
+    clinic = await make_clinic()
+    wallet = await wallets.get_or_create_wallet(db, "clinic", clinic.id)
+
+    tx = await wallets.request_topup(db, wallet, Decimal("50.00"))
+
+    assert tx.status == "success"
+    assert tx.type == "topup"
+    assert tx.balance_after_usd == Decimal("50.00")
+    assert tx.payment_code is not None
+    assert tx.payment_code.startswith(f"MEDF-{clinic.id}-")
+
+    await db.refresh(wallet)
+    assert wallet.balance_usd == Decimal("50.00")
+
+
+async def test_request_topup_pending_in_manual_mode(db, manual_confirm, make_clinic):
+    """В manual-режиме заявка создаётся как pending, баланс не меняется."""
     clinic = await make_clinic()
     wallet = await wallets.get_or_create_wallet(db, "clinic", clinic.id)
 
     tx = await wallets.request_topup(db, wallet, Decimal("50.00"))
 
     assert tx.status == "pending"
-    assert tx.type == "topup"
-    assert tx.payment_code is not None
-    assert tx.payment_code.startswith(f"MEDF-{clinic.id}-")
-    assert len(tx.payment_code.split("-")[-1]) == 4  # 4-символьный хэш
+    assert tx.balance_after_usd is None
+    await db.refresh(wallet)
+    assert wallet.balance_usd == Decimal("0.00")
 
 
 async def test_request_topup_rejects_amount_below_minimum(db, make_clinic):
@@ -56,8 +80,8 @@ async def test_request_topup_rejects_amount_above_maximum(db, make_clinic):
     assert exc.value.code == "amount_too_large"
 
 
-async def test_only_one_pending_request_allowed(db, make_clinic):
-    """Нельзя создать вторую заявку пока первая в статусе pending."""
+async def test_only_one_pending_request_allowed(db, manual_confirm, make_clinic):
+    """Нельзя создать вторую заявку пока первая в статусе pending (manual режим)."""
     clinic = await make_clinic()
     wallet = await wallets.get_or_create_wallet(db, "clinic", clinic.id)
 
@@ -70,7 +94,7 @@ async def test_only_one_pending_request_allowed(db, make_clinic):
     assert exc.value.http_status == 409
 
 
-async def test_confirm_topup_increases_balance(db, make_clinic):
+async def test_confirm_topup_increases_balance(db, manual_confirm, make_clinic):
     clinic = await make_clinic()
     wallet = await wallets.get_or_create_wallet(db, "clinic", clinic.id)
     tx = await wallets.request_topup(db, wallet, Decimal("50.00"))
@@ -83,7 +107,7 @@ async def test_confirm_topup_increases_balance(db, make_clinic):
     assert wallet.balance_usd == Decimal("50.00")
 
 
-async def test_confirm_topup_accepts_partial_amount(db, make_clinic):
+async def test_confirm_topup_accepts_partial_amount(db, manual_confirm, make_clinic):
     """Админ может подтвердить меньшую/большую сумму чем заявлено."""
     clinic = await make_clinic()
     wallet = await wallets.get_or_create_wallet(db, "clinic", clinic.id)
@@ -96,7 +120,7 @@ async def test_confirm_topup_accepts_partial_amount(db, make_clinic):
     assert wallet.balance_usd == Decimal("45.00")
 
 
-async def test_cannot_confirm_already_processed(db, make_clinic):
+async def test_cannot_confirm_already_processed(db, manual_confirm, make_clinic):
     clinic = await make_clinic()
     wallet = await wallets.get_or_create_wallet(db, "clinic", clinic.id)
     tx = await wallets.request_topup(db, wallet, Decimal("50.00"))
@@ -108,7 +132,7 @@ async def test_cannot_confirm_already_processed(db, make_clinic):
     assert exc.value.code == "already_processed"
 
 
-async def test_cancel_topup_does_not_change_balance(db, make_clinic):
+async def test_cancel_topup_does_not_change_balance(db, manual_confirm, make_clinic):
     clinic = await make_clinic()
     wallet = await wallets.get_or_create_wallet(db, "clinic", clinic.id)
     tx = await wallets.request_topup(db, wallet, Decimal("50.00"))
@@ -126,8 +150,8 @@ async def test_purchase_subscription_pro_month(db, make_clinic):
     """После пополнения и покупки Pro: баланс -$20, подписка активна."""
     clinic = await make_clinic()
     wallet = await wallets.get_or_create_wallet(db, "clinic", clinic.id)
-    tx = await wallets.request_topup(db, wallet, Decimal("50.00"))
-    await wallets.confirm_topup(db, tx.id, Decimal("50.00"))
+    # auto-режим: запрос на пополнение сразу зачисляет баланс
+    await wallets.request_topup(db, wallet, Decimal("50.00"))
 
     purchase_tx, sub = await wallets.purchase_subscription(db, wallet, "pro", "month")
 
@@ -148,8 +172,7 @@ async def test_purchase_premium_year_costs_more(db, make_clinic):
     """Premium годовая = $400 (со скидкой 2 месяца от $40)."""
     clinic = await make_clinic()
     wallet = await wallets.get_or_create_wallet(db, "clinic", clinic.id)
-    tx = await wallets.request_topup(db, wallet, Decimal("500.00"))
-    await wallets.confirm_topup(db, tx.id, Decimal("500.00"))
+    await wallets.request_topup(db, wallet, Decimal("500.00"))
 
     purchase_tx, sub = await wallets.purchase_subscription(db, wallet, "premium", "year")
 
@@ -175,7 +198,7 @@ async def test_purchase_fails_with_insufficient_funds(db, make_clinic):
     assert wallet.balance_usd == Decimal("0.00")  # не списалось
 
 
-async def test_find_topup_by_code(db, make_clinic):
+async def test_find_topup_by_code(db, manual_confirm, make_clinic):
     """Поиск заявки по коду (нужен для будущего Mbank webhook)."""
     clinic = await make_clinic()
     wallet = await wallets.get_or_create_wallet(db, "clinic", clinic.id)
@@ -204,8 +227,7 @@ async def test_get_history_returns_all_tx_descending(db, make_clinic):
     clinic = await make_clinic()
     wallet = await wallets.get_or_create_wallet(db, "clinic", clinic.id)
 
-    tx1 = await wallets.request_topup(db, wallet, Decimal("30.00"))
-    await wallets.confirm_topup(db, tx1.id, Decimal("30.00"))
+    await wallets.request_topup(db, wallet, Decimal("30.00"))
     await wallets.purchase_subscription(db, wallet, "pro", "month")
 
     history = await wallets.get_history(db, wallet.id, limit=10)

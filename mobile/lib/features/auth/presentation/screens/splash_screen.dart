@@ -68,7 +68,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         final hasProfile =
             await ref.read(authProvider.notifier).hasProviderProfile('clinic');
         if (!mounted) return;
-        context.go(hasProfile ? '/clinic/manage' : '/provider/clinic-intro');
+        context.go(hasProfile ? '/main' : '/provider/clinic-intro');
       case 'pharmacy':
         final hasProfile = await ref
             .read(authProvider.notifier)

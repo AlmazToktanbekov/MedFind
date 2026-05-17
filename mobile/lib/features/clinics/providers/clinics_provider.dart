@@ -5,6 +5,11 @@ import '../../../shared/models/clinic_model.dart';
 final clinicsRepositoryProvider =
     Provider<ClinicsRepository>((_) => ClinicsRepository());
 
+/// Текущая клиника пользователя (для роли 'clinic'). null если ещё не создана.
+final myClinicProvider = FutureProvider<ClinicModel?>((ref) async {
+  return ref.read(clinicsRepositoryProvider).getMyClinic();
+});
+
 final clinicCategoryProvider = StateProvider<String?>((_) => null);
 
 final clinicsProvider =

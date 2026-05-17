@@ -5,7 +5,7 @@ import '../../../core/services/notification_service.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../search/providers/search_provider.dart';
 import '../../provider/providers/doctor_setup_provider.dart';
-import '../../clinics/presentation/screens/clinic_manage_screen.dart' show myClinicProvider;
+import '../../clinics/providers/clinics_provider.dart' show myClinicProvider;
 import '../../../shared/providers/favorites_provider.dart';
 
 // ─── Repository provider ───────────────────────────────────────────────────

@@ -1,0 +1,52 @@
+{% extends "admin/base.html" %}
+{% block title %}Логи действий — MedFind Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>🔒 Логи действий администраторов</h1>
+  <p>Аудит-журнал всех изменений. Записи не удаляются.</p>
+</div>
+
+<div class="card">
+  <div style="margin-bottom:16px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+    <span style="font-size:13px; color:var(--text2);">Действие:</span>
+    <a class="btn btn-sm {% if current_action == 'all' %}btn-primary{% else %}btn-ghost{% endif %}"
+       href="/panel/admin-logs?action=all">Все</a>
+    {% for a in actions %}
+      <a class="btn btn-sm {% if current_action == a %}btn-primary{% else %}btn-ghost{% endif %}"
+         href="/panel/admin-logs?action={{ a }}">{{ a }}</a>
+    {% endfor %}
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Время</th><th>Админ</th><th>Действие</th>
+          <th>Объект</th><th>Детали</th><th>IP</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in items %}
+        <tr>
+          <td style="color:var(--text2); font-size:13px;">{{ l.id }}</td>
+          <td style="font-size:12px; color:var(--text2);">{{ l.created_at.strftime('%d.%m.%Y %H:%M:%S') }}</td>
+          <td style="font-weight:600;">{{ l.admin_name }}</td>
+          <td><span class="badge pending" style="font-family:monospace; font-size:11px;">{{ l.action }}</span></td>
+          <td style="font-size:13px;">
+            {% if l.target_type %}{{ l.target_type }} #{{ l.target_id }}{% else %}—{% endif %}
+          </td>
+          <td style="font-size:13px; color:var(--text2); max-width:300px;">{{ l.details or '—' }}</td>
+          <td style="font-family:monospace; font-size:12px; color:var(--text2);">{{ l.ip_address or '—' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7"><div class="empty-state"><div class="empty-icon">🔒</div><p>Пока нет записей в журнале</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div style="padding-top:16px; border-top:1px solid #EEF1F8; font-size:13px; color:var(--text2);">
+    Показано: {{ items|length }} (последние 300)
+  </div>
+</div>
+{% endblock %}

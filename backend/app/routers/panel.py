@@ -20,7 +20,12 @@ from app.models.clinic import Clinic
 from app.models.pharmacy import PharmacyCompany
 from app.models.article import Article
 from app.models.wallet import Wallet, WalletTransaction
+from app.models.subscription import Subscription
+from app.models.admin_log import AdminLog
 from app.services import wallet_service as wallets
+from app.services import subscription_service as subs
+from datetime import datetime, timedelta, timezone
+from app.services.admin_log_service import log_action
 from sqlalchemy.orm import selectinload
 from jose import JWTError
 from decimal import Decimal
@@ -149,6 +154,39 @@ async def dashboard(request: Request, db: AsyncSession = Depends(get_db)):
         {"label": "На модерации",     "count": pc,               "pct": round(pc / total_all * 100)},
     ]
 
+    # Финансы и подписки для дашборда
+    now = datetime.now(timezone.utc)
+    cutoff_30 = now - timedelta(days=30)
+    cutoff_7 = now + timedelta(days=7)
+
+    revenue_30d = (await db.execute(
+        select(func.coalesce(func.sum(WalletTransaction.amount_usd), 0)).where(
+            WalletTransaction.type == "purchase",
+            WalletTransaction.status == "completed",
+            WalletTransaction.created_at >= cutoff_30,
+        )
+    )).scalar() or 0
+    expiring_subs = (await db.execute(
+        select(func.count()).where(
+            Subscription.status == "active",
+            Subscription.expires_at.isnot(None),
+            Subscription.expires_at <= cutoff_7,
+            Subscription.expires_at >= now,
+        )
+    )).scalar() or 0
+    pending_topups = (await db.execute(
+        select(func.count()).where(
+            WalletTransaction.type == "topup",
+            WalletTransaction.status == "pending",
+        )
+    )).scalar() or 0
+
+    finance = {
+        "revenue_30d_usd": float(revenue_30d),
+        "expiring_subs": expiring_subs,
+        "pending_topups": pending_topups,
+    }
+
     # Последние 6 врачей
     recent_result = await db.execute(select(Doctor).order_by(Doctor.created_at.desc()).limit(6))
     recent_doctors = recent_result.scalars().all()
@@ -171,6 +209,7 @@ async def dashboard(request: Request, db: AsyncSession = Depends(get_db)):
             "status_breakdown": status_breakdown,
             "recent_doctors": recent_doctors,
             "pending_items": pending_items,
+            "finance": finance,
         }, pending_count=pc),
     )
 
@@ -313,7 +352,11 @@ async def approve(
 
     entity = await _find_entity(entity_type, entity_id, db)
     if entity:
+        old = entity.status
         entity.status = "active"
+        await log_action(db, admin_id=admin.id, action=f"{entity_type}.approve",
+                         target_type=entity_type, target_id=entity_id,
+                         details=f"status {old} -> active", request=request)
         await db.commit()
 
     return RedirectResponse(request.headers.get("referer", "/panel/pending"), status_code=302)
@@ -332,7 +375,11 @@ async def reject(
 
     entity = await _find_entity(entity_type, entity_id, db)
     if entity:
+        old = entity.status
         entity.status = "rejected"
+        await log_action(db, admin_id=admin.id, action=f"{entity_type}.reject",
+                         target_type=entity_type, target_id=entity_id,
+                         details=f"status {old} -> rejected", request=request)
         await db.commit()
 
     return RedirectResponse(request.headers.get("referer", "/panel/pending"), status_code=302)
@@ -406,6 +453,9 @@ async def toggle_article(
     article = result.scalar_one_or_none()
     if article:
         article.is_published = not article.is_published
+        await log_action(db, admin_id=admin.id, action="article.toggle",
+                         target_type="article", target_id=article.id,
+                         details=f"is_published -> {article.is_published}", request=request)
         await db.commit()
 
     return RedirectResponse(request.headers.get("referer", "/panel/articles"), status_code=302)
@@ -488,6 +538,9 @@ async def panel_confirm_topup(
         return _redirect_login()
     try:
         await wallets.confirm_topup(db, tx_id, Decimal(str(actual_amount_usd)), admin_user_id=admin.id)
+        await log_action(db, admin_id=admin.id, action="wallet.topup_confirm",
+                         target_type="wallet_tx", target_id=tx_id,
+                         details=f"amount_usd={actual_amount_usd}", request=request)
         await db.commit()
     except wallets.WalletError:
         pass  # silently — для простоты, можно flash-сообщения добавить
@@ -506,7 +559,244 @@ async def panel_cancel_topup(
         return _redirect_login()
     try:
         await wallets.cancel_topup(db, tx_id, reason or "Без причины", admin_user_id=admin.id)
+        await log_action(db, admin_id=admin.id, action="wallet.topup_cancel",
+                         target_type="wallet_tx", target_id=tx_id,
+                         details=f"reason={reason or 'Без причины'}", request=request)
         await db.commit()
     except wallets.WalletError:
         pass
     return RedirectResponse("/panel/wallet/topups", status_code=302)
+
+
+# ── Финансы ───────────────────────────────────────────────────────────────────
+
+@router.get("/finance", response_class=HTMLResponse)
+async def finance_overview(
+    request: Request,
+    type: str = "all",     # all | topup | purchase | refund
+    status: str = "all",   # all | pending | completed | cancelled
+    db: AsyncSession = Depends(get_db),
+):
+    admin = await _get_admin(request, db)
+    if not admin:
+        return _redirect_login()
+
+    pc = await _pending_count(db)
+
+    # Базовый запрос — все транзакции кошелька (deposits/purchases/refunds)
+    q = select(WalletTransaction, Wallet).join(
+        Wallet, WalletTransaction.wallet_id == Wallet.id
+    )
+    if type != "all":
+        q = q.where(WalletTransaction.type == type)
+    if status != "all":
+        q = q.where(WalletTransaction.status == status)
+    q = q.order_by(WalletTransaction.created_at.desc()).limit(200)
+    rows = (await db.execute(q)).all()
+
+    items = []
+    for tx, w in rows:
+        owner_name = None
+        if w.owner_type == "clinic":
+            r = await db.execute(select(Clinic.name_ru).where(Clinic.id == w.owner_id))
+            owner_name = r.scalar_one_or_none()
+        elif w.owner_type == "pharmacy":
+            r = await db.execute(select(PharmacyCompany.name).where(PharmacyCompany.id == w.owner_id))
+            owner_name = r.scalar_one_or_none()
+        items.append({
+            "id": tx.id,
+            "owner_type": w.owner_type,
+            "owner_id": w.owner_id,
+            "owner_name": owner_name or f"#{w.owner_id}",
+            "type": tx.type,
+            "status": tx.status,
+            "amount_usd": float(tx.amount_usd),
+            "payment_code": tx.payment_code,
+            "comment": tx.comment,
+            "created_at": tx.created_at,
+        })
+
+    # Сводка: выручка за 30 дней (completed purchases) + всего пополнено
+    cutoff = datetime.now(timezone.utc) - timedelta(days=30)
+    rev30 = (await db.execute(
+        select(func.coalesce(func.sum(WalletTransaction.amount_usd), 0)).where(
+            WalletTransaction.type == "purchase",
+            WalletTransaction.status == "completed",
+            WalletTransaction.created_at >= cutoff,
+        )
+    )).scalar() or 0
+    topup_total = (await db.execute(
+        select(func.coalesce(func.sum(WalletTransaction.amount_usd), 0)).where(
+            WalletTransaction.type == "topup",
+            WalletTransaction.status == "completed",
+        )
+    )).scalar() or 0
+    balance_total = (await db.execute(
+        select(func.coalesce(func.sum(Wallet.balance_usd), 0))
+    )).scalar() or 0
+    pending_topups = (await db.execute(
+        select(func.count()).where(
+            WalletTransaction.type == "topup",
+            WalletTransaction.status == "pending",
+        )
+    )).scalar() or 0
+
+    summary = {
+        "revenue_30d_usd": float(rev30),
+        "topup_total_usd": float(topup_total),
+        "balance_total_usd": float(balance_total),
+        "pending_topups": pending_topups,
+    }
+
+    return templates.TemplateResponse(
+        "admin/finance.html",
+        _ctx(request, "finance", {
+            "items": items,
+            "summary": summary,
+            "current_type": type,
+            "current_status": status,
+        }, pc),
+    )
+
+
+# ── Подписки ──────────────────────────────────────────────────────────────────
+
+@router.get("/subscriptions", response_class=HTMLResponse)
+async def subscriptions_list(
+    request: Request,
+    plan: str = "all",
+    status: str = "all",
+    owner_type: str = "all",
+    db: AsyncSession = Depends(get_db),
+):
+    admin = await _get_admin(request, db)
+    if not admin:
+        return _redirect_login()
+
+    pc = await _pending_count(db)
+    q = select(Subscription).order_by(Subscription.created_at.desc())
+    if plan != "all":
+        q = q.where(Subscription.plan == plan)
+    if status != "all":
+        q = q.where(Subscription.status == status)
+    if owner_type != "all":
+        q = q.where(Subscription.owner_type == owner_type)
+    rows = (await db.execute(q)).scalars().all()
+
+    items = []
+    now = datetime.now(timezone.utc)
+    for s in rows:
+        owner_name = None
+        if s.owner_type == "clinic":
+            r = await db.execute(select(Clinic.name_ru).where(Clinic.id == s.owner_id))
+            owner_name = r.scalar_one_or_none()
+        elif s.owner_type == "pharmacy":
+            r = await db.execute(select(PharmacyCompany.name).where(PharmacyCompany.id == s.owner_id))
+            owner_name = r.scalar_one_or_none()
+        days_left = None
+        if s.expires_at:
+            delta = s.expires_at - now
+            days_left = max(0, delta.days)
+        items.append({
+            "id": s.id,
+            "owner_type": s.owner_type,
+            "owner_id": s.owner_id,
+            "owner_name": owner_name or f"#{s.owner_id}",
+            "plan": s.plan,
+            "period": s.period or "—",
+            "is_trial": s.is_trial,
+            "status": s.status,
+            "started_at": s.started_at,
+            "expires_at": s.expires_at,
+            "days_left": days_left,
+        })
+
+    # Сводка
+    counts_by_plan = {"free": 0, "pro": 0, "premium": 0}
+    for it in items:
+        if it["status"] == "active":
+            counts_by_plan[it["plan"]] = counts_by_plan.get(it["plan"], 0) + 1
+
+    expiring_soon = sum(1 for it in items
+                        if it["status"] == "active" and it["days_left"] is not None and it["days_left"] <= 7)
+
+    return templates.TemplateResponse(
+        "admin/subscriptions.html",
+        _ctx(request, "subscriptions", {
+            "items": items,
+            "counts_by_plan": counts_by_plan,
+            "expiring_soon": expiring_soon,
+            "current_plan": plan,
+            "current_status": status,
+            "current_owner_type": owner_type,
+        }, pc),
+    )
+
+
+@router.post("/subscriptions/set")
+async def panel_set_subscription(
+    request: Request,
+    owner_type: str = Form(...),
+    owner_id: int = Form(...),
+    plan: str = Form(...),
+    period: str = Form("month"),
+    days: int = Form(30),
+    db: AsyncSession = Depends(get_db),
+):
+    admin = await _get_admin(request, db)
+    if not admin:
+        return _redirect_login()
+    if owner_type not in ("clinic", "pharmacy") or plan not in ("free", "pro", "premium"):
+        return RedirectResponse("/panel/subscriptions", status_code=302)
+    sub = await subs.set_plan_manual(db, owner_type, owner_id, plan, days, period)
+    await log_action(
+        db, admin_id=admin.id, action="subscription.set_plan",
+        target_type="subscription", target_id=sub.id,
+        details=f"{owner_type}#{owner_id} -> plan={plan} period={period} days={days}",
+        request=request,
+    )
+    await db.commit()
+    return RedirectResponse("/panel/subscriptions", status_code=302)
+
+
+# ── Логи действий админов ────────────────────────────────────────────────────
+
+@router.get("/admin-logs", response_class=HTMLResponse)
+async def admin_logs_list(
+    request: Request,
+    action: str = "all",
+    db: AsyncSession = Depends(get_db),
+):
+    admin = await _get_admin(request, db)
+    if not admin:
+        return _redirect_login()
+
+    pc = await _pending_count(db)
+    q = select(AdminLog, User).join(User, AdminLog.admin_user_id == User.id, isouter=True)
+    if action != "all":
+        q = q.where(AdminLog.action == action)
+    q = q.order_by(AdminLog.created_at.desc()).limit(300)
+    rows = (await db.execute(q)).all()
+    items = [{
+        "id": l.id,
+        "admin_name": (u.full_name if u else None) or (u.phone if u else f"#{l.admin_user_id}"),
+        "action": l.action,
+        "target_type": l.target_type,
+        "target_id": l.target_id,
+        "details": l.details,
+        "ip_address": l.ip_address,
+        "created_at": l.created_at,
+    } for l, u in rows]
+
+    # Уникальные action для фильтра
+    actions_r = await db.execute(select(AdminLog.action).distinct())
+    distinct_actions = sorted({a for (a,) in actions_r.all() if a})
+
+    return templates.TemplateResponse(
+        "admin/admin_logs.html",
+        _ctx(request, "admin_logs", {
+            "items": items,
+            "actions": distinct_actions,
+            "current_action": action,
+        }, pc),
+    )

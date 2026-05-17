@@ -95,7 +95,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
     if (hasProfile) {
       final dest = switch (role) {
-        'clinic' => '/clinic/manage',
+        'clinic' => '/main',
         'pharmacy' => '/main',
         _ => '/main',
       };

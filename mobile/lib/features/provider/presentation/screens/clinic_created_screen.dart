@@ -100,7 +100,7 @@ class ClinicCreatedScreen extends StatelessWidget {
                     const Spacer(),
                     GradientButton(
                       text: 'Перейти в кабинет клиники',
-                      onPressed: () => context.go('/clinic/manage'),
+                      onPressed: () => context.go('/main'),
                     ),
                     const SizedBox(height: 12),
                     TextButton(

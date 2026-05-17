@@ -24,7 +24,6 @@ import '../../features/provider/presentation/screens/clinic_intro_screen.dart';
 import '../../features/provider/presentation/screens/clinic_created_screen.dart';
 import '../../features/provider/presentation/screens/pharmacy_setup_screen.dart';
 import '../../features/clinics/presentation/screens/doctor_requests_screen.dart';
-import '../../features/clinics/presentation/screens/clinic_manage_screen.dart';
 import '../../features/clinics/presentation/screens/clinic_doctors_screen.dart';
 import '../../features/ai/presentation/screens/ai_chat_screen.dart';
 import '../../features/pharmacies/presentation/screens/pharmacy_manage_screen.dart';
@@ -192,10 +191,6 @@ final appRouter = GoRouter(
     ),
 
     // ─── Clinic management routes ─────────────────────────────────────────
-    GoRoute(
-      path: '/clinic/manage',
-      builder: (_, s) => const ClinicManageScreen(),
-    ),
     GoRoute(
       path: '/clinic/:id/doctor-requests',
       builder: (_, state) => DoctorRequestsScreen(

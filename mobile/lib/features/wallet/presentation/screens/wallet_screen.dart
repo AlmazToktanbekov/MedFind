@@ -79,7 +79,6 @@ class _BalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final usd = wallet?.balanceUsd ?? 0;
-    final kgs = wallet?.balanceKgs ?? 0;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -100,27 +99,13 @@ class _BalanceCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                '\$${usd.toStringAsFixed(2)}',
-                style: GoogleFonts.inter(
-                  fontSize: 36,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                '≈ ${kgs.toStringAsFixed(0)} ₸',
-                style: GoogleFonts.inter(
-                  fontSize: 15,
-                  color: Colors.white.withValues(alpha: 0.85),
-                ),
-              ),
-            ],
+          Text(
+            '\$${usd.toStringAsFixed(2)}',
+            style: GoogleFonts.inter(
+              fontSize: 36,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
           ),
           const SizedBox(height: 20),
           SizedBox(

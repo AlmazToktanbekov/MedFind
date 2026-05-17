@@ -92,7 +92,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                                 Text(
                                   wallet == null
                                       ? '—'
-                                      : '\$${wallet.balanceUsd.toStringAsFixed(2)}  •  ≈ ${wallet.balanceKgs.toStringAsFixed(0)} ₸',
+                                      : '\$${wallet.balanceUsd.toStringAsFixed(2)}',
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
@@ -400,19 +400,11 @@ class _PlanCard extends StatelessWidget {
                     color: AppColors.textPrimary.withValues(alpha: 0.6),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  '≈ ${plan.priceKgsMonth} с',
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: AppColors.textPrimary.withValues(alpha: 0.5),
-                  ),
-                ),
               ],
             ),
             const SizedBox(height: 4),
             Text(
-              'Год: \$${plan.priceUsdYear} (≈ ${plan.priceKgsYear} с) — экономия 2 мес.',
+              'Год: \$${plan.priceUsdYear} — экономия 2 мес.',
               style: GoogleFonts.inter(
                 fontSize: 12,
                 color: AppColors.textPrimary.withValues(alpha: 0.5),
@@ -464,14 +456,14 @@ class _PlanFeatures extends StatelessWidget {
   Widget build(BuildContext context) {
     final features = <String>[];
     if (plan.doctorLimit != null) {
-      features.add('До ${plan.doctorLimit} активных врачей');
+      features.add('До ${plan.doctorLimit} активных врачей (для клиник)');
     } else if (plan.plan != 'free') {
-      features.add('Неограниченно врачей');
+      features.add('Неограниченно врачей для клиники');
     }
     if (plan.branchLimit != null) {
-      features.add('До ${plan.branchLimit} филиалов');
+      features.add('До ${plan.branchLimit} филиалов (для аптек)');
     } else if (plan.plan != 'free') {
-      features.add('Неограниченно филиалов');
+      features.add('Неограниченно филиалов для аптеки');
     }
     if (plan.hasReports) features.add('Раздел «Отчёты» с аналитикой');
     if (plan.hasBadge) features.add('Бейдж «Премиум» и приоритет в поиске');
