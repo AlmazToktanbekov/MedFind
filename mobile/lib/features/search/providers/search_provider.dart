@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/search_repository.dart';
-import '../../../core/analytics/analytics_tracker.dart';
 import '../../../shared/models/doctor_model.dart';
 import '../../../shared/models/clinic_model.dart';
 import '../../../shared/models/pharmacy_model.dart';
@@ -103,7 +102,6 @@ class SearchNotifier extends StateNotifier<SearchState> {
     state = state.copyWith(status: SearchStatus.loading);
     try {
       final results = await _repo.search(query);
-      if (query.trim().isNotEmpty) AnalyticsTracker().search(query.trim());
       state = state.copyWith(
         status: SearchStatus.loaded,
         doctors: results.doctors,

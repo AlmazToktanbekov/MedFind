@@ -81,25 +81,4 @@
   {% else %}<div class="empty-state"><div class="empty-icon">🏪</div><p>Нет филиалов</p></div>{% endif %}
 </div>
 
-<div class="card">
-  <h3 style="font-size:16px; font-weight:700; margin-bottom:16px;">💳 История подписок</h3>
-  {% if subs_history %}
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>План</th><th>Период</th><th>Статус</th><th>Начало</th><th>Окончание</th></tr></thead>
-      <tbody>
-        {% for s in subs_history %}
-        <tr>
-          <td>{{ s.plan }}</td>
-          <td>{{ s.period }}</td>
-          <td>{{ s.status }}</td>
-          <td>{{ s.started_at.strftime('%d.%m.%Y') if s.started_at else '—' }}</td>
-          <td>{{ s.expires_at.strftime('%d.%m.%Y') if s.expires_at else '—' }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}<p style="color:var(--text2);">Подписок не было</p>{% endif %}
-</div>
 {% endblock %}

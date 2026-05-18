@@ -15,9 +15,14 @@ import '../../../../features/pharmacies/providers/pharmacies_provider.dart';
 import '../../../../features/profile/providers/profile_provider.dart';
 import '../../../../features/notifications/providers/notifications_provider.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
+  @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _greeting() {
     final h = DateTime.now().hour;
     if (h < 12) return 'Доброе утро';
@@ -26,7 +31,7 @@ class HomeScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final profile = ref.watch(profileProvider);
     final unreadCount = ref.watch(notificationsProvider).unreadCount;
     return Scaffold(
@@ -479,10 +484,10 @@ class HomeScreen extends ConsumerWidget {
           onTapAll: () => context.push('/main/clinics'),
         ),
         clinicsAsync.when(
-          loading: () => const _HorizontalShimmer(height: 96, width: 220),
+          loading: () => const _HorizontalShimmer(height: 108, width: 220),
           error: (e, st) => const SizedBox.shrink(),
           data: (clinics) => SizedBox(
-            height: 96,
+            height: 108,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),

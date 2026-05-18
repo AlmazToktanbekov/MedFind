@@ -96,25 +96,6 @@
 
 </div>
 
-<!-- ── Конверсия trial → paid ── -->
-<div class="card" style="margin-top:20px;">
-  <h3 style="font-size:16px; font-weight:700; margin-bottom:16px;">💸 Конверсия trial → paid</h3>
-  <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:20px;">
-    <div>
-      <div style="font-size:28px; font-weight:700;">{{ trial_count }}</div>
-      <div style="font-size:13px; color:var(--text2);">Trial-подписок выдано</div>
-    </div>
-    <div>
-      <div style="font-size:28px; font-weight:700; color:var(--success);">{{ converted_count }}</div>
-      <div style="font-size:13px; color:var(--text2);">Купили платный план</div>
-    </div>
-    <div>
-      <div style="font-size:28px; font-weight:700; color:var(--primary);">{{ conversion_pct }}%</div>
-      <div style="font-size:13px; color:var(--text2);">Конверсия</div>
-    </div>
-  </div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
   const labels = {{ chart_labels | tojson }};

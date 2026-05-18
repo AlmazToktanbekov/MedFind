@@ -13,7 +13,6 @@ from app.schemas.pharmacy import (
     BranchOut, BranchCreate, BranchUpdate,
     PharmacyRegisterRequest,
 )
-from app.services import subscription_service as subs
 
 router = APIRouter(tags=["pharmacies"])
 
@@ -73,9 +72,6 @@ async def register_pharmacy(
     if photo_url:
         db.add(PharmacyBranchPhoto(branch_id=branch.id, url=photo_url, order=0))
         await db.flush()
-
-    # Автоматический Pro-триал на 30 дней при регистрации аптечной компании
-    await subs.start_trial(db, "pharmacy", company.id)
 
     return await _load_company(company.id, db)
 
@@ -151,24 +147,6 @@ async def add_branch(
         raise HTTPException(status_code=404, detail="Company not found")
     if company.user_id != current_user.id and current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Not allowed")
-
-    # Проверка лимита тарифа: Free = 9 активных филиалов
-    plan = await subs.get_plan(db, "pharmacy", company_id)
-    limit = subs.get_branch_limit(plan)
-    if limit is not None:
-        active_count = await subs.count_active_branches(db, company_id)
-        if active_count >= limit:
-            raise HTTPException(
-                status_code=402,
-                detail={
-                    "code": "plan_limit_reached",
-                    "limit_type": "branches",
-                    "current_plan": plan,
-                    "limit": limit,
-                    "current": active_count,
-                    "message": "Достигнут лимит филиалов на бесплатном тарифе. Оформите подписку Pro или Premium.",
-                },
-            )
 
     branch_data = body.model_dump()
     branch_data.pop("photo_url", None)

@@ -16,14 +16,11 @@ import '../../providers/clinics_provider.dart';
 import '../../../clinics/data/clinics_repository.dart';
 import '../../../doctors/providers/reviews_provider.dart';
 import '../../../../shared/widgets/review_card.dart';
-import '../../../../core/analytics/analytics_tracker.dart';
-
 class ClinicDetailScreen extends ConsumerWidget {
   final String clinicId;
   const ClinicDetailScreen({super.key, required this.clinicId});
 
   Future<void> _call(int clinicIdInt, String phone) async {
-    AnalyticsTracker().clickCall('clinic', clinicIdInt);
     final uri = Uri.parse('tel:$phone');
     if (await canLaunchUrl(uri)) await launchUrl(uri);
   }
@@ -36,29 +33,21 @@ class ClinicDetailScreen extends ConsumerWidget {
   }
 
   Future<void> _openWhatsApp(int clinicIdInt, String number) {
-    AnalyticsTracker().clickWhatsapp('clinic', clinicIdInt);
     return _openUrl('https://wa.me/$number');
   }
 
   Future<void> _openTelegram(int clinicIdInt, String username) {
-    AnalyticsTracker().clickTelegram('clinic', clinicIdInt);
     final handle = username.startsWith('@') ? username.substring(1) : username;
     return _openUrl('https://t.me/$handle');
   }
 
   Future<void> _openMaps(int clinicIdInt, String mapUrl) {
-    AnalyticsTracker().clickRoute('clinic', clinicIdInt);
     return _openUrl(mapUrl);
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final id = int.tryParse(clinicId) ?? 0;
-    if (id != 0) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        AnalyticsTracker().viewClinic(id);
-      });
-    }
     final clinicAsync = ref.watch(clinicByIdProvider(id));
     final isFavorite = ref.watch(favoritesProvider).contains('clinic:$id');
 

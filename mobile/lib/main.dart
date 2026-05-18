@@ -10,7 +10,6 @@ import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'core/network/api_client.dart';
 import 'core/services/notification_service.dart';
-import 'core/analytics/analytics_tracker.dart';
 import 'features/profile/providers/profile_provider.dart';
 import 'firebase_options.dart';
 
@@ -37,8 +36,6 @@ void main() async {
     ApiClient().clearAuthCache();
     appRouter.go('/login');
   };
-
-  AnalyticsTracker().init();
 
   runApp(const ProviderScope(child: MedFindApp()));
 }

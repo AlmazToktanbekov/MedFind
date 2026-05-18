@@ -218,32 +218,14 @@
         <span class="nav-badge">{{ pending_count }}</span>
       {% endif %}
     </a>
-    <a href="/panel/articles" class="nav-item {% if active == 'articles' %}active{% endif %}">
-      <span class="nav-icon">📰</span> Статьи
-    </a>
     <a href="/panel/users" class="nav-item {% if active == 'users' %}active{% endif %}">
       <span class="nav-icon">👥</span> Пользователи
-    </a>
-    <a href="/panel/wallet/topups" class="nav-item {% if active == 'wallet_topups' %}active{% endif %}">
-      <span class="nav-icon">💰</span> Пополнения
-      {% if topup_pending_count and topup_pending_count > 0 %}
-        <span class="nav-badge">{{ topup_pending_count }}</span>
-      {% endif %}
-    </a>
-    <a href="/panel/finance" class="nav-item {% if active == 'finance' %}active{% endif %}">
-      <span class="nav-icon">💳</span> Финансы
-    </a>
-    <a href="/panel/transactions" class="nav-item {% if active == 'transactions' %}active{% endif %}">
-      <span class="nav-icon">💸</span> Транзакции
     </a>
     <a href="/panel/analytics" class="nav-item {% if active == 'analytics' %}active{% endif %}">
       <span class="nav-icon">📈</span> Аналитика
     </a>
     <a href="/panel/broadcasts" class="nav-item {% if active == 'broadcasts' %}active{% endif %}">
       <span class="nav-icon">📨</span> Рассылки
-    </a>
-    <a href="/panel/subscriptions" class="nav-item {% if active == 'subscriptions' %}active{% endif %}">
-      <span class="nav-icon">⭐</span> Подписки
     </a>
     <a href="/panel/reviews" class="nav-item {% if active == 'reviews' %}active{% endif %}">
       <span class="nav-icon">💬</span> Отзывы

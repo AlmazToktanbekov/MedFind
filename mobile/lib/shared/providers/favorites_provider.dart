@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/network/api_client.dart';
-import '../../core/analytics/analytics_tracker.dart';
 
 // ─── Repository ────────────────────────────────────────────────────────────
 
@@ -67,7 +66,6 @@ class FavoritesNotifier extends StateNotifier<Set<String>> {
     // Optimistic update
     if (adding) {
       next.add(key);
-      AnalyticsTracker().addFavorite(type, id);
     } else {
       next.remove(key);
     }

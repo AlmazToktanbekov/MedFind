@@ -4,12 +4,7 @@
 Все задачи стартуют ежедневно в SCHEDULER_HOUR:SCHEDULER_MINUTE по таймзоне SCHEDULER_TIMEZONE.
 
 Список задач:
-  • subscription_reminders     — напоминания за 7/3/1 день до окончания
-  • subscription_expiration    — автодеактивация при истечении срока
-  • topup_cleanup              — отмена pending-заявок старше 7 дней
-  • complaints_warning         — предупреждение при N жалобах (заглушка)
-
-Для отладки: `await run_job("subscription_reminders")` запускает любую задачу вручную.
+  • complaints_warning — предупреждение при N жалобах (заглушка)
 """
 import logging
 from typing import Callable, Awaitable, Optional, Dict
@@ -19,20 +14,12 @@ from apscheduler.triggers.cron import CronTrigger
 
 from app.core.config import settings
 from app.core.database import AsyncSessionLocal
-from app.services.jobs import (
-    subscription_reminders,
-    subscription_expiration,
-    topup_cleanup,
-    complaints_warning,
-)
+from app.services.jobs import complaints_warning
 
 logger = logging.getLogger(__name__)
 
 # Реестр всех задач: имя → корутина job(db: AsyncSession) → dict со статистикой
 JOBS: Dict[str, Callable[..., Awaitable[dict]]] = {
-    "subscription_reminders": subscription_reminders.run,
-    "subscription_expiration": subscription_expiration.run,
-    "topup_cleanup": topup_cleanup.run,
     "complaints_warning": complaints_warning.run,
 }
 

@@ -11,7 +11,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.user import User
 from app.models.broadcast import Broadcast, BroadcastDelivery
 from app.models.notification import Notification
-from app.models.subscription import Subscription
 
 
 async def resolve_segment(db: AsyncSession, segment: Optional[dict]) -> list[int]:
@@ -51,31 +50,6 @@ async def resolve_segment(db: AsyncSession, segment: Optional[dict]) -> list[int
             q = q.where(User.last_active_at >= cutoff)
         except Exception:
             pass
-
-    plans = segment.get("plans")  # filter by clinic/pharmacy plan
-    if plans:
-        # подписки активные с этим планом
-        owners_sub = select(Subscription.owner_id).where(
-            Subscription.status == "active",
-            Subscription.plan.in_(plans),
-        ).subquery()
-        # user_id владельцев — через clinic.user_id / pharmacy.user_id
-        from app.models.clinic import Clinic
-        from app.models.pharmacy import PharmacyCompany
-        clinic_users = (await db.execute(
-            select(Clinic.user_id).where(
-                Clinic.id.in_(select(owners_sub).where(Subscription.owner_type == "clinic"))
-            )
-        )).scalars().all()
-        pharm_users = (await db.execute(
-            select(PharmacyCompany.user_id).where(
-                PharmacyCompany.id.in_(select(owners_sub).where(Subscription.owner_type == "pharmacy"))
-            )
-        )).scalars().all()
-        allowed = {uid for uid in clinic_users + pharm_users if uid is not None}
-        if not allowed:
-            return []
-        q = q.where(User.id.in_(allowed))
 
     return list((await db.execute(q)).scalars().all())
 

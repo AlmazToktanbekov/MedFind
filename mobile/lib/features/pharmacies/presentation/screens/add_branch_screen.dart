@@ -9,8 +9,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/gradient_button.dart';
 import '../../data/pharmacies_repository.dart';
-import '../../../../core/network/plan_limit_exception.dart';
-import '../../../../shared/widgets/plan_limit_reached_dialog.dart';
 import 'pharmacy_manage_screen.dart';
 
 class AddBranchScreen extends ConsumerStatefulWidget {
@@ -129,17 +127,6 @@ class _AddBranchScreenState extends ConsumerState<AddBranchScreen> {
       ref.invalidate(myPharmacyCompanyProvider);
       if (mounted) context.pop();
     } catch (e) {
-      final planLimit = PlanLimitException.tryFromDio(e);
-      if (planLimit != null && mounted) {
-        setState(() => _isLoading = false);
-        await PlanLimitReachedDialog.show(
-          context,
-          limitType: planLimit.limitType,
-          limit: planLimit.limit,
-          currentPlan: planLimit.currentPlan,
-        );
-        return;
-      }
       setState(() {
         _error = 'Ошибка: ${e.toString()}';
         _isLoading = false;

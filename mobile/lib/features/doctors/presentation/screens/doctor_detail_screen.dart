@@ -15,8 +15,6 @@ import '../../../../shared/widgets/review_card.dart';
 import '../../../../shared/widgets/report_dialog.dart';
 import '../../providers/doctors_provider.dart';
 import '../../providers/reviews_provider.dart';
-import '../../../../core/analytics/analytics_tracker.dart';
-
 class DoctorDetailScreen extends ConsumerStatefulWidget {
   final String doctorId;
   const DoctorDetailScreen({super.key, required this.doctorId});
@@ -34,8 +32,6 @@ class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    final id = int.tryParse(widget.doctorId);
-    if (id != null) AnalyticsTracker().viewDoctor(id);
   }
 
   @override
@@ -436,20 +432,14 @@ class _AboutTab extends StatelessWidget {
                     label: 'WhatsApp',
                     color: const Color(0xFF25D366),
                     icon: Icons.message_rounded,
-                    onTap: () {
-                      AnalyticsTracker().clickWhatsapp('doctor', doctor.id);
-                      onOpenUrl('https://wa.me/${doctor.whatsapp}');
-                    },
+                    onTap: () => onOpenUrl('https://wa.me/${doctor.whatsapp}'),
                   ),
                 if (doctor.telegram != null)
                   _ContactButton(
                     label: 'Telegram',
                     color: const Color(0xFF0088CC),
                     icon: Icons.send_rounded,
-                    onTap: () {
-                      AnalyticsTracker().clickTelegram('doctor', doctor.id);
-                      onOpenUrl('https://t.me/${doctor.telegram}');
-                    },
+                    onTap: () => onOpenUrl('https://t.me/${doctor.telegram}'),
                   ),
                 if (doctor.instagram != null)
                   _ContactButton(
@@ -464,10 +454,7 @@ class _AboutTab extends StatelessWidget {
                     label: 'Позвонить',
                     color: AppColors.primaryBlue,
                     icon: PhosphorIconsRegular.phone,
-                    onTap: () {
-                      AnalyticsTracker().clickCall('doctor', doctor.id);
-                      onOpenUrl('tel:${doctor.phone}');
-                    },
+                    onTap: () => onOpenUrl('tel:${doctor.phone}'),
                   ),
               ],
             ),
@@ -478,10 +465,7 @@ class _AboutTab extends StatelessWidget {
             text: 'Позвонить',
             onPressed: doctor.phone == null
                 ? () {}
-                : () {
-                    AnalyticsTracker().clickCall('doctor', doctor.id);
-                    onOpenUrl('tel:${doctor.phone}');
-                  },
+                : () => onOpenUrl('tel:${doctor.phone}'),
           ),
           const SizedBox(height: 24),
         ],
