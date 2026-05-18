@@ -154,6 +154,48 @@ async def test_complaints_warning_dedup(db, make_user, make_clinic, monkeypatch)
     assert len(owner_notifs) == 1
 
 
+async def test_complaints_auto_block_after_threshold(db, make_user, make_clinic, monkeypatch):
+    """При auto_block_after=1 первое же предупреждение блокирует аккаунт."""
+    from app.core import config as cfg
+    from app.models.user import User
+    from sqlalchemy import select as sa_select
+
+    monkeypatch.setattr(cfg.settings, "COMPLAINTS_WARNING_THRESHOLD", 2)
+    monkeypatch.setattr(cfg.settings, "COMPLAINTS_WINDOW_DAYS", 10)
+    monkeypatch.setattr(cfg.settings, "COMPLAINTS_AUTO_BLOCK_AFTER", 1)
+
+    owner = await make_user(role="clinic")
+    patient = await make_user(role="patient")
+    clinic = await make_clinic(user=owner)
+
+    for _ in range(2):
+        db.add(Complaint(
+            author_id=patient.id, target_type="clinic", target_id=clinic.id,
+            reason="fraud", status="new",
+            created_at=datetime.now(timezone.utc),
+        ))
+    await db.flush()
+
+    # Первый запуск: warning_num=1, should_block=(1>=1)=True → сразу блокировка
+    result = await complaints_warning.run(db)
+    assert result["warned"] == 1
+    assert result["blocked"] == 1
+
+    # Аккаунт заблокирован
+    owner_user = (await db.execute(sa_select(User).where(User.id == owner.id))).scalar_one()
+    assert owner_user.is_active is False
+
+    # Уведомление о блокировке отправлено
+    block_notifs = (await db.execute(
+        sa_select(Notification).where(
+            Notification.user_id == owner.id,
+            Notification.type == "complaints_auto_blocked",
+        )
+    )).scalars().all()
+    assert len(block_notifs) == 1
+    assert "заблокирован" in block_notifs[0].body.lower()
+
+
 async def test_complaints_warning_skips_reviews(db, make_user, make_clinic, monkeypatch):
     """Жалобы на отзывы не вызывают предупреждение владельцу — только админу."""
     from app.core import config as cfg

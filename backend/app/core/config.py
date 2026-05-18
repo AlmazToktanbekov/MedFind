@@ -44,6 +44,8 @@ class Settings(BaseSettings):
     # Порог жалоб для авто-предупреждения клиники
     COMPLAINTS_WARNING_THRESHOLD: int = 100
     COMPLAINTS_WINDOW_DAYS: int = 10
+    # После скольких предупреждений автоматически блокировать аккаунт
+    COMPLAINTS_AUTO_BLOCK_AFTER: int = 3
 
     class Config:
         env_file = ".env"
