@@ -692,6 +692,16 @@ class _ProviderManagementSection extends ConsumerWidget {
           subtitle: subtitle,
           onTap: () => context.push(route),
         ),
+        if (role == 'pharmacy') ...[
+          const SizedBox(height: 10),
+          _NavCard(
+            icon: PhosphorIconsRegular.chartBar,
+            color: const Color(0xFF6C63FF),
+            title: 'Отчёты и аналитика',
+            subtitle: 'Просмотры, звонки, активность по филиалам',
+            onTap: () => context.push('/pharmacy/analytics'),
+          ),
+        ],
       ],
     );
   }
@@ -753,6 +763,14 @@ class _ClinicManagementState extends ConsumerState<_ClinicManagement> {
             title: 'Заявки врачей',
             subtitle: 'Ожидают / активны / отклонены / обновления',
             onTap: () => context.push('/clinic/${clinic.id}/doctor-requests'),
+          ),
+          const SizedBox(height: 10),
+          _NavCard(
+            icon: PhosphorIconsRegular.chartBar,
+            color: const Color(0xFF6C63FF),
+            title: 'Отчёты и аналитика',
+            subtitle: 'Просмотры, звонки, активность пациентов',
+            onTap: () => context.push('/clinic/analytics'),
           ),
         ],
       ],

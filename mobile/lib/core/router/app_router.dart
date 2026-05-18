@@ -41,6 +41,8 @@ import '../../features/pharmacies/presentation/screens/edit_branch_screen.dart';
 import '../../features/provider/presentation/screens/doctor_edit_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
+import '../../features/analytics/presentation/screens/clinic_analytics_screen.dart';
+import '../../features/analytics/presentation/screens/pharmacy_branch_analytics_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/splash',
@@ -272,6 +274,14 @@ final appRouter = GoRouter(
       builder: (_, state) => EditBranchScreen(
         branchId: int.parse(state.pathParameters['id']!),
       ),
+    ),
+    GoRoute(
+      path: '/clinic/analytics',
+      builder: (_, s) => const ClinicAnalyticsScreen(),
+    ),
+    GoRoute(
+      path: '/pharmacy/analytics',
+      builder: (_, s) => const PharmacyBranchAnalyticsScreen(),
     ),
   ],
 );

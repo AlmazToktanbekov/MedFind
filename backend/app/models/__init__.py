@@ -11,6 +11,7 @@ from app.models.admin_log import AdminLog
 from app.models.complaint import Complaint
 from app.models.search_log import SearchLog
 from app.models.broadcast import Broadcast, BroadcastDelivery
+from app.models.analytics import AnalyticsEvent
 
 __all__ = [
     "User", "OTPCode",
@@ -26,4 +27,5 @@ __all__ = [
     "Complaint",
     "SearchLog",
     "Broadcast", "BroadcastDelivery",
+    "AnalyticsEvent",
 ]
