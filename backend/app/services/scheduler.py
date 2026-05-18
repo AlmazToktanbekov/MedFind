@@ -14,13 +14,14 @@ from apscheduler.triggers.cron import CronTrigger
 
 from app.core.config import settings
 from app.core.database import AsyncSessionLocal
-from app.services.jobs import complaints_warning
+from app.services.jobs import complaints_warning, unblock_expired
 
 logger = logging.getLogger(__name__)
 
 # Реестр всех задач: имя → корутина job(db: AsyncSession) → dict со статистикой
 JOBS: Dict[str, Callable[..., Awaitable[dict]]] = {
     "complaints_warning": complaints_warning.run,
+    "unblock_expired": unblock_expired.run,
 }
 
 _scheduler: Optional[AsyncIOScheduler] = None

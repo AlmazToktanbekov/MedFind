@@ -1,10 +1,14 @@
-"""Авто-предупреждение и авто-блокировка при превышении порога жалоб.
+"""Авто-обработка жалоб на врачей / клиники / филиалы аптек.
 
-Логика:
-  1. Каждые COMPLAINTS_WINDOW_DAYS дней считаем жалобы по каждой цели.
-  2. Если >= COMPLAINTS_WARNING_THRESHOLD — шлём предупреждение (1 раз в окно).
-  3. После COMPLAINTS_AUTO_BLOCK_AFTER предупреждений подряд — автоматически
-     блокируем аккаунт владельца (user.is_active = False) и уведомляем его.
+Логика (считаем ВСЕ жалобы за всё время по каждой цели):
+  • >= 10  (COMPLAINT_NOTIFY_1)  — первое уведомление владельцу
+  • >= 100 (COMPLAINT_NOTIFY_2)  — повторное уведомление
+  • >= 300 (COMPLAINT_BLOCK_AT)  — блокировка аккаунта на COMPLAINT_BLOCK_DAYS дней
+
+Дедуп: в текущем окне (1 день) не шлём дубли одного типа на ту же цель.
+Блокировка: устанавливает user.complaint_blocked_until = now + N дней
+             и user.is_active = False.
+Разблокировка: ежедневный job unblock_expired (в scheduler.py).
 """
 import logging
 from datetime import datetime, timezone, timedelta
@@ -22,42 +26,11 @@ from app.models.user import User
 
 logger = logging.getLogger(__name__)
 
-
-async def _recent_warnings(db: AsyncSession, since) -> set[tuple[str, int]]:
-    """Возвращает (target_type, target_id) по которым УЖЕ было предупреждение
-    в текущем окне — чтобы не слать повторно."""
-    res = await db.execute(
-        select(Notification.data).where(
-            and_(
-                Notification.type.in_(["complaints_warning", "complaints_auto_blocked"]),
-                Notification.created_at >= since,
-            )
-        )
-    )
-    out: set[tuple[str, int]] = set()
-    for (data,) in res.all():
-        if isinstance(data, dict) and data.get("target_type") and data.get("target_id"):
-            try:
-                out.add((data["target_type"], int(data["target_id"])))
-            except (TypeError, ValueError):
-                pass
-    return out
-
-
-async def _total_warning_count(db: AsyncSession, target_type: str, target_id: int) -> int:
-    """Возвращает общее количество предупреждений по цели за всё время."""
-    res = await db.execute(
-        select(Notification.data).where(Notification.type == "complaints_warning")
-    )
-    count = 0
-    for (data,) in res.all():
-        if (
-            isinstance(data, dict)
-            and data.get("target_type") == target_type
-            and data.get("target_id") == target_id
-        ):
-            count += 1
-    return count
+_ROUTE_MAP = {
+    "doctor": "/main/doctors/{}",
+    "clinic": "/main/clinics/{}",
+    "pharmacy_branch": "/main/pharmacies/branch/{}",
+}
 
 
 async def _owner_user_id(db: AsyncSession, target_type: str, target_id: int):
@@ -77,125 +50,141 @@ async def _owner_user_id(db: AsyncSession, target_type: str, target_id: int):
     return None
 
 
-_ROUTE_MAP = {
-    "doctor": "/main/doctors/{}",
-    "clinic": "/main/clinics/{}",
-    "pharmacy_branch": "/main/pharmacies/branch/{}",
-}
+async def _sent_today(db: AsyncSession, notif_type: str, target_type: str, target_id: int) -> bool:
+    """Проверяем: отправляли ли уже сегодня такое уведомление на эту цель."""
+    since = datetime.now(timezone.utc) - timedelta(hours=24)
+    rows = await db.execute(
+        select(Notification.data).where(
+            and_(Notification.type == notif_type, Notification.created_at >= since)
+        )
+    )
+    for (data,) in rows.all():
+        if (
+            isinstance(data, dict)
+            and data.get("target_type") == target_type
+            and data.get("target_id") == target_id
+        ):
+            return True
+    return False
+
+
+def _notif(user_id: int, title: str, body: str, notif_type: str, data: dict) -> Notification:
+    return Notification(user_id=user_id, title=title, body=body, type=notif_type, data=data)
 
 
 async def run(db: AsyncSession) -> dict:
-    threshold = settings.COMPLAINTS_WARNING_THRESHOLD
-    window_days = settings.COMPLAINTS_WINDOW_DAYS
-    auto_block_after = settings.COMPLAINTS_AUTO_BLOCK_AFTER
-    since = datetime.now(timezone.utc) - timedelta(days=window_days)
+    n1 = settings.COMPLAINT_NOTIFY_1
+    n2 = settings.COMPLAINT_NOTIFY_2
+    n_block = settings.COMPLAINT_BLOCK_AT
+    block_days = settings.COMPLAINT_BLOCK_DAYS
 
+    # Все жалобы суммарно по каждой цели
     rows = (await db.execute(
-        select(
-            Complaint.target_type, Complaint.target_id, func.count(Complaint.id)
-        ).where(Complaint.created_at >= since)
+        select(Complaint.target_type, Complaint.target_id, func.count(Complaint.id))
+        .where(Complaint.target_type != "review")
         .group_by(Complaint.target_type, Complaint.target_id)
-        .having(func.count(Complaint.id) >= threshold)
+        .having(func.count(Complaint.id) >= n1)
     )).all()
 
     admin_ids = [u for (u,) in (await db.execute(
         select(User.id).where(User.role == "admin")
     )).all()]
 
-    already = await _recent_warnings(db, since)
-    warned = 0
+    notified = 0
     blocked = 0
 
     for target_type, target_id, count in rows:
-        if target_type == "review":
-            continue
-        if (target_type, target_id) in already:
-            continue
-
         owner_id = await _owner_user_id(db, target_type, target_id)
-        route_tpl = _ROUTE_MAP.get(target_type)
-        route = route_tpl.format(target_id) if route_tpl else None
+        route = _ROUTE_MAP.get(target_type, "").format(target_id)
         data = {"target_type": target_type, "target_id": target_id, "route": route}
 
-        # Считаем сколько предупреждений уже было по этой цели
-        prev_warnings = await _total_warning_count(db, target_type, target_id)
-        # Это будет (prev_warnings + 1)-е предупреждение
-        new_warning_num = prev_warnings + 1
-        should_block = new_warning_num >= auto_block_after
-
-        if should_block and owner_id:
-            # Блокируем аккаунт
-            user_res = await db.execute(select(User).where(User.id == owner_id))
-            user = user_res.scalar_one_or_none()
-            if user and user.is_active:
-                user.is_active = False
-                blocked += 1
-                db.add(Notification(
-                    user_id=owner_id,
-                    title="Аккаунт заблокирован",
-                    body=(
-                        f"Ваш аккаунт заблокирован автоматически: на ваш профиль "
-                        f"поступило {count} жалоб за {window_days} дней. "
-                        f"Это {new_warning_num}-е предупреждение. "
-                        "Свяжитесь с поддержкой для разблокировки."
-                    ),
-                    type="complaints_auto_blocked",
-                    data={**data, "warning_num": new_warning_num},
-                ))
-                for aid in admin_ids:
-                    db.add(Notification(
-                        user_id=aid,
-                        title=f"🔴 Авто-блокировка: {target_type} #{target_id}",
-                        body=(
-                            f"Аккаунт заблокирован автоматически после "
-                            f"{new_warning_num} предупреждений ({count} жалоб за {window_days} дней)."
-                        ),
-                        type="complaints_auto_blocked",
-                        data={**data, "warning_num": new_warning_num},
-                    ))
-                logger.warning(
-                    "AUTO-BLOCKED %s #%d after %d warnings (%d complaints in %dd)",
-                    target_type, target_id, new_warning_num, count, window_days,
-                )
-        else:
-            # Обычное предупреждение
+        if count >= n_block:
+            # ── Блокировка на 14 дней ──────────────────────────────────
+            if await _sent_today(db, "complaint_blocked", target_type, target_id):
+                continue
             if owner_id:
-                db.add(Notification(
-                    user_id=owner_id,
-                    title="Поступило много жалоб",
-                    body=(
-                        f"На ваш профиль поступило {count} жалоб за {window_days} дней. "
-                        f"Это предупреждение {new_warning_num} из {auto_block_after}. "
-                        "При следующем превышении аккаунт может быть заблокирован."
-                    ),
-                    type="complaints_warning",
-                    data={**data, "warning_num": new_warning_num},
+                user_res = await db.execute(select(User).where(User.id == owner_id))
+                user = user_res.scalar_one_or_none()
+                if user and user.is_active:
+                    block_until = datetime.now(timezone.utc) + timedelta(days=block_days)
+                    user.is_active = False
+                    user.complaint_blocked_until = block_until
+                    blocked += 1
+                    db.add(_notif(
+                        owner_id,
+                        "Аккаунт заблокирован",
+                        (f"Ваш аккаунт заблокирован на {block_days} дней: "
+                         f"на ваш профиль поступило {count} жалоб. "
+                         "Свяжитесь с поддержкой."),
+                        "complaint_blocked",
+                        {**data, "count": count, "block_days": block_days},
+                    ))
+                    for aid in admin_ids:
+                        db.add(_notif(
+                            aid,
+                            f"🔴 Авто-блокировка: {target_type} #{target_id}",
+                            f"{count} жалоб — аккаунт заблокирован на {block_days} дней.",
+                            "complaint_blocked",
+                            {**data, "count": count},
+                        ))
+                    logger.warning(
+                        "AUTO-BLOCKED %s #%d (%d complaints, %d days)",
+                        target_type, target_id, count, block_days,
+                    )
+            notified += 1
+
+        elif count >= n2:
+            # ── Второе уведомление ────────────────────────────────────
+            if await _sent_today(db, "complaint_warning_2", target_type, target_id):
+                continue
+            if owner_id:
+                db.add(_notif(
+                    owner_id,
+                    "⚠️ Критически много жалоб",
+                    (f"На ваш профиль поступило уже {count} жалоб. "
+                     f"При {n_block} жалобах аккаунт будет заблокирован на {block_days} дней."),
+                    "complaint_warning_2",
+                    {**data, "count": count},
                 ))
             for aid in admin_ids:
-                db.add(Notification(
-                    user_id=aid,
-                    title=f"⚠️ {count} жалоб на {target_type} #{target_id}",
-                    body=(
-                        f"Превышен порог жалоб ({threshold}) за {window_days} дней. "
-                        f"Предупреждение {new_warning_num}/{auto_block_after}."
-                    ),
-                    type="complaints_warning",
-                    data={**data, "warning_num": new_warning_num},
+                db.add(_notif(
+                    aid,
+                    f"⚠️ {count} жалоб на {target_type} #{target_id}",
+                    f"Второе предупреждение (порог блокировки: {n_block}).",
+                    "complaint_warning_2",
+                    {**data, "count": count},
                 ))
+            notified += 1
 
-        warned += 1
+        else:
+            # ── Первое уведомление (>= 10) ────────────────────────────
+            if await _sent_today(db, "complaint_warning_1", target_type, target_id):
+                continue
+            if owner_id:
+                db.add(_notif(
+                    owner_id,
+                    "На вас поступили жалобы",
+                    (f"На ваш профиль поступило {count} жалоб. "
+                     f"При {n2} жалобах придёт серьёзное предупреждение, "
+                     f"при {n_block} — блокировка на {block_days} дней."),
+                    "complaint_warning_1",
+                    {**data, "count": count},
+                ))
+            for aid in admin_ids:
+                db.add(_notif(
+                    aid,
+                    f"ℹ️ {count} жалоб на {target_type} #{target_id}",
+                    f"Первое предупреждение (порог: {n1}).",
+                    "complaint_warning_1",
+                    {**data, "count": count},
+                ))
+            notified += 1
 
-    if warned:
+    if notified or blocked:
         await db.flush()
 
     logger.info(
-        "complaints_warning: warned=%d, blocked=%d (threshold=%d, window=%dd, auto_block_after=%d)",
-        warned, blocked, threshold, window_days, auto_block_after,
+        "complaints job: notified=%d, blocked=%d (n1=%d, n2=%d, block_at=%d)",
+        notified, blocked, n1, n2, n_block,
     )
-    return {
-        "warned": warned,
-        "blocked": blocked,
-        "threshold": threshold,
-        "window_days": window_days,
-        "auto_block_after": auto_block_after,
-    }
+    return {"notified": notified, "blocked": blocked, "n1": n1, "n2": n2, "block_at": n_block}

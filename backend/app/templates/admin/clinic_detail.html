@@ -5,41 +5,9 @@
 <div class="page-header">
   <h1>🏥 {{ clinic.name_ru }}</h1>
   <p>ID #{{ clinic.id }} ·
-    {% if clinic.is_frozen %}<span style="color:#06c;">❄️ Заморожена</span>{% endif %}
-    {% if clinic.status == 'blocked' %}<span style="color:var(--error);">🚫 Заблокирована</span>{% endif %}
-    {% if clinic.status == 'active' and not clinic.is_frozen %}<span style="color:var(--success);">✓ Активна</span>{% endif %}
+    {% if clinic.status == 'active' %}<span style="color:var(--success);">✓ Активна</span>{% else %}<span style="color:var(--error);">{{ clinic.status }}</span>{% endif %}
   </p>
   <a href="/panel/clinics" class="btn btn-sm btn-ghost">← К списку</a>
-</div>
-
-{% if clinic.is_frozen %}
-<div class="alert alert-warning" style="background:#FFF7E6;">
-  ❄️ Клиника заморожена администратором. Не видна пациентам.
-  {% if clinic.frozen_reason %}<br><b>Причина:</b> {{ clinic.frozen_reason }}{% endif %}
-</div>
-{% endif %}
-
-<div class="card" style="margin-bottom:20px;">
-  <h3 style="font-size:16px; font-weight:700; margin-bottom:16px;">Действия</h3>
-  <div style="display:flex; gap:10px; flex-wrap:wrap;">
-    <form method="POST" action="/panel/clinics/{{ clinic.id }}/freeze" style="display:inline;"
-          onsubmit="if (!{{ 'true' if clinic.is_frozen else 'false' }}) { this.querySelector('[name=reason]').value = prompt('Причина заморозки:', '') || ''; return this.querySelector('[name=reason]').value !== ''; } return true;">
-      <input type="hidden" name="reason">
-      {% if clinic.is_frozen %}
-        <button class="btn btn-sm btn-success">☀️ Разморозить</button>
-      {% else %}
-        <button class="btn btn-sm" style="background:#E3F2FD; color:#06c;">❄️ Заморозить</button>
-      {% endif %}
-    </form>
-    <form method="POST" action="/panel/clinics/{{ clinic.id }}/block" style="display:inline;"
-          onsubmit="return confirm('{% if clinic.status == 'blocked' %}Разблокировать{% else %}Заблокировать{% endif %} клинику?');">
-      {% if clinic.status == 'blocked' %}
-        <button class="btn btn-sm btn-success">✓ Разблокировать</button>
-      {% else %}
-        <button class="btn btn-sm" style="background:#FFEBEE; color:var(--error);">🚫 Заблокировать</button>
-      {% endif %}
-    </form>
-  </div>
 </div>
 
 <div class="card" style="margin-bottom:20px;">

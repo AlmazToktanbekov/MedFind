@@ -29,6 +29,7 @@ class User(Base):
     fcm_token: Mapped[Optional[str]] = mapped_column(String(512))
     failed_login_attempts: Mapped[int] = mapped_column(Integer, default=0)
     locked_until: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    complaint_blocked_until: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     last_active_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     must_change_password: Mapped[bool] = mapped_column(Boolean, default=False)
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))

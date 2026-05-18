@@ -4,23 +4,8 @@
 {% block content %}
 <div class="page-header">
   <h1>👥 Пользователи</h1>
-  <p>Управление учётными записями</p>
+  <p>Просмотр учётных записей</p>
 </div>
-
-<!-- Flash: временный пароль после сброса -->
-<div id="flash-temp-pwd" class="alert alert-success" style="display:none;"></div>
-<script>
-  (function() {
-    const m = document.cookie.match(/flash_temp_password=([^;]+)/);
-    if (m) {
-      const [phone, pwd] = decodeURIComponent(m[1]).split('|');
-      const el = document.getElementById('flash-temp-pwd');
-      el.innerHTML = `🔑 Временный пароль для <b>${phone}</b>: <code style="background:#fff; padding:2px 8px; border-radius:4px; font-size:15px; font-weight:700;">${pwd}</code> &nbsp; <small>Скопируйте и передайте пользователю — он должен сменить при следующем входе.</small>`;
-      el.style.display = 'block';
-      document.cookie = 'flash_temp_password=; max-age=0';
-    }
-  })();
-</script>
 
 <div class="card" style="margin-bottom:20px;">
   <form method="GET" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
@@ -36,7 +21,6 @@
       <option value="all" {% if filter_status == 'all' %}selected{% endif %}>Все статусы</option>
       <option value="active" {% if filter_status == 'active' %}selected{% endif %}>Активные</option>
       <option value="blocked" {% if filter_status == 'blocked' %}selected{% endif %}>Заблокированные</option>
-      <option value="deleted" {% if filter_status == 'deleted' %}selected{% endif %}>Удалённые</option>
     </select>
     <button type="submit" class="btn btn-sm btn-primary">Применить</button>
     {% if filter_q or filter_role != 'all' or filter_status != 'all' %}
@@ -57,7 +41,7 @@
           <th>Статус</th>
           <th>Активность</th>
           <th>Регистрация</th>
-          <th>Действия</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -68,70 +52,30 @@
             <div style="display:flex; align-items:center; gap:10px;">
               <div class="avatar">{{ (u.full_name or u.phone)[0] }}</div>
               <div>
-                <div style="font-weight:600; font-size:14px;">
-                  {{ u.full_name or '—' }}
-                  {% if u.must_change_password %}
-                    <span title="Должен сменить пароль" style="color:var(--warning);">🔑</span>
-                  {% endif %}
-                </div>
+                <div style="font-weight:600; font-size:14px;">{{ u.full_name or '—' }}</div>
                 <div style="font-size:12px; color:var(--text2);">{{ u.email or '' }}</div>
                 {% if u.city %}<div style="font-size:11px; color:var(--text2);">📍 {{ u.city }}</div>{% endif %}
               </div>
             </div>
           </td>
           <td style="font-size:14px;">{{ u.phone }}</td>
+          <td><span class="badge" style="background:#EEF2FF; color:#1565C0; font-size:12px;">{{ u.role }}</span></td>
           <td>
-            <form method="POST" action="/panel/users/{{ u.id }}/role" style="display:inline;">
-              <select name="role" onchange="if(confirm('Сменить роль на ' + this.value + '?')) this.form.submit(); else this.value = '{{ u.role }}';"
-                      style="padding:4px 8px; border:1px solid #ddd; border-radius:6px; font-size:12px;">
-                {% set roles_list = ['patient', 'doctor', 'clinic', 'pharmacy', 'admin'] %}
-                {% for r in roles_list %}
-                  <option value="{{ r }}" {% if u.role == r %}selected{% endif %}>{{ r }}</option>
-                {% endfor %}
-              </select>
-            </form>
-          </td>
-          <td>
-            {% if u.deleted_at %}
-              <span class="badge" style="background:#FFEBEE; color:var(--error);"><span class="badge-dot"></span>Удалён</span>
-            {% elif u.is_active %}
+            {% if u.is_active %}
               <span class="badge active"><span class="badge-dot"></span>Активен</span>
             {% else %}
               <span class="badge rejected"><span class="badge-dot"></span>Заблокирован</span>
+              {% if u.complaint_blocked_until %}
+                <div style="font-size:11px; color:var(--text2);">до {{ u.complaint_blocked_until.strftime('%d.%m.%Y') }}</div>
+              {% endif %}
             {% endif %}
           </td>
           <td style="font-size:12px; color:var(--text2);">
-            {% if u.last_active_at %}
-              {{ u.last_active_at.strftime('%d.%m.%Y %H:%M') }}
-            {% else %}
-              —
-            {% endif %}
+            {% if u.last_active_at %}{{ u.last_active_at.strftime('%d.%m.%Y %H:%M') }}{% else %}—{% endif %}
           </td>
           <td style="font-size:13px; color:var(--text2);">{{ u.created_at.strftime('%d.%m.%Y') }}</td>
           <td>
-            {% if not u.deleted_at %}
-            <div style="display:flex; gap:4px; flex-wrap:wrap;">
-              <form method="POST" action="/panel/users/{{ u.id }}/block" style="display:inline;"
-                    onsubmit="return confirm('{% if u.is_active %}Заблокировать{% else %}Разблокировать{% endif %} пользователя?');">
-                {% if u.is_active %}
-                  <button type="submit" class="btn btn-sm" style="background:#FFEBEE; color:var(--error);" title="Блок">🚫</button>
-                {% else %}
-                  <button type="submit" class="btn btn-sm btn-success" title="Разблокировать">✓</button>
-                {% endif %}
-              </form>
-              <form method="POST" action="/panel/users/{{ u.id }}/reset-password" style="display:inline;"
-                    onsubmit="return confirm('Сгенерировать новый временный пароль?');">
-                <button type="submit" class="btn btn-sm btn-ghost" title="Сбросить пароль">🔑</button>
-              </form>
-              <a href="/panel/users/{{ u.id }}/history" class="btn btn-sm btn-ghost" title="История действий">📜</a>
-              <form method="POST" action="/panel/users/{{ u.id }}/delete" style="display:inline;"
-                    onsubmit="return confirm('Удалить аккаунт безвозвратно (soft-delete)?');">
-                <button type="submit" class="btn btn-sm" style="background:#FFEBEE; color:var(--error);" title="Удалить">🗑</button>
-              </form>
-            </div>
-            {% else %}
-              <span style="font-size:12px; color:var(--text2);">удалён {{ u.deleted_at.strftime('%d.%m') }}</span>
-            {% endif %}
+            <a href="/panel/users/{{ u.id }}/history" class="btn btn-sm btn-ghost" title="История">📜</a>
           </td>
         </tr>
         {% else %}

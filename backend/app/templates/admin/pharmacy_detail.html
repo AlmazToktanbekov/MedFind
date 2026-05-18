@@ -4,31 +4,8 @@
 {% block content %}
 <div class="page-header">
   <h1>💊 {{ company.name }}</h1>
-  <p>ID #{{ company.id }} ·
-    {% if company.is_frozen %}<span style="color:#06c;">❄️ Заморожена</span>
-    {% else %}<span style="color:var(--success);">✓ Активна</span>{% endif %}
-  </p>
+  <p>ID #{{ company.id }} · <span style="color:var(--success);">✓ Активна</span></p>
   <a href="/panel/pharmacies" class="btn btn-sm btn-ghost">← К списку</a>
-</div>
-
-{% if company.is_frozen %}
-<div class="alert alert-warning" style="background:#FFF7E6;">
-  ❄️ Компания заморожена. Все филиалы скрыты.
-  {% if company.frozen_reason %}<br><b>Причина:</b> {{ company.frozen_reason }}{% endif %}
-</div>
-{% endif %}
-
-<div class="card" style="margin-bottom:20px;">
-  <h3 style="font-size:16px; font-weight:700; margin-bottom:16px;">Действия</h3>
-  <form method="POST" action="/panel/pharmacies/{{ company.id }}/freeze" style="display:inline;"
-        onsubmit="if (!{{ 'true' if company.is_frozen else 'false' }}) { this.querySelector('[name=reason]').value = prompt('Причина заморозки:', '') || ''; return this.querySelector('[name=reason]').value !== ''; } return true;">
-    <input type="hidden" name="reason">
-    {% if company.is_frozen %}
-      <button class="btn btn-sm btn-success">☀️ Разморозить</button>
-    {% else %}
-      <button class="btn btn-sm" style="background:#E3F2FD; color:#06c;">❄️ Заморозить</button>
-    {% endif %}
-  </form>
 </div>
 
 <div class="card" style="margin-bottom:20px;">
@@ -48,7 +25,7 @@
   {% if company.branches %}
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Адрес</th><th>Телефон</th><th>Часы</th><th>Рейтинг</th><th>Статус</th><th></th></tr></thead>
+      <thead><tr><th>Адрес</th><th>Телефон</th><th>Часы</th><th>Рейтинг</th><th>Статус</th></tr></thead>
       <tbody>
         {% for b in company.branches %}
         <tr {% if not b.is_active %}style="opacity:0.55;"{% endif %}>
@@ -62,16 +39,6 @@
             {% else %}
               <span class="badge rejected"><span class="badge-dot"></span>Деактивирован</span>
             {% endif %}
-          </td>
-          <td>
-            <form method="POST" action="/panel/pharmacy-branches/{{ b.id }}/toggle" style="display:inline;"
-                  onsubmit="return confirm('{% if b.is_active %}Деактивировать{% else %}Активировать{% endif %} филиал?');">
-              {% if b.is_active %}
-                <button class="btn btn-sm" style="background:#FFEBEE; color:var(--error);">Деактив.</button>
-              {% else %}
-                <button class="btn btn-sm btn-success">Активировать</button>
-              {% endif %}
-            </form>
           </td>
         </tr>
         {% endfor %}

@@ -41,11 +41,11 @@ class Settings(BaseSettings):
     SCHEDULER_MINUTE: int = 0
     SCHEDULER_TIMEZONE: str = "Asia/Bishkek"
 
-    # Порог жалоб для авто-предупреждения клиники
-    COMPLAINTS_WARNING_THRESHOLD: int = 100
-    COMPLAINTS_WINDOW_DAYS: int = 10
-    # После скольких предупреждений автоматически блокировать аккаунт
-    COMPLAINTS_AUTO_BLOCK_AFTER: int = 3
+    # Жалобы: порог первого уведомления, второго, блокировки + длина блока в днях
+    COMPLAINT_NOTIFY_1: int = 10
+    COMPLAINT_NOTIFY_2: int = 100
+    COMPLAINT_BLOCK_AT: int = 300
+    COMPLAINT_BLOCK_DAYS: int = 14
 
     class Config:
         env_file = ".env"
