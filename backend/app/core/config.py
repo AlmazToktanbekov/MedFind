@@ -26,8 +26,6 @@ class Settings(BaseSettings):
     SMS_SENDER: str = "SMSPRO.KG"  # одобренное имя отправителя
     SMS_API_KEY: str = ""          # резерв (для других провайдеров)
 
-    GROQ_API_KEY: str = ""
-    OPENROUTER_API_KEY: str = ""
     MISTRAL_API_KEY: str = ""
 
     FIREBASE_PROJECT_ID: str = ""          # Firebase project ID
