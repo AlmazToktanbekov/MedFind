@@ -707,7 +707,7 @@ class _HistorySheet extends ConsumerWidget {
                       itemBuilder: (_, i) {
                         final conv = history[i];
                         return Dismissible(
-                          key: Key(conv.id),
+                          key: Key(conv.id.toString()),
                           direction: DismissDirection.endToStart,
                           background: Container(
                             alignment: Alignment.centerRight,

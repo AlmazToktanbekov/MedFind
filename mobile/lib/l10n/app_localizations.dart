@@ -148,6 +148,60 @@ abstract class AppLocalizations {
   /// **'Loading…'**
   String get commonLoading;
 
+  /// No description provided for @commonDoctors.
+  ///
+  /// In en, this message translates to:
+  /// **'Doctors'**
+  String get commonDoctors;
+
+  /// No description provided for @commonClinics.
+  ///
+  /// In en, this message translates to:
+  /// **'Clinics'**
+  String get commonClinics;
+
+  /// No description provided for @commonPharmacies.
+  ///
+  /// In en, this message translates to:
+  /// **'Pharmacies'**
+  String get commonPharmacies;
+
+  /// No description provided for @commonShowAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get commonShowAll;
+
+  /// No description provided for @roleDoctor.
+  ///
+  /// In en, this message translates to:
+  /// **'Doctor'**
+  String get roleDoctor;
+
+  /// No description provided for @roleClinic.
+  ///
+  /// In en, this message translates to:
+  /// **'Clinic'**
+  String get roleClinic;
+
+  /// No description provided for @rolePharmacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Pharmacy'**
+  String get rolePharmacy;
+
+  /// No description provided for @roleAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin'**
+  String get roleAdmin;
+
+  /// No description provided for @rolePatient.
+  ///
+  /// In en, this message translates to:
+  /// **'Patient'**
+  String get rolePatient;
+
   /// No description provided for @profileUser.
   ///
   /// In en, this message translates to:
@@ -267,6 +321,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Allow'**
   String get locationAllow;
+
+  /// No description provided for @onboardingTagDoctors.
+  ///
+  /// In en, this message translates to:
+  /// **'👨‍⚕️  Doctors'**
+  String get onboardingTagDoctors;
+
+  /// No description provided for @onboardingTagClinics.
+  ///
+  /// In en, this message translates to:
+  /// **'🏥  Clinics'**
+  String get onboardingTagClinics;
+
+  /// No description provided for @onboardingTagPharmacies.
+  ///
+  /// In en, this message translates to:
+  /// **'💊  Pharmacies'**
+  String get onboardingTagPharmacies;
+
+  /// No description provided for @onboardingTagSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'🔍  Search nearby'**
+  String get onboardingTagSearch;
+
+  /// No description provided for @onboardingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your health\nstarts here'**
+  String get onboardingTitle;
+
+  /// No description provided for @onboardingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Find a doctor, clinic or pharmacy near you in Kyrgyzstan'**
+  String get onboardingSubtitle;
+
+  /// No description provided for @authLoginTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome\nback!'**
+  String get authLoginTitle;
+
+  /// No description provided for @authLoginSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to your MedFind account'**
+  String get authLoginSubtitle;
+
+  /// No description provided for @authPhoneLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number'**
+  String get authPhoneLabel;
+
+  /// No description provided for @authPhoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'700 000 000'**
+  String get authPhoneHint;
+
+  /// No description provided for @authPhoneInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid number (9 digits)'**
+  String get authPhoneInvalid;
+
+  /// No description provided for @authPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get authPasswordLabel;
+
+  /// No description provided for @authPasswordMin6.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum 6 characters'**
+  String get authPasswordMin6;
+
+  /// No description provided for @authForgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get authForgotPassword;
+
+  /// No description provided for @authLoginButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get authLoginButton;
+
+  /// No description provided for @authRegisterButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up'**
+  String get authRegisterButton;
+
+  /// No description provided for @authNoAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'No account? '**
+  String get authNoAccount;
+
+  /// No description provided for @authLoginError.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in failed'**
+  String get authLoginError;
+
+  /// No description provided for @homeGreetingMorning.
+  ///
+  /// In en, this message translates to:
+  /// **'Good morning'**
+  String get homeGreetingMorning;
+
+  /// No description provided for @homeGreetingDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Good afternoon'**
+  String get homeGreetingDay;
+
+  /// No description provided for @homeGreetingEvening.
+  ///
+  /// In en, this message translates to:
+  /// **'Good evening'**
+  String get homeGreetingEvening;
+
+  /// No description provided for @homeQuickSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get homeQuickSearch;
+
+  /// No description provided for @homeAiHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Assistant'**
+  String get homeAiHelper;
+
+  /// No description provided for @homeAiHelperHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe your symptoms — AI will suggest\nwhich doctor to see'**
+  String get homeAiHelperHint;
+
+  /// No description provided for @homeSectionSymptoms.
+  ///
+  /// In en, this message translates to:
+  /// **'Symptoms'**
+  String get homeSectionSymptoms;
+
+  /// No description provided for @homeSectionSpecializations.
+  ///
+  /// In en, this message translates to:
+  /// **'Specializations'**
+  String get homeSectionSpecializations;
 }
 
 class _AppLocalizationsDelegate

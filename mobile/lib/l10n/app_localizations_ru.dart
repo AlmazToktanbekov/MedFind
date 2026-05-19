@@ -33,6 +33,33 @@ class AppLocalizationsRu extends AppLocalizations {
   String get commonLoading => 'Загрузка…';
 
   @override
+  String get commonDoctors => 'Врачи';
+
+  @override
+  String get commonClinics => 'Клиники';
+
+  @override
+  String get commonPharmacies => 'Аптеки';
+
+  @override
+  String get commonShowAll => 'Все';
+
+  @override
+  String get roleDoctor => 'Врач';
+
+  @override
+  String get roleClinic => 'Клиника';
+
+  @override
+  String get rolePharmacy => 'Аптека';
+
+  @override
+  String get roleAdmin => 'Админ';
+
+  @override
+  String get rolePatient => 'Пациент';
+
+  @override
   String get profileUser => 'Пользователь';
 
   @override
@@ -96,4 +123,84 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get locationAllow => 'Разрешить';
+
+  @override
+  String get onboardingTagDoctors => '👨‍⚕️  Врачи';
+
+  @override
+  String get onboardingTagClinics => '🏥  Клиники';
+
+  @override
+  String get onboardingTagPharmacies => '💊  Аптеки';
+
+  @override
+  String get onboardingTagSearch => '🔍  Поиск рядом';
+
+  @override
+  String get onboardingTitle => 'Здоровье\nначинается здесь';
+
+  @override
+  String get onboardingSubtitle =>
+      'Найдите врача, клинику или аптеку рядом с вами в Кыргызстане';
+
+  @override
+  String get authLoginTitle => 'Добро\nпожаловать!';
+
+  @override
+  String get authLoginSubtitle => 'Войдите в свой аккаунт MedFind';
+
+  @override
+  String get authPhoneLabel => 'Номер телефона';
+
+  @override
+  String get authPhoneHint => '700 000 000';
+
+  @override
+  String get authPhoneInvalid => 'Введите корректный номер (9 цифр)';
+
+  @override
+  String get authPasswordLabel => 'Пароль';
+
+  @override
+  String get authPasswordMin6 => 'Минимум 6 символов';
+
+  @override
+  String get authForgotPassword => 'Забыли пароль?';
+
+  @override
+  String get authLoginButton => 'Войти';
+
+  @override
+  String get authRegisterButton => 'Зарегистрироваться';
+
+  @override
+  String get authNoAccount => 'Нет аккаунта? ';
+
+  @override
+  String get authLoginError => 'Ошибка входа';
+
+  @override
+  String get homeGreetingMorning => 'Доброе утро';
+
+  @override
+  String get homeGreetingDay => 'Добрый день';
+
+  @override
+  String get homeGreetingEvening => 'Добрый вечер';
+
+  @override
+  String get homeQuickSearch => 'Поиск';
+
+  @override
+  String get homeAiHelper => 'ИИ-Помощник';
+
+  @override
+  String get homeAiHelperHint =>
+      'Опишите симптомы — ИИ подскажет\nк какому врачу обратиться';
+
+  @override
+  String get homeSectionSymptoms => 'Симптомы';
+
+  @override
+  String get homeSectionSpecializations => 'Специализации';
 }

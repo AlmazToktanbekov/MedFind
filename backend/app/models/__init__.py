@@ -10,8 +10,8 @@ from app.models.notification import Notification
 from app.models.admin_log import AdminLog
 from app.models.complaint import Complaint
 from app.models.search_log import SearchLog
-from app.models.broadcast import Broadcast, BroadcastDelivery
 from app.models.analytics import AnalyticsEvent
+from app.models.ai_conversation import AiConversation
 
 __all__ = [
     "User", "OTPCode",
@@ -26,6 +26,6 @@ __all__ = [
     "AdminLog",
     "Complaint",
     "SearchLog",
-    "Broadcast", "BroadcastDelivery",
     "AnalyticsEvent",
+    "AiConversation",
 ]

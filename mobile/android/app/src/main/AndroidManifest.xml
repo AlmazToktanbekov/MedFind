@@ -35,6 +35,25 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- ── FCM Push Notifications ─────────────────────────────────────
+             Канал, в который попадают push-уведомления от Firebase когда
+             приложение закрыто или в фоне. Канал создаётся программно
+             в NotificationService (medfind_high, importance: high). -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="medfind_high" />
+
+        <!-- Цвет акцента уведомления в шторке -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/notification_color" />
+
+        <!-- Иконка уведомления в статус-баре (белый силуэт). Если не задан,
+             Android показывает белый квадрат на 5.0+. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

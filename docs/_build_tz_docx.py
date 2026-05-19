@@ -117,10 +117,19 @@ def bullet(text):
     set_font(run, size=14)
 
 
+_num_counter = [0]
+
+
+def reset_numbering():
+    _num_counter[0] = 0
+
+
 def numbered(text):
-    para = doc.add_paragraph(style="List Number")
+    _num_counter[0] += 1
+    para = doc.add_paragraph()
     para.paragraph_format.line_spacing = 1.5
-    run = para.add_run(text)
+    para.paragraph_format.left_indent = Mm(12.5)
+    run = para.add_run(f"{_num_counter[0]}. {text}")
     set_font(run, size=14)
 
 
@@ -200,26 +209,24 @@ toc = [
     "1. Введение",
     "2. Цели и задачи проекта",
     "3. Целевая аудитория и роли",
-    "4. Бизнес-модель",
-    "5. Анализ конкурентов",
-    "6. Экономическая эффективность",
-    "7. Архитектура системы",
-    "8. Используемые технологии",
-    "9. Структура серверной части (Backend)",
-    "10. Структура мобильного клиента (Frontend / Flutter)",
-    "11. База данных",
-    "12. REST API — детальный перечень эндпоинтов",
-    "13. Функциональные требования по ролям",
-    "14. Нефункциональные требования",
-    "15. Дизайн-система",
-    "16. Безопасность",
-    "17. Тестирование",
-    "18. Развёртывание и сопровождение",
-    "19. Конфигурация (.env)",
-    "20. Этапы разработки и статус",
-    "21. Что предстоит сделать",
-    "22. Заключение",
-    "23. Список использованной литературы",
+    "4. Анализ конкурентов",
+    "5. Архитектура системы",
+    "6. Используемые технологии",
+    "7. Структура серверной части (Backend)",
+    "8. Структура мобильного клиента (Frontend / Flutter)",
+    "9. База данных",
+    "10. REST API — детальный перечень эндпоинтов",
+    "11. Функциональные требования по ролям",
+    "12. Нефункциональные требования",
+    "13. Дизайн-система",
+    "14. Безопасность",
+    "15. Тестирование",
+    "16. Развёртывание и сопровождение",
+    "17. Конфигурация (.env)",
+    "18. Этапы разработки и статус",
+    "19. Что предстоит сделать",
+    "20. Заключение",
+    "21. Список использованной литературы",
 ]
 for item in toc:
     p(item, indent_first=0)
@@ -235,8 +242,7 @@ p("MedFind — мобильное приложение для Кыргызста
   "платформе врачей, медицинские клиники и аптеки. Пациенты получают единый "
   "удобный канал для поиска медицинских услуг, а медицинские учреждения — "
   "инструмент для привлечения новых клиентов и управления своим профилем. "
-  "Архитектура B2B2C: пациенты пользуются бесплатно, монетизация происходит "
-  "через подписки клиник и аптечных компаний.")
+  "Пациенты, врачи, клиники и аптеки пользуются платформой бесплатно.")
 
 h2("1.2. Актуальность")
 p("На текущий момент в Кыргызской Республике отсутствует специализированный "
@@ -254,14 +260,12 @@ bullet("Аптеки не имеют единой витрины — пацие�
        "ближайший филиал аптечной сети.")
 
 h2("1.3. Предлагаемое решение")
+reset_numbering()
 numbered("Система верификации врачей через клиники: врач не виден пациентам, "
          "пока клиника не подтвердит его профиль (статус active).")
 numbered("Прямая связь с врачом/клиникой через WhatsApp, Telegram, телефонный "
          "звонок — без посредников и комиссий с консультаций.")
 numbered("Поддержка трёх языков: русский (ru), кыргызский (ky), английский (en).")
-numbered("Доступная подписка для бизнеса — Pro $20/мес, Premium $40/мес.")
-numbered("Аналитические Premium-отчёты для клиник и аптек: 9 типов событий, "
-         "8 метрик в карточках, графики активности.")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -272,10 +276,10 @@ h1("2. Цели и задачи проекта")
 h2("2.1. Главная цель")
 p("Спроектировать и реализовать кроссплатформенное мобильное приложение и "
   "серверную часть, объединяющие пациентов, врачей, клиники и аптеки в одну "
-  "экосистему, с устойчивой бизнес-моделью монетизации и готовностью к "
-  "промышленной эксплуатации.")
+  "экосистему с готовностью к промышленной эксплуатации.")
 
 h2("2.2. Технические задачи")
+reset_numbering()
 for t in [
     "Разработать кроссплатформенное мобильное приложение (iOS + Android) "
     "на Flutter с единой кодовой базой.",
@@ -285,20 +289,18 @@ for t in [
     "Реализовать многоязычность интерфейса (русский, кыргызский, английский).",
     "Внедрить систему JWT-аутентификации с защитой от брутфорса.",
     "Реализовать систему ролей: пациент, врач, клиника, аптека, администратор.",
-    "Разработать веб-административную панель на Jinja2 с аудит-логом действий.",
-    "Внедрить подсистему аналитики действий пользователей и Premium-отчёты.",
-    "Разработать систему монетизации с тарифами, лимитами, триалом и "
-    "B2B-кошельком с атомарными финансовыми транзакциями.",
+    "Разработать веб-панель администратора на Jinja2 для просмотра общей статистики платформы.",
     "Внедрить автоматизацию периодических задач через APScheduler.",
     "Покрыть критичные модули backend автоматизированными тестами (pytest).",
-    "Интегрировать AI-помощника по симптомам (Groq Llama 3.3 с fallback на "
-    "OpenRouter и Mistral).",
+    "Интегрировать AI-помощника по симптомам (Mistral AI, модель "
+    "mistral-small-latest) с серверной историей диалогов.",
     "Внедрить push-уведомления через Firebase Cloud Messaging.",
 ]:
     numbered(t)
 
 h2("2.3. Образовательные задачи")
 p("В рамках выполнения дипломного проекта изучены и применены:")
+reset_numbering()
 for t in [
     "Архитектурный паттерн Layered Architecture (data → providers → presentation).",
     "Feature-first организация мобильного кода.",
@@ -311,8 +313,6 @@ for t in [
     "Push-уведомления (Firebase Cloud Messaging).",
     "Принципы безопасной разработки (rate limiting, защита от SQL-инъекций, "
     "security headers, CORS, HSTS).",
-    "Паттерн Strategy — для гибридного подтверждения платежей.",
-    "Атомарные финансовые операции (SELECT FOR UPDATE).",
     "Планирование периодических задач (APScheduler + CronTrigger).",
 ]:
     bullet(t)
@@ -332,106 +332,20 @@ table(
     [
         ["Пациент", "patient", "Поиск медицинских услуг, отзывы, избранное", "Mobile"],
         ["Врач", "doctor", "Профиль, привязка к одной клинике", "Mobile"],
-        ["Клиника", "clinic", "Управление штатом врачей, подписка", "Mobile"],
+        ["Клиника", "clinic", "Управление штатом врачей и профилем клиники", "Mobile"],
         ["Аптека", "pharmacy", "Управление компанией и сетью филиалов", "Mobile"],
-        ["Администратор", "admin", "Управление платформой, модерация, финансы", "Веб-панель"],
+        ["Администратор", "admin", "Просмотр общей статистики платформы (только чтение)", "Веб-панель"],
     ],
     widths_mm=[28, 22, 80, 30],
 )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 4. БИЗНЕС-МОДЕЛЬ
+# 4. АНАЛИЗ КОНКУРЕНТОВ
 # ═══════════════════════════════════════════════════════════════════════════
-h1("4. Бизнес-модель")
+h1("4. Анализ конкурентов")
 
-h2("4.1. Подход B2B2C")
-p("Используется модель Business-to-Business-to-Consumer: пациенты получают "
-  "приложение бесплатно и являются трафиком, который монетизируется через "
-  "подписки клиник и аптек. Врачи всегда пользуются платформой бесплатно — "
-  "за их видимость в каталоге платит привязанная клиника.")
-
-h2("4.2. Тарифные планы")
-p("Тарифные планы одинаковы для клиник и аптек:")
-table(
-    ["Параметр", "Free", "Pro", "Premium"],
-    [
-        ["Цена / месяц (USD)", "$0", "$20", "$40"],
-        ["Цена / год (USD)", "$0", "$200 (–17%)", "$400 (–17%)"],
-        ["Лимит врачей (клиника)", "4", "∞", "∞"],
-        ["Лимит филиалов (аптека)", "9", "∞", "∞"],
-        ["Premium-отчёты", "—", "—", "✓"],
-        ["Бейдж «Премиум / Рекомендуем»", "—", "—", "✓"],
-        ["Приоритет в поиске", "—", "—", "✓"],
-    ],
-    widths_mm=[60, 25, 25, 30],
-)
-p("Скидка при годовой оплате — 2 месяца в подарок "
-  "(PLAN_YEAR_DISCOUNT_MONTHS = 2). Валюта в БД — USD; в личном кабинете "
-  "отображается в KGS по курсу USD_TO_KGS_RATE (текущее значение — 89.0).",
-  italic=True)
-
-h2("4.3. Триальный период")
-p("При регистрации клиники или аптеки автоматически активируется тариф Pro "
-  "на 30 дней бесплатно (флаг is_trial=true). Карта не требуется. Триал "
-  "выдаётся только один раз навсегда на сущность — гарантируется уникальным "
-  "индексом таблицы trial_usages по (owner_type, owner_id). По истечении "
-  "TRIAL_DAYS = 30 сущность автоматически переходит на тариф Free.")
-
-h2("4.4. Логика лимитов на тарифе Free")
-p("При попытке клиники подтвердить пятого активного врача или аптеки создать "
-  "десятый филиал backend возвращает HTTP 402 (Payment Required). Мобильное "
-  "приложение перехватывает этот код через PlanLimitException в "
-  "core/network/plan_limit_exception.dart и показывает модальное окно "
-  "PlanLimitReachedDialog с предложением перейти на Pro/Premium.")
-
-h2("4.5. Деактивация при истечении подписки")
-p("Когда подписка Pro/Premium не продлевается, фоновая задача "
-  "subscription_expiration выполняет:")
-bullet("Для клиники: первые 4 активных врача (ORDER BY created_at ASC) "
-       "остаются active, остальные → deactivated.")
-bullet("Для аптеки: первые 9 филиалов остаются is_active=true, остальные → "
-       "is_active=false.")
-bullet("Владельцу отправляется push: «Подписка истекла, деактивировано N "
-       "сущностей. Оплатите чтобы вернуть».")
-
-h2("4.6. Кошелёк B2B-счёта")
-p("Использована модель B2B-счёта, аналогичная Google Ads и Booking.com:")
-numbered("У каждой клиники/аптеки есть кошелёк в USD.")
-numbered("Пополнение через банковский перевод на расчётный счёт MedFind.")
-numbered("При создании заявки генерируется уникальный код вида MEDF-31-A7K4.")
-numbered("Подтверждение по стратегии WALLET_CONFIRM_STRATEGY: auto "
-         "(мгновенно — для MVP/демо), manual (админ сверяет код с банковской "
-         "выпиской в /panel/wallet/topups), mbank_auto (webhook от Mbank "
-         "Business API с матчингом по payment_code, защищённый "
-         "MBANK_WEBHOOK_SECRET).")
-numbered("Зачисление средств — атомарно с SELECT FOR UPDATE.")
-p("Лимиты: WALLET_MIN_TOPUP_USD = 10, WALLET_MAX_TOPUP_USD = 1000. "
-  "Срок жизни pending-заявки — WALLET_TOPUP_REQUEST_TTL_DAYS = 7 дней. "
-  "Одновременно допускается только одна pending-заявка на кошелёк "
-  "(HTTP 409 pending_request_exists).")
-
-h2("4.7. Покупка подписки из баланса")
-p("POST /wallet/me/purchase {plan, period} — атомарная транзакция:")
-code_block(
-    "BEGIN\n"
-    "  SELECT * FROM wallets WHERE owner_type=? AND owner_id=? FOR UPDATE\n"
-    "  IF balance < price → ROLLBACK + HTTP 402 insufficient_funds\n"
-    "  INSERT wallet_transactions (type=purchase, status=success, amount, ...)\n"
-    "  UPDATE wallets SET balance = balance - price\n"
-    "  CALL subscription_service.set_plan_manual(plan, period)\n"
-    "COMMIT"
-)
-p("Подписки не автопродлеваются — клиника каждый месяц или год покупает "
-  "разово.")
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# 5. АНАЛИЗ КОНКУРЕНТОВ
-# ═══════════════════════════════════════════════════════════════════════════
-h1("5. Анализ конкурентов")
-
-h2("5.1. Прямые и косвенные конкуренты")
+h2("4.1. Прямые и косвенные конкуренты")
 h3("2GIS Кыргызстан")
 p("Городской справочник. Сильные стороны: высокий охват, качественные карты, "
   "графики работы. Слабые: не специализирован на медицине, нет верификации "
@@ -439,7 +353,7 @@ p("Городской справочник. Сильные стороны: вы�
 h3("Namba Doctor")
 p("Сервис онлайн-консультаций. Сильные стороны: видеосвязь, узнаваемость "
   "бренда. Слабые: только онлайн (нет офлайн-приёма), высокая цена "
-  "(700–2000 сом), нет каталога клиник и аптек, нет подписок для клиник.")
+  "(700–2000 сом), нет каталога клиник и аптек.")
 h3("Instagram / WhatsApp-каналы врачей")
 p("Соцсети как основной канал. Сильные: бесплатно, прямая коммуникация. "
   "Слабые: нет верификации, рейтингов, фильтров, информация хаотична, "
@@ -450,7 +364,7 @@ p("Нет единой точки входа; устаревший контен�
 h3("Российские аналоги (DocDoc, ПроДокторов)")
 p("Не работают в Кыргызстане. Используются как референс по UX.")
 
-h2("5.2. Сравнительная таблица")
+h2("4.2. Сравнительная таблица")
 table(
     ["Критерий", "2GIS", "Namba", "Instagram", "MedFind"],
     [
@@ -463,7 +377,6 @@ table(
         ["Рейтинги и отзывы", "общие", "—", "—", "✓"],
         ["Звонок одним нажатием", "✓", "—", "—", "✓"],
         ["WhatsApp / Telegram deeplinks", "—", "—", "огр.", "✓"],
-        ["Premium-аналитика", "—", "—", "—", "✓"],
         ["3 языка (RU/KY/EN)", "—", "только RU", "—", "✓"],
         ["AI-помощник по симптомам", "—", "—", "—", "✓"],
         ["Бесплатно для пациента", "✓", "част.", "✓", "✓"],
@@ -471,7 +384,7 @@ table(
     widths_mm=[60, 20, 20, 25, 30],
 )
 
-h2("5.3. Уникальное торговое предложение")
+h2("4.3. Уникальное торговое предложение")
 p("MedFind — единственное в Кыргызстане приложение, объединяющее врачей, "
   "клиники и аптеки в одной системе, где каждый специалист подтверждён "
   "реальной клиникой, а связь с ним происходит за один клик через привычный "
@@ -479,67 +392,11 @@ p("MedFind — единственное в Кыргызстане приложе
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 6. ЭКОНОМИЧЕСКАЯ ЭФФЕКТИВНОСТЬ
+# 5. АРХИТЕКТУРА СИСТЕМЫ
 # ═══════════════════════════════════════════════════════════════════════════
-h1("6. Экономическая эффективность")
+h1("5. Архитектура системы")
 
-h2("6.1. Размер рынка")
-table(
-    ["Показатель", "Значение"],
-    [
-        ["TAM — весь рынок медуслуг КР", "≈ $500 млн / год"],
-        ["SAM — частная медицина в городах", "≈ $150 млн / год"],
-        ["SOM — целевая доля за 3 года", "$2–5 млн / год"],
-    ],
-    widths_mm=[110, 50],
-)
-
-h2("6.2. Целевые сегменты")
-table(
-    ["Сегмент", "Кол-во в КР", "Готовность платить"],
-    [
-        ["Частные клиники (Бишкек)", "300–500", "Высокая"],
-        ["Частные клиники (регионы)", "200–300", "Средняя"],
-        ["Врачи-частники", "3 000–5 000", "Низкая (платит клиника)"],
-        ["Аптечные сети", "50–100", "Высокая"],
-        ["Пациенты (городские, 20–45 лет)", "≈ 1.5 млн", "Бесплатно"],
-    ],
-    widths_mm=[70, 40, 50],
-)
-
-h2("6.3. Юнит-экономика")
-p("Стоимость привлечения клиента (CAC) — средневзвешенная по каналам: ≈ $50. "
-  "Пожизненная ценность клиента (LTV) для клиники на тарифе Pro:")
-code_block(
-    "LTV = ($20 × 24 мес) × 0.8 + ($40 × 24 мес) × 0.2 = $576\n"
-    "С учётом косвенных доходов: LTV ≈ $720\n"
-    "LTV / CAC = $720 / $50 = 14.4 (норма для SaaS ≥ 3)"
-)
-
-h2("6.4. Прогноз выручки")
-table(
-    ["Период", "Клиник", "Аптек", "Выручка / мес", "Выручка / год"],
-    [
-        ["Месяц 6 (триалы)", "—", "—", "$0", "$0"],
-        ["Месяц 12", "50 × $30", "10 × $50", "$2 300", "$14 000"],
-        ["Год 2", "200 × $30", "30 × $50", "$9 000", "$90 000"],
-        ["Год 3", "500 × $40", "80 × $70", "$30 600", "$367 000"],
-    ],
-    widths_mm=[35, 30, 30, 35, 35],
-)
-
-h2("6.5. Точка безубыточности")
-p("Постоянные операционные расходы ≈ $300/мес (хостинг, БД, SMS, мониторинг, "
-  "AI). Точка безубыточности достигается при ≈ 15 клиниках на Pro и "
-  "ожидается на 8–10-й месяц после публичного запуска.")
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# 7. АРХИТЕКТУРА СИСТЕМЫ
-# ═══════════════════════════════════════════════════════════════════════════
-h1("7. Архитектура системы")
-
-h2("7.1. Общая схема")
+h2("5.1. Общая схема")
 p("Система состоит из трёх крупных компонентов:")
 code_block(
     "┌───────────────────────────────┐\n"
@@ -552,7 +409,7 @@ code_block(
     "               ▼\n"
     "┌───────────────────────────────┐\n"
     "│  Backend (FastAPI / Python)   │\n"
-    "│  • Routers (17)               │\n"
+    "│  • Routers (16)               │\n"
     "│  • Services (бизнес-логика)   │\n"
     "│  • Models (SQLAlchemy)        │\n"
     "│  • Schemas (Pydantic)         │\n"
@@ -564,14 +421,13 @@ code_block(
     "│ PostgreSQL │  │ Внешние сервисы:         │\n"
     "│ + asyncpg  │  │ • Firebase Cloud Messaging│\n"
     "└────────────┘  │ • Nikita.kg SMS gateway  │\n"
-    "                │ • Groq / OpenRouter /    │\n"
-    "                │   Mistral (AI fallback)  │\n"
+    "                │ • Mistral AI             │\n"
+    "                │   (mistral-small-latest) │\n"
     "                │ • 2GIS / Google Maps     │\n"
-    "                │ • (план) Mbank Business  │\n"
     "                └──────────────────────────┘"
 )
 
-h2("7.2. Слои мобильного клиента")
+h2("5.2. Слои мобильного клиента")
 p("Каждая фича (mobile/lib/features/<name>/) разделена на три слоя:")
 bullet("data/ — Repository-классы выполняют HTTP-запросы через единый "
        "ApiClient (singleton), возвращают модели предметной области.")
@@ -581,9 +437,9 @@ bullet("providers/ — StateNotifierProvider (Riverpod) содержит биз�
 bullet("presentation/screens/ — Flutter-виджеты, читают данные через "
        "ref.watch / ref.read.")
 
-h2("7.3. Слои серверной части")
+h2("5.3. Слои серверной части")
 bullet("routers/ — FastAPI APIRouter, маршрутизация HTTP-запросов.")
-bullet("services/ — бизнес-логика (подписки, кошелёк, аналитика, SMS, FCM).")
+bullet("services/ — бизнес-логика (SMS, FCM, AI, планировщик).")
 bullet("services/jobs/ — отдельные cron-задачи для APScheduler.")
 bullet("models/ — SQLAlchemy ORM-модели (объявления таблиц).")
 bullet("schemas/ — Pydantic-схемы для валидации входа и сериализации выхода.")
@@ -592,11 +448,11 @@ bullet("templates/admin/ — Jinja2-шаблоны веб-панели.")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 8. ТЕХНОЛОГИИ
+# 6. ТЕХНОЛОГИИ
 # ═══════════════════════════════════════════════════════════════════════════
-h1("8. Используемые технологии")
+h1("6. Используемые технологии")
 
-h2("8.1. Мобильное приложение (Flutter)")
+h2("6.1. Мобильное приложение (Flutter)")
 table(
     ["Технология", "Версия", "Назначение"],
     [
@@ -614,14 +470,13 @@ table(
         ["firebase_messaging", "^15.1.3", "Push-уведомления"],
         ["geolocator", "^13.0.2", "Геолокация (ближайшие аптеки)"],
         ["url_launcher", "^6.3.1", "WhatsApp / Telegram / звонки / карты"],
-        ["fl_chart", "^0.69.0", "Графики Premium-аналитики"],
         ["freezed", "—", "Кодогенерация моделей"],
         ["flutter_localizations", "—", "Локализация RU/KY/EN"],
     ],
     widths_mm=[55, 25, 80],
 )
 
-h2("8.2. Серверная часть")
+h2("6.2. Серверная часть")
 table(
     ["Технология", "Назначение"],
     [
@@ -644,28 +499,28 @@ table(
     widths_mm=[55, 110],
 )
 
-h2("8.3. База данных")
+h2("6.3. База данных")
 bullet("PostgreSQL 15 в продакшене.")
 bullet("Асинхронный драйвер asyncpg.")
-bullet("20+ таблиц с реляционными связями (см. раздел 11).")
+bullet("20+ таблиц с реляционными связями (см. раздел 9).")
 bullet("Миграции через Alembic.")
 
-h2("8.4. Внешние сервисы")
+h2("6.4. Внешние сервисы")
 bullet("Firebase Cloud Messaging — push-уведомления (через firebase-admin "
        "SDK; ключ FIREBASE_SERVICE_ACCOUNT_PATH).")
 bullet("Nikita.kg — SMS-шлюз для OTP (через единую точку app/services/sms.py; "
        "в DEV_MODE — заглушка с возвратом dev_code в теле ответа без реальной "
        "отправки SMS; настройки SMS_LOGIN, SMS_PASSWORD, SMS_SENDER).")
-bullet("AI-помощник: основной провайдер Groq (Llama 3.3, ключ GROQ_API_KEY); "
-       "fallback на OpenRouter (OPENROUTER_API_KEY) и Mistral "
-       "(MISTRAL_API_KEY). Мультиязычный системный промпт (RU/KY/EN), "
-       "задаёт уточняющие вопросы, рекомендует профильных специалистов; "
-       "запрещено ставить диагнозы и назначать лекарства.")
+bullet("Mistral AI (mistral-small-latest, ключ MISTRAL_API_KEY) — AI-ассистент "
+       "по симптомам. Мультиязычный системный промпт (RU/KY/EN), задаёт "
+       "уточняющие вопросы, рекомендует профильных специалистов; "
+       "запрещено ставить диагнозы и назначать лекарства. История диалогов "
+       "хранится в таблице ai_conversations (max 20 на пользователя).")
 bullet("2GIS (приоритет) и Google Maps (fallback) — карты и маршруты через "
        "url_launcher с проверкой canLaunchUrl. Deeplink 2GIS: "
        "dgis://2gis.ru/routeSearch/to/<lat>,<lon>.")
 
-h2("8.5. DevOps")
+h2("6.5. DevOps")
 bullet("Docker + docker-compose — контейнеризация (см. docker-compose.yml).")
 bullet("Nginx — обратный прокси, SSL-терминация (см. nginx/).")
 bullet("Let's Encrypt — бесплатные SSL-сертификаты (init-letsencrypt.sh).")
@@ -674,11 +529,11 @@ bullet("GitHub — система контроля версий.")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 9. СТРУКТУРА BACKEND
+# 7. СТРУКТУРА BACKEND
 # ═══════════════════════════════════════════════════════════════════════════
-h1("9. Структура серверной части (Backend)")
+h1("7. Структура серверной части (Backend)")
 
-h2("9.1. Дерево директорий")
+h2("7.1. Дерево директорий")
 code_block(
     "backend/\n"
     "├── alembic/              # миграции БД\n"
@@ -690,32 +545,28 @@ code_block(
     "│   │   ├── security.py          # JWT, bcrypt, get_current_user, OTP gen\n"
     "│   │   ├── security_limits.py   # SMS/OTP/login lockout логика\n"
     "│   │   └── rate_limit.py        # slowapi Limiter\n"
-    "│   ├── models/           # 14 SQLAlchemy ORM-моделей\n"
+    "│   ├── models/           # 15 SQLAlchemy ORM-моделей\n"
     "│   ├── schemas/          # Pydantic-схемы (read/write раздельно)\n"
-    "│   ├── routers/          # 17 APIRouter\n"
+    "│   ├── routers/          # 15 APIRouter\n"
     "│   ├── services/\n"
     "│   │   ├── sms.py                # отправка SMS (Nikita.kg + DEV stub)\n"
     "│   │   ├── fcm.py                # отправка push через FCM\n"
-    "│   │   ├── subscription_service.py # бизнес-логика подписок и лимитов\n"
-    "│   │   ├── wallet_service.py     # кошелёк, коды, атомарная покупка\n"
-    "│   │   ├── analytics_service.py  # агрегации Premium-отчётов\n"
-    "│   │   ├── admin_log_service.py  # запись действий админов\n"
+    "│   │   ├── admin_log_service.py  # журнал доступа к веб-панели\n"
     "│   │   ├── scheduler.py          # APScheduler + регистрация задач\n"
     "│   │   ├── jobs/\n"
-    "│   │   │   ├── subscription_reminders.py\n"
-    "│   │   │   ├── subscription_expiration.py\n"
-    "│   │   │   ├── topup_cleanup.py\n"
-    "│   │   │   └── complaints_warning.py\n"
+    "│   │   │   ├── complaints_warning.py  # авто-блокировки по жалобам\n"
+    "│   │   │   └── unblock_expired.py     # снятие блокировок\n"
     "│   │   └── seed.py               # тестовые данные\n"
     "│   ├── templates/admin/  # Jinja2-шаблоны веб-панели\n"
     "│   └── static/admin/     # CSS/JS веб-панели\n"
-    "├── tests/                # pytest (41 тест)\n"
+    "├── tests/                # pytest (test_complaints.py)\n"
     "├── uploads/              # локальное хранилище фото\n"
     "└── requirements.txt"
 )
 
-h2("9.2. Точка входа: app/main.py")
+h2("7.2. Точка входа: app/main.py")
 p("Запускает FastAPI-приложение со следующей последовательностью:")
+reset_numbering()
 numbered("Lifespan: на startup вызывается scheduler.start_scheduler(), на "
          "shutdown — scheduler.shutdown_scheduler().")
 numbered("Подключение SlowAPIMiddleware с лимитером limiter из core/rate_limit.py.")
@@ -727,9 +578,9 @@ numbered("Middleware SecurityHeadersMiddleware — добавляет загол
          "Strict-Transport-Security (только если не DEV_MODE).")
 numbered("CORSMiddleware — в DEV разрешает все origins, в production — "
          "только белый список из BACKEND_CORS_ORIGINS с allow_credentials=True.")
-numbered("Подключение 17 роутеров через include_router.")
+numbered("Подключение 15 роутеров через include_router.")
 
-h2("9.3. Сервисный слой (app/services/)")
+h2("7.3. Сервисный слой (app/services/)")
 table(
     ["Модуль", "Назначение"],
     [
@@ -738,54 +589,42 @@ table(
          "HTTP-запрос к Nikita.kg API."],
         ["fcm.py", "Отправка push-уведомлений через Firebase Admin SDK. "
          "Загружает service account из FIREBASE_SERVICE_ACCOUNT_PATH."],
-        ["subscription_service.py", "Активация триала, проверка лимитов, "
-         "set_plan_manual для ручной активации админом / при покупке."],
-        ["wallet_service.py", "Генерация уникального payment_code "
-         "(формат MEDF-<wallet_id>-<random4>), создание заявки на пополнение, "
-         "подтверждение/отклонение, атомарная покупка подписки."],
-        ["analytics_service.py", "Запись событий, агрегация для отчётов "
-         "(GROUP BY event_type с фильтром по периоду), формирование топа врачей."],
-        ["admin_log_service.py", "Запись действий администраторов в admin_logs."],
-        ["scheduler.py", "Регистрация 4 cron-задач, "
-         "AsyncIOScheduler с CronTrigger, реестр JOBS, "
-         "функция run_job(name) для ручного запуска из админки."],
+        ["admin_log_service.py", "Журнал доступа администратора к веб-панели (audit log)."],
+        ["scheduler.py", "Регистрация 2 cron-задач (JOBS: complaints_warning, "
+         "unblock_expired), AsyncIOScheduler с CronTrigger."],
         ["seed.py", "Заполнение БД тестовыми данными (запуск: "
          "python -m app.services.seed)."],
     ],
     widths_mm=[55, 110],
 )
 
-h2("9.4. Cron-задачи (app/services/jobs/)")
-p("Все задачи зарегистрированы в scheduler.JOBS и запускаются ежедневно в "
+h2("7.4. Cron-задачи (app/services/jobs/)")
+p("Зарегистрированы в scheduler.JOBS и запускаются ежедневно в "
   "SCHEDULER_HOUR:SCHEDULER_MINUTE (09:00 по таймзоне Asia/Bishkek).")
 table(
     ["Файл", "Что делает"],
     [
-        ["subscription_reminders.py",
-         "Находит подписки, истекающие через 7 / 3 / 1 дней "
-         "(SUBSCRIPTION_REMINDER_DAYS), отправляет push владельцу."],
-        ["subscription_expiration.py",
-         "Находит истёкшие подписки → переводит на Free, деактивирует "
-         "«лишних» врачей/филиалов (по CLINIC_FREE_DOCTOR_LIMIT / "
-         "PHARMACY_FREE_BRANCH_LIMIT), отправляет уведомление."],
-        ["topup_cleanup.py",
-         "Отменяет pending-заявки на пополнение старше "
-         "WALLET_TOPUP_REQUEST_TTL_DAYS = 7 дней."],
         ["complaints_warning.py",
-         "Заглушка. После создания таблицы complaints будет проверять "
-         "превышение COMPLAINTS_WARNING_THRESHOLD = 100 жалоб за "
-         "COMPLAINTS_WINDOW_DAYS = 10 дней и слать push владельцу."],
+         "Считает все жалобы на каждую цель (врач/клиника/филиал). "
+         "При >= COMPLAINT_NOTIFY_1 (10) — первое уведомление; "
+         ">= COMPLAINT_NOTIFY_2 (100) — повторное; "
+         ">= COMPLAINT_BLOCK_AT (300) — блокировка аккаунта на "
+         "COMPLAINT_BLOCK_DAYS дней. Дедупликация: не шлёт дубли "
+         "одного типа на ту же цель в течение 24 часов."],
+        ["unblock_expired.py",
+         "Снимает блокировки у пользователей, у которых "
+         "complaint_blocked_until истёк. Устанавливает is_active = True."],
     ],
     widths_mm=[55, 110],
 )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 10. СТРУКТУРА FLUTTER
+# 8. СТРУКТУРА FLUTTER
 # ═══════════════════════════════════════════════════════════════════════════
-h1("10. Структура мобильного клиента (Flutter)")
+h1("8. Структура мобильного клиента (Flutter)")
 
-h2("10.1. Дерево директорий")
+h2("8.1. Дерево директорий")
 code_block(
     "mobile/lib/\n"
     "├── main.dart                    # точка входа, ProviderScope, MaterialApp\n"
@@ -798,41 +637,31 @@ code_block(
     "│   │   └── app_theme.dart             # ThemeData\n"
     "│   ├── router/app_router.dart         # GoRouter, ~40 маршрутов\n"
     "│   ├── network/\n"
-    "│   │   ├── api_client.dart            # singleton Dio + JWT interceptor\n"
-    "│   │   └── plan_limit_exception.dart  # перехват HTTP 402\n"
-    "│   ├── services/notification_service.dart  # FCM client side\n"
-    "│   └── analytics/analytics_tracker.dart    # POST /analytics/track\n"
+    "│   │   └── api_client.dart            # singleton Dio + JWT interceptor\n"
+    "│   └── services/notification_service.dart  # FCM client side\n"
     "├── shared/\n"
     "│   ├── models/                         # переиспользуемые модели\n"
     "│   ├── providers/                      # current_user, favorites\n"
     "│   └── widgets/                        # GradientButton, DoctorCard,\n"
     "│                                         FilterChipWidget, RatingStars,\n"
-    "│                                         CustomSearchBar, BottomNavBar,\n"
-    "│                                         PlanLimitReachedDialog, ...\n"
-    "├── features/                           # 14 фич (data/providers/presentation)\n"
+    "│                                         CustomSearchBar, BottomNavBar, ...\n"
+    "├── features/                           # 10 фич (data/providers/presentation)\n"
     "│   ├── auth/         clinics/    doctors/   pharmacies/\n"
     "│   ├── home/         search/     health/    profile/\n"
-    "│   ├── provider/     subscription/  wallet/    analytics/\n"
-    "│   ├── notifications/  ai/\n"
-    "└── l10n/\n"
-    "    ├── app_ru.arb    # русский (базовый)\n"
-    "    ├── app_ky.arb    # кыргызский\n"
-    "    └── app_en.arb    # английский"
+    "│   ├── provider/     notifications/  ai/\n"
+    "└── l10n/             # .arb-файлы будут добавлены позднее"
 )
 
-h2("10.2. Сетевой слой: core/network/api_client.dart")
+h2("8.2. Сетевой слой: core/network/api_client.dart")
 bullet("ApiClient — настоящий singleton (приватный конструктор _internal() + "
        "factory), не создаётся заново.")
 bullet("baseUrl = AppConstants.baseUrl.")
 bullet("JWT-интерцептор: читает access_token из flutter_secure_storage, "
        "добавляет заголовок Authorization: Bearer.")
 bullet("Обработка HTTP 401: вызов ApiClient.onUnauthorized (редирект на /login).")
-bullet("Обработка HTTP 402: преобразование в PlanLimitException (mobile/lib/"
-       "core/network/plan_limit_exception.dart) с типом превышения "
-       "(doctor_limit / branch_limit) для показа PlanLimitReachedDialog.")
 bullet("PrettyDioLogger включён в DEV-режиме.")
 
-h2("10.3. Маршруты GoRouter")
+h2("8.3. Маршруты GoRouter")
 p("Начальный маршрут /splash. MainScreen использует IndexedStack с 4 табами: "
   "Home, Search, Health, Profile. Вложенные маршруты открываются поверх "
   "MainScreen.")
@@ -865,13 +694,6 @@ table(
         ["/clinic/edit", "Редактирование профиля клиники"],
         ["/pharmacy/manage, /pharmacy/branch/add",
          "Управление аптекой и филиалами"],
-        ["/subscription", "SubscriptionScreen (текущий план + тарифы)"],
-        ["/wallet", "WalletScreen (баланс + транзакции)"],
-        ["/wallet/topup", "TopupScreen (заявка + код MEDF-X-Y)"],
-        ["/wallet/purchase-confirm",
-         "PurchaseConfirmScreen (подтверждение покупки подписки)"],
-        ["/clinic/analytics, /pharmacy/branch/:id/analytics",
-         "Premium-отчёты (fl_chart)"],
         ["/notifications", "История push-уведомлений"],
         ["/profile/edit", "Редактирование профиля пациента"],
         ["/ai/chat", "AI-помощник по симптомам"],
@@ -880,26 +702,21 @@ table(
     font_size=10,
 )
 
-h2("10.4. Локальное хранилище на устройстве")
+h2("8.4. Локальное хранилище на устройстве")
 bullet("FlutterSecureStorage (Keychain на iOS, Keystore на Android) — "
        "access_token, full_name, user_phone, user_role.")
 bullet("SharedPreferences — избранное (ключи doctor:<id>, clinic:<id>, "
        "branch:<id>), выбранная локаль (ключ app_locale).")
-bullet("Избранное хранится локально и НЕ синхронизируется с бэкендом.")
-
-h2("10.5. Аналитика на стороне клиента")
-p("Файл core/analytics/analytics_tracker.dart отправляет события батчем "
-  "(fire-and-forget) на POST /analytics/track. Список событий: view_clinic, "
-  "view_doctor, view_pharmacy_branch, click_call, click_whatsapp, "
-  "click_telegram, click_route, add_favorite, search.")
-
+bullet("Избранное хранится локально на устройстве. Серверная синхронизация "
+       "(роутер /favorites) реализована в backend, но mobile использует "
+       "локальное хранение через SharedPreferences.")
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 11. БАЗА ДАННЫХ
+# 9. БАЗА ДАННЫХ
 # ═══════════════════════════════════════════════════════════════════════════
-h1("11. База данных")
+h1("9. База данных")
 
-h2("11.1. Основные сущности")
+h2("9.1. Основные сущности")
 
 h3("Пользователи и аутентификация")
 bullet("users (id, phone UNIQUE, role, password_hash, full_name, fcm_token, "
@@ -942,45 +759,34 @@ bullet("symptoms (id, name_ru, name_ky, name_en).")
 bullet("symptom_specializations (symptom_id FK, specialization).")
 bullet("notifications (id, user_id FK, type, title, body, is_read, created_at).")
 
-h3("Монетизация")
-bullet("subscriptions (id, owner_type, owner_id, plan, period, is_trial, "
-       "started_at, expires_at, status).")
-bullet("trial_usages (id, owner_type, owner_id UNIQUE, used_at) — гарантия "
-       "однократности триала уникальным индексом.")
-bullet("wallets (id, owner_type, owner_id UNIQUE, balance_usd Decimal(12,2)).")
-bullet("wallet_transactions (id, wallet_id FK, type, amount_usd, "
-       "balance_after_usd, status, payment_code, related_subscription_id, "
-       "comment, admin_user_id, created_at, completed_at).")
-
-h3("Аналитика и аудит")
-bullet("analytics_events (id, event_type, target_type, target_id, "
-       "clinic_id FK NULL, pharmacy_branch_id FK NULL, user_id FK NULL, "
-       "metadata_json, created_at) — поля clinic_id и pharmacy_branch_id "
-       "ДЕНОРМАЛИЗОВАНЫ для быстрого формирования Premium-отчётов без JOIN.")
+h3("Жалобы и AI")
+bullet("complaints (id, author_id FK, target_type, target_id, reason, "
+       "comment, created_at) — полиморфные жалобы на врача/клинику/"
+       "филиал/отзыв.")
+bullet("ai_conversations (id, user_id FK, title, messages_json TEXT, "
+       "created_at, updated_at) — история AI-диалогов; автоочистка: "
+       "хранятся только последние 20 диалогов на пользователя.")
 bullet("admin_logs (id, admin_user_id FK, action, target_type, target_id, "
-       "payload_json, created_at) — журнал не удаляется.")
+       "payload_json, created_at) — журнал доступа администратора к веб-панели.")
 
-h2("11.2. Особенности проектирования")
-numbered("Денормализация для производительности: в analytics_events поля "
-         "clinic_id и pharmacy_branch_id хранятся напрямую.")
-numbered("Полиморфные связи: reviews и favorites через target_type + "
-         "target_id.")
-numbered("Атомарность финансовых операций: SELECT FOR UPDATE при списании.")
-numbered("Уникальные индексы: один кошелёк и один триал на сущность "
-         "(owner_type, owner_id).")
-numbered("Ленивая инициализация кошельков: создаются при первом обращении.")
+h2("9.2. Особенности проектирования")
+reset_numbering()
+numbered("Полиморфные связи: reviews, favorites, complaints через "
+         "target_type + target_id.")
+numbered("История AI-диалогов: messages_json хранит список [{role, text}] "
+         "без нормализации; автоочистка старше 20-й записи на пользователя.")
 numbered("Pydantic-схемы разделены: DoctorOut/ClinicOut для чтения, "
          "DoctorCreate/ClinicUpdate для записи.")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 12. REST API
+# 10. REST API
 # ═══════════════════════════════════════════════════════════════════════════
-h1("12. REST API — детальный перечень эндпоинтов")
+h1("10. REST API — детальный перечень эндпоинтов")
 
-p("Реализовано 17 роутеров. Swagger / ReDoc доступны по /docs и /redoc.")
+p("Реализовано 15 роутеров. Swagger / ReDoc доступны по /docs и /redoc.")
 
-h2("12.1. /auth — аутентификация")
+h2("10.1. /auth — аутентификация")
 table(
     ["Метод", "Endpoint", "Описание", "Rate limit"],
     [
@@ -995,7 +801,7 @@ table(
     widths_mm=[18, 50, 70, 30],
 )
 
-h2("12.2. /doctors, /clinics, /pharmacies")
+h2("10.2. /doctors, /clinics, /pharmacies")
 table(
     ["Endpoint", "Описание"],
     [
@@ -1008,68 +814,53 @@ table(
         ["POST /clinics, PUT /clinics/{id}", "Создание / обновление клиники"],
         ["GET /pharmacies", "Список активных аптек"],
         ["GET /pharmacies/{id}, /pharmacies/my", "Детали / профиль компании"],
-        ["GET /pharmacy-branches/nearby", "Ближайшие филиалы (Haversine)"],
+        ["GET /pharmacy-branches/nearby", "Ближайшие филиалы (Haversine) — запланировано"],
         ["POST /pharmacies, PUT /pharmacies/{id}", "Создание / обновление"],
     ],
     widths_mm=[80, 90],
 )
 
-h2("12.3. /wallet — кошелёк")
+h2("10.3. /complaints, /ai")
 table(
     ["Endpoint", "Описание"],
     [
-        ["GET /wallet/me", "Баланс и история транзакций"],
-        ["POST /wallet/me/topup-request",
-         "Создание заявки на пополнение (валидация лимитов "
-         "$10–$1000; HTTP 409 если уже есть pending)"],
-        ["POST /wallet/me/purchase",
-         "Покупка подписки из баланса (атомарно, "
-         "HTTP 402 при insufficient_funds)"],
-        ["POST /wallet/webhook/mbank",
-         "Webhook Mbank (HTTP 501 при WALLET_CONFIRM_STRATEGY=manual)"],
+        ["POST /complaints", "Создание жалобы"],
+        ["GET /complaints/mine", "Мои жалобы"],
+        ["POST /ai/chat", "Чат с AI-ассистентом (Mistral AI)"],
+        ["GET /ai/history", "История диалогов пользователя (max 20)"],
+        ["POST /ai/history", "Сохранить диалог"],
+        ["DELETE /ai/history/{id}", "Удалить диалог"],
+        ["DELETE /ai/history", "Очистить всю историю"],
     ],
-    widths_mm=[60, 110],
+    widths_mm=[70, 100],
 )
 
-h2("12.4. /subscriptions, /analytics")
-table(
-    ["Endpoint", "Описание"],
-    [
-        ["GET /subscriptions/me", "Текущий план + срок"],
-        ["GET /subscriptions/plans", "Доступные тарифы"],
-        ["POST /analytics/track", "Трекинг событий (батчем, fire-and-forget)"],
-        ["GET /clinic/me/analytics?from=&to=", "Premium-отчёт клиники"],
-        ["GET /clinic/me/analytics/doctors", "Топ врачей клиники"],
-        ["GET /pharmacy/me/analytics/branch/{id}", "Отчёт по филиалу"],
-    ],
-    widths_mm=[80, 90],
-)
-
-h2("12.5. Остальные роутеры")
+h2("10.4. Остальные роутеры")
 table(
     ["Префикс", "Назначение"],
     [
         ["/reviews", "Отзывы с автоматическим пересчётом рейтинга"],
         ["/search", "Единый поиск; /search/specializations (27); /search/categories (25)"],
-        ["/content", "/content/articles, /content/first-aid, /content/health-tips"],
-        ["/ai", "/ai/chat — AI-помощник (Groq → OpenRouter → Mistral fallback)"],
+        ["/content", "/content/articles, /content/first-aid"],
+        ["/ai", "/ai/chat, /ai/history — AI-помощник Mistral + история диалогов"],
         ["/symptoms", "Справочник симптомов"],
         ["/favorites", "Серверное избранное (резерв)"],
         ["/notifications", "История push-уведомлений"],
         ["/upload", "POST /upload/photo — загрузка в uploads/"],
-        ["/admin", "JSON API для административных действий"],
-        ["/panel", "HTML-страницы веб-панели администратора (Jinja2)"],
+        ["/admin", "JSON API для чтения сводной статистики платформы"],
+        ["/panel", "HTML-страницы веб-панели администратора — просмотр статистики (Jinja2)"],
     ],
     widths_mm=[40, 130],
 )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 13. ФУНКЦИОНАЛЬНЫЕ ТРЕБОВАНИЯ
+# 11. ФУНКЦИОНАЛЬНЫЕ ТРЕБОВАНИЯ
 # ═══════════════════════════════════════════════════════════════════════════
-h1("13. Функциональные требования по ролям")
+h1("11. Функциональные требования по ролям")
 
-h2("13.1. Пациент")
+h2("11.1. Пациент")
+reset_numbering()
 numbered("Регистрация по номеру телефона с подтверждением OTP. "
          "Восстановление пароля через OTP по SMS. Onboarding при первом запуске.")
 numbered("Поиск: по симптомам (выбор → список врачей), по 27 специализациям, "
@@ -1084,8 +875,9 @@ numbered("AI-помощник: чат-бот по симптомам с уточ
          "запрещено ставить диагнозы и назначать лекарства.")
 numbered("Раздел «Здоровье»: «Первая помощь», образовательные статьи.")
 
-h2("13.2. Врач")
+h2("11.2. Врач")
 p("Пошаговая регистрация (7 шагов):")
+reset_numbering()
 numbered("Шаг 1: фото, ФИО, телефон.")
 numbered("Шаг 2: специализация, формат консультации (очно / онлайн / оба), цены.")
 numbered("Шаг 3: образование и стаж.")
@@ -1109,9 +901,10 @@ p("При статусе removed в личном кабинете врача п�
   "«⚠ Вас не видят пациенты — выберите новую клинику» с кнопкой возврата на "
   "шаг 7. Push отправляется врачу при каждом изменении статуса.")
 
-h2("13.3. Клиника")
+h2("11.3. Клиника")
 p("Трёхшаговая регистрация. Клиника становится активной сразу после "
   "регистрации — модерация админом не требуется. Личный кабинет:")
+reset_numbering()
 for s in [
     "«О клинике» — просмотр и редактирование.",
     "«Контакты».",
@@ -1120,40 +913,38 @@ for s in [
     "«Управление врачами» — заявки по статусам, кнопки: подтвердить, "
     "отклонить, деактивировать, активировать, удалить.",
     "«Отзывы».",
-    "«Подписка» — текущий план, баланс, покупка из кошелька.",
-    "«Отчёты» (только Premium).",
 ]:
     numbered(s)
-p("При подтверждении пятого активного врача на Free — HTTP 402 + модалка.")
 
-h2("13.4. Аптека")
+h2("11.4. Аптека")
 p("Архитектура «компания + филиалы»: pharmacy_companies + pharmacy_branches. "
   "Регистрация: (1) данные компании, (2) первый филиал. Из кабинета владелец "
-  "может добавлять новые филиалы (на Free — лимит 9, при попытке 10-го "
-  "HTTP 402 + модалка). Отчёты — по каждому филиалу отдельно (Premium).")
+  "может добавлять и редактировать филиалы.")
 
-h2("13.5. Администратор")
-p("Веб-панель на /panel (Jinja2 + cookie с JWT). 11 разделов:")
+h2("11.5. Администратор")
+p("Веб-панель на /panel (Jinja2 + cookie с JWT) предоставляет администратору "
+  "доступ к общей статистике платформы в режиме только чтения. Управление "
+  "контентом, модерация и блокировки через панель не выполняются — она служит "
+  "инструментом мониторинга. Основные разделы:")
+reset_numbering()
 for i, s in enumerate([
-    "Дашборд — регистрации, DAU, выручка, жалобы, истекающие подписки.",
-    "Пользователи — фильтр по роли, блокировка, сброс пароля, история.",
-    "Клиники — фильтр по тарифу, ручное управление подпиской, заморозка.",
-    "Аптеки — то же + список филиалов.",
-    "Врачи — статусы, фильтры, принудительное изменение.",
-    "Отзывы и жалобы — модерация, удаление с причиной.",
-    "Контент — статьи, справочники симптомов / специализаций / категорий.",
-    "Финансы — платежи, выручка, заявки на пополнение с кодами MEDF-X-Y.",
-    "Аналитика платформы — DAU/WAU/MAU, топ запросов, география.",
-    "Push-рассылки — сегментация (роль / город / план), шаблоны.",
-    "Логи действий админов — таблица admin_logs, не удаляется.",
+    "Дашборд — сводные показатели: количество регистраций за день, "
+    "число активных пользователей, число новых жалоб.",
+    "Пользователи — просмотр списка с фильтром по роли (без редактирования).",
+    "Клиники — просмотр списка и карточек.",
+    "Аптеки — просмотр списка компаний и их филиалов.",
+    "Врачи — просмотр списка со статусами.",
+    "Отзывы и жалобы — просмотр поступивших жалоб (без модерации).",
+    "Контент — просмотр справочников: симптомы, специализации, "
+    "категории клиник.",
 ], 1):
     numbered(s)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 14. НЕФУНКЦИОНАЛЬНЫЕ ТРЕБОВАНИЯ
+# 12. НЕФУНКЦИОНАЛЬНЫЕ ТРЕБОВАНИЯ
 # ═══════════════════════════════════════════════════════════════════════════
-h1("14. Нефункциональные требования")
+h1("12. Нефункциональные требования")
 
 bullet("Кроссплатформенность: единая кодовая база Flutter для iOS и Android.")
 bullet("Многоязычность: 3 языка (RU/KY/EN). Структура локализации готова "
@@ -1163,22 +954,19 @@ bullet("Производительность: среднее время откл
        "не более 500 мс при нормальной нагрузке; eager loading через "
        "selectinload для исключения N+1.")
 bullet("Безопасность хранения секретов: токены — flutter_secure_storage.")
-bullet("Атомарность финансовых операций: SELECT FOR UPDATE.")
-bullet("Покрытие тестами критичных модулей backend: 41 pytest-тест.")
+bullet("Покрытие тестами критичных модулей backend: test_complaints.py (pytest).")
 bullet("Соответствие дизайн-системе: без отклонений от палитры, радиусов, "
        "теней, типографики.")
 bullet("Единый стиль иконок: phosphor_flutter, стиль Outline.")
-bullet("Готовность к подключению банковского API: Strategy pattern + готовый "
-       "endpoint /wallet/webhook/mbank.")
-bullet("Логирование действий администраторов: admin_logs.")
+bullet("Журнал доступа администратора к веб-панели: admin_logs.")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 15. ДИЗАЙН-СИСТЕМА
+# 13. ДИЗАЙН-СИСТЕМА
 # ═══════════════════════════════════════════════════════════════════════════
-h1("15. Дизайн-система")
+h1("13. Дизайн-система")
 
-h2("15.1. Цветовая палитра (core/theme/app_colors.dart)")
+h2("13.1. Цветовая палитра (core/theme/app_colors.dart)")
 table(
     ["Назначение", "HEX"],
     [
@@ -1199,7 +987,7 @@ p("Градиенты: heroGradient (#0D47A1 → #1565C0 → #42A5F5); btnGradie
   "(#1565C0 → #2979FF). cardShadow: color=#1A1565C0, blurRadius=20, "
   "offset=(0, 8).")
 
-h2("15.2. Типографика (core/theme/app_text_styles.dart)")
+h2("13.2. Типографика (core/theme/app_text_styles.dart)")
 p("Шрифт Inter (google_fonts).")
 table(
     ["Стиль", "Размер", "Вес"],
@@ -1213,7 +1001,7 @@ table(
     widths_mm=[60, 30, 30],
 )
 
-h2("15.3. UI-компоненты")
+h2("13.3. UI-компоненты")
 bullet("Карточки: белый фон + cardShadow, borderRadius 16–20 px, padding 16 px.")
 bullet("Кнопка Primary: btnGradient, borderRadius 14 px, высота 54 px.")
 bullet("Кнопка Outlined: border 1.5 px solid #1565C0, borderRadius 14 px.")
@@ -1223,7 +1011,7 @@ bullet("Поле поиска: фон #EEF2FF, borderRadius 14 px, высота 
 bullet("Фильтр-чип активный/неактивный: primaryBlue / #EEF2FF; "
        "borderRadius 20 px.")
 
-h2("15.4. Анимации")
+h2("13.4. Анимации")
 bullet("Переходы страниц: FadeTransition + SlideTransition (снизу), 300 ms, "
        "Curves.easeInOut.")
 bullet("Hero-анимация фото: Hero(tag: 'doctor_${doctor.id}', ...).")
@@ -1232,11 +1020,11 @@ bullet("Кнопки: ScaleTransition при нажатии (scale 0.95).")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 16. БЕЗОПАСНОСТЬ
+# 14. БЕЗОПАСНОСТЬ
 # ═══════════════════════════════════════════════════════════════════════════
-h1("16. Безопасность")
+h1("14. Безопасность")
 
-h2("16.1. Аутентификация и токены")
+h2("14.1. Аутентификация и токены")
 p("Реализация в backend/app/core/security.py:")
 bullet("Хеширование паролей: bcrypt (gensalt() + checkpw).")
 bullet("JWT (python-jose): один access-токен HS256 со сроком "
@@ -1250,7 +1038,7 @@ bullet("OTP: длина 6 цифр, secrets.choice(string.digits); срок де
 bullet("Защищённое хранение на устройстве: flutter_secure_storage "
        "(Keychain на iOS, Keystore на Android).")
 
-h2("16.2. Защита от перебора (security_limits.py)")
+h2("14.2. Защита от перебора (security_limits.py)")
 table(
     ["Параметр", "Значение", "Назначение"],
     [
@@ -1277,7 +1065,7 @@ p("Дополнительно: invalidate_active_otps() помечает все 
   "валидный код. Счётчик failed_login_attempts сбрасывается при успешном "
   "входе (reset_login_failures).")
 
-h2("16.3. Защита от атак")
+h2("14.3. Защита от атак")
 bullet("Rate limiting через slowapi (Middleware SlowAPIMiddleware) + "
        "обработчик RateLimitExceeded → HTTP 429.")
 bullet("SQL Injection: использование ORM SQLAlchemy с параметризованными "
@@ -1291,22 +1079,8 @@ bullet("HSTS (Strict-Transport-Security): max-age=63072000; "
 bullet("CORS: в production allow_origins = whitelist + allow_credentials=True; "
        "в DEV — allow_origins=['*'], allow_credentials=False.")
 
-h2("16.4. Безопасность платежей")
-numbered("Не храним платёжные карты пользователей.")
-numbered("Не интегрируем напрямую банковский API на текущем этапе.")
-numbered("Двойная проверка: банк показывает поступление, администратор "
-         "сверяет payment_code (формат MEDF-<wallet_id>-<random4>).")
-numbered("Атомарные транзакции: SELECT FOR UPDATE при списании с баланса.")
-numbered("Лимиты пополнения: $10–$1000 за заявку.")
-numbered("Логирование действий администратора: admin_user_id в каждой "
-         "подтверждённой/отклонённой транзакции + запись в admin_logs.")
-numbered("Webhook от Mbank защищён MBANK_WEBHOOK_SECRET (HMAC-подпись).")
-
-h2("16.5. Защита персональных данных")
-bullet("Premium-аналитика обезличена: клиники видят агрегированные цифры, "
-       "имена и телефоны пациентов НЕ передаются.")
-bullet("Отзывы: только автор может удалить свой отзыв (или администратор по "
-       "жалобе).")
+h2("14.4. Защита персональных данных")
+bullet("Отзывы: удалить отзыв может только его автор.")
 bullet("/auth/password/forgot всегда возвращает одинаковое сообщение "
        "независимо от существования пользователя — защита от перебора номеров.")
 bullet("DEV_MODE возвращает OTP в теле ответа (dev_code) ТОЛЬКО в режиме "
@@ -1314,38 +1088,31 @@ bullet("DEV_MODE возвращает OTP в теле ответа (dev_code) Т
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 17. ТЕСТИРОВАНИЕ
+# 15. ТЕСТИРОВАНИЕ
 # ═══════════════════════════════════════════════════════════════════════════
-h1("17. Тестирование")
+h1("15. Тестирование")
 
-p("Критичные модули backend покрыты автоматизированными тестами на pytest. "
-  "Всего 41 тест в 4 модулях:")
+p("Критичные модули backend покрыты автоматизированными тестами на pytest.")
 table(
     ["Модуль", "Кол-во", "Что покрыто"],
     [
-        ["test_subscriptions.py", "11",
-         "Триал (выдача один раз, переход на Free), лимиты (4 врача / "
-         "9 филиалов), переходы планов, grace-период 30 дней"],
-        ["test_wallet.py", "17",
-         "Генерация payment_code, создание/подтверждение/отмена заявок, "
-         "атомарная покупка с проверкой баланса, защита от двойной pending"],
-        ["test_analytics.py", "6",
-         "Трекинг событий, агрегации с GROUP BY, фильтр по периоду"],
-        ["test_scheduler_jobs.py", "7",
-         "Все 4 cron-задачи APScheduler (напоминания, истечение, "
-         "очистка topup, заглушка complaints)"],
+        ["test_complaints.py", "~10",
+         "Создание жалобы, получение списка, фильтрация по цели; "
+         "авто-блокировка при превышении порогов; снятие блокировок."],
     ],
     widths_mm=[45, 22, 95],
 )
-p("Запуск всех тестов: pytest (из backend/). Все тесты зелёные.", italic=True)
+p("Запуск: pytest (из backend/). Команды для других слоёв:", italic=True)
+p("flutter test — запуск unit-тестов мобильного приложения (виджет-тесты).",
+  indent_first=0)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 18. РАЗВЁРТЫВАНИЕ
+# 16. РАЗВЁРТЫВАНИЕ
 # ═══════════════════════════════════════════════════════════════════════════
-h1("18. Развёртывание и сопровождение")
+h1("16. Развёртывание и сопровождение")
 
-h2("18.1. Команды backend")
+h2("16.1. Команды backend")
 code_block(
     "cp .env.example .env                           # первый запуск\n"
     "uvicorn app.main:app --reload                  # dev-сервер\n"
@@ -1356,7 +1123,7 @@ code_block(
 )
 p("Документация API: http://localhost:8000/docs (Swagger) и /redoc.")
 
-h2("18.2. Команды mobile (Flutter)")
+h2("16.2. Команды mobile (Flutter)")
 code_block(
     "flutter run                                                  # запуск\n"
     "flutter build apk                                            # APK\n"
@@ -1365,30 +1132,29 @@ code_block(
     "dart run build_runner watch                                  # watch\n"
 )
 
-h2("18.3. Production-инфраструктура")
+h2("16.3. Production-инфраструктура")
 bullet("Docker + docker-compose.yml — контейнеризация всех компонентов.")
 bullet("Nginx (nginx/) — обратный прокси, SSL-терминация.")
 bullet("Let's Encrypt — бесплатные SSL (init-letsencrypt.sh).")
 bullet("Скрипт deploy.sh — автоматизация деплоя.")
 
-h2("18.4. APScheduler — cron-задачи")
+h2("16.4. APScheduler — cron-задачи")
 p("Запускается из lifespan FastAPI, AsyncIOScheduler с CronTrigger "
   "(hour=SCHEDULER_HOUR=9, minute=SCHEDULER_MINUTE=0, "
   "timezone=SCHEDULER_TIMEZONE='Asia/Bishkek').")
 p("Каждая задача создаёт собственную AsyncSession, коммитит изменения, "
-  "возвращает dict со статистикой. Из админки доступен ручной запуск через "
-  "функцию scheduler.run_job(name).")
+  "возвращает dict со статистикой выполнения.")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 19. КОНФИГУРАЦИЯ
+# 17. КОНФИГУРАЦИЯ
 # ═══════════════════════════════════════════════════════════════════════════
-h1("19. Конфигурация (.env)")
+h1("17. Конфигурация (.env)")
 
 p("Все настройки в app/core/config.py (Pydantic Settings), читаются из файла "
   ".env. Полный перечень переменных:")
 
-h2("19.1. Базовые")
+h2("17.1. Базовые")
 table(
     ["Переменная", "Назначение / значение по умолчанию"],
     [
@@ -1405,7 +1171,7 @@ table(
     widths_mm=[60, 105],
 )
 
-h2("19.2. SMS (Nikita.kg)")
+h2("17.2. SMS (Nikita.kg)")
 table(
     ["Переменная", "Назначение"],
     [
@@ -1417,18 +1183,16 @@ table(
     widths_mm=[40, 125],
 )
 
-h2("19.3. AI-провайдеры")
+h2("17.3. AI-провайдер")
 table(
-    ["Переменная", "Провайдер"],
+    ["Переменная", "Назначение"],
     [
-        ["GROQ_API_KEY", "Groq — основной (Llama 3.3)"],
-        ["OPENROUTER_API_KEY", "OpenRouter — fallback"],
-        ["MISTRAL_API_KEY", "Mistral — fallback"],
+        ["MISTRAL_API_KEY", "Mistral AI (mistral-small-latest) — AI-ассистент по симптомам"],
     ],
     widths_mm=[50, 115],
 )
 
-h2("19.4. Firebase Cloud Messaging")
+h2("17.4. Firebase Cloud Messaging")
 table(
     ["Переменная", "Назначение"],
     [
@@ -1438,126 +1202,72 @@ table(
     widths_mm=[60, 105],
 )
 
-h2("19.5. Подписки и тарифы")
-table(
-    ["Переменная", "Значение", "Описание"],
-    [
-        ["CLINIC_FREE_DOCTOR_LIMIT", "4", "Макс. активных врачей на Free"],
-        ["PHARMACY_FREE_BRANCH_LIMIT", "9", "Макс. активных филиалов на Free"],
-        ["TRIAL_DAYS", "30", "Длительность триала Pro"],
-        ["PLAN_PRO_PRICE_USD", "20", "Цена Pro / месяц"],
-        ["PLAN_PREMIUM_PRICE_USD", "40", "Цена Premium / месяц"],
-        ["PLAN_YEAR_DISCOUNT_MONTHS", "2", "Месяцев в подарок при годовой оплате"],
-        ["USD_TO_KGS_RATE", "89.0", "Курс для отображения в кабинете"],
-        ["PREMIUM_REPORTS_RETENTION_DAYS", "30", "Доступ к отчётам после отмены"],
-    ],
-    widths_mm=[60, 20, 85],
-)
-
-h2("19.6. Кошелёк")
-table(
-    ["Переменная", "Значение", "Описание"],
-    [
-        ["WALLET_MIN_TOPUP_USD", "10", "Минимум пополнения"],
-        ["WALLET_MAX_TOPUP_USD", "1000", "Максимум пополнения"],
-        ["WALLET_TOPUP_REQUEST_TTL_DAYS", "7", "TTL pending-заявки"],
-        ["WALLET_CONFIRM_STRATEGY", "auto / manual / mbank_auto", "Стратегия"],
-        ["MBANK_WEBHOOK_SECRET", "—", "Секрет для подписи webhook Mbank"],
-        ["COMPANY_NAME", "ОсОО MedFind", "Реквизиты для перевода"],
-        ["COMPANY_INN, BANK_NAME,",
-         "—", "Полные банковские реквизиты"],
-        ["BANK_ACCOUNT, BANK_BIK", "", ""],
-        ["SUPPORT_PHONE", "+996700000000", "Телефон поддержки"],
-    ],
-    widths_mm=[60, 35, 70],
-)
-
-h2("19.7. APScheduler и автоматизация")
+h2("17.5. APScheduler и автоматизация")
 table(
     ["Переменная", "Значение"],
     [
         ["SCHEDULER_ENABLED", "true"],
         ["SCHEDULER_HOUR / SCHEDULER_MINUTE", "9 / 0"],
         ["SCHEDULER_TIMEZONE", "Asia/Bishkek"],
-        ["SUBSCRIPTION_REMINDER_DAYS", "[7, 3, 1]"],
-        ["TOPUP_PENDING_TTL_DAYS", "7"],
-        ["COMPLAINTS_WARNING_THRESHOLD", "100"],
-        ["COMPLAINTS_WINDOW_DAYS", "10"],
+        ["COMPLAINT_NOTIFY_1", "10 — первое уведомление"],
+        ["COMPLAINT_NOTIFY_2", "100 — второе уведомление"],
+        ["COMPLAINT_BLOCK_AT", "300 — блокировка аккаунта"],
+        ["COMPLAINT_BLOCK_DAYS", "14 — срок блокировки в днях"],
     ],
-    widths_mm=[80, 85],
+    widths_mm=[60, 105],
 )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 20. ЭТАПЫ
+# 18. ЭТАПЫ
 # ═══════════════════════════════════════════════════════════════════════════
-h1("20. Этапы разработки и статус")
+h1("18. Этапы разработки и статус")
 
 h2("Этап 0. Базовый функционал — реализован")
-bullet("Регистрация и авторизация (OTP, JWT).")
-bullet("Каталоги врачей, клиник, аптек.")
-bullet("Поиск, фильтры, отзывы, избранное.")
-bullet("AI-помощник (Groq Llama 3.3 + OpenRouter / Mistral fallback).")
-bullet("Push-уведомления через FCM.")
-bullet("Базовая веб-панель администратора.")
+bullet("Регистрация и авторизация (OTP, JWT с автообновлением токена).")
+bullet("Каталоги врачей, клиник, аптек с фильтрацией.")
+bullet("Поиск по симптомам, специализациям, свободный текст.")
+bullet("Отзывы, избранное.")
+bullet("AI-ассистент (Mistral AI, mistral-small-latest) с историей диалогов "
+       "на сервере (ai_conversations).")
+bullet("Push-уведомления через FCM (firebase_messaging + firebase-admin SDK).")
+bullet("Веб-панель администратора (Jinja2 + cookie JWT).")
 
-h2("Этап 1. Подписки и лимиты — реализован")
-bullet("Модель подписок и триалов.")
-bullet("Лимиты: 4 врача / 9 филиалов на Free.")
-bullet("Экраны выбора и просмотра тарифа.")
-bullet("Эндпоинты управления подписками в админке.")
-bullet("Перехват HTTP 402 + модалка PlanLimitReachedDialog.")
+h2("Этап 1. Система жалоб и авто-блокировки — реализован")
+bullet("Таблица complaints, роутер /complaints (POST /complaints, "
+       "GET /complaints/mine).")
+bullet("Mobile: ReportDialog во всех карточках врача, клиники, филиала аптеки.")
+bullet("APScheduler ежедневно запускает 2 задачи: complaints_warning "
+       "(уведомления и блокировки при 10/100/300 жалобах) и "
+       "unblock_expired (снятие блокировок по истечении срока).")
+bullet("pytest: test_complaints.py покрывает создание жалоб и авто-блокировки.")
 
-h2("Этап 2. Аналитика и Premium-отчёты — реализован")
-bullet("Трекинг 9 типов событий через core/analytics/analytics_tracker.dart.")
-bullet("Атомарные агрегации (GROUP BY event_type + фильтр по периоду).")
-bullet("8 метрик в карточках + столбчатый график (fl_chart).")
-bullet("Топ-врачей клиники.")
-bullet("30 дней grace-period (PREMIUM_REPORTS_RETENTION_DAYS).")
-
-h2("Этап 3. Кошелёк и платежи — реализован")
-bullet("Модели Wallet и WalletTransaction.")
-bullet("Генерация уникальных кодов MEDF-XX-XXXX.")
-bullet("Атомарная покупка с проверкой баланса.")
-bullet("Веб-страница /panel/wallet/topups для ручного подтверждения.")
-bullet("Заглушка webhook Mbank (Strategy: auto / manual / mbank_auto).")
-
-h2("Этап 4. Автоматизация — реализован")
-bullet("APScheduler запускается из lifespan FastAPI.")
-bullet("4 cron-задачи, ежедневно 09:00 (Asia/Bishkek).")
-bullet("Все задачи покрыты тестами (test_scheduler_jobs.py, 7 тестов).")
-
-h2("Этап 5. Интеграции — запланирован")
-bullet("Реальная интеграция Mbank Business API (WALLET_CONFIRM_STRATEGY → "
-       "mbank_auto).")
-bullet("Таблица complaints + активация авто-предупреждений (100 жалоб / 10 дней).")
-bullet("PDF-экспорт Premium-отчётов.")
+h2("Этап 2. Интеграции — запланирован")
+bullet("Перенос загрузки фото из uploads/ на S3-совместимое хранилище.")
 bullet("Email-рассылки.")
-bullet("Перенос загрузки фото из uploads/ на S3.")
+bullet("Запуск в App Store и Google Play.")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 21. ЧТО ПРЕДСТОИТ
+# 19. ЧТО ПРЕДСТОИТ
 # ═══════════════════════════════════════════════════════════════════════════
-h1("21. Что предстоит сделать")
+h1("19. Что предстоит сделать")
 
-h2("21.1. Краткосрочные")
-numbered("Доработка веб-панели: полный дашборд DAU/WAU/MAU, раздел "
-         "«Финансы», push-рассылки с сегментацией.")
-numbered("Таблица complaints + активация авто-предупреждений.")
-numbered("Перенос текстов в .arb-файлы (структура готова, нужно вынести "
-         "хардкод-строки из виджетов).")
-numbered("Расширение покрытия тестами (flutter_test, e2e).")
+h2("19.1. Краткосрочные")
+reset_numbering()
+numbered("Локализация: перенос хардкодированных строк в .arb-файлы "
+         "(RU, KY, EN).")
+numbered("Расширение покрытия тестами (pytest, flutter_test).")
 
-h2("21.2. Среднесрочные")
+h2("19.2. Среднесрочные")
+reset_numbering()
 numbered("Регистрация юридического лица (ОсОО MedFind).")
-numbered("Открытие расчётного счёта в банке.")
-numbered("Подключение Mbank Business API.")
 numbered("Перенос uploads/ на S3-совместимое хранилище.")
 numbered("Внедрение Sentry для мониторинга ошибок.")
-numbered("PDF-экспорт Premium-отчётов и email-рассылки.")
+numbered("Email-рассылки.")
 
-h2("21.3. Долгосрочные")
+h2("19.3. Долгосрочные")
+reset_numbering()
 numbered("Запуск в App Store и Google Play.")
 numbered("Маркетинговая кампания.")
 numbered("Партнёрство с медицинскими учреждениями.")
@@ -1566,39 +1276,36 @@ numbered("Возможное расширение в Казахстан и Уз�
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 22. ЗАКЛЮЧЕНИЕ
+# 20. ЗАКЛЮЧЕНИЕ
 # ═══════════════════════════════════════════════════════════════════════════
-h1("22. Заключение")
+h1("20. Заключение")
 
-p("Проект MedFind представляет собой полноценную медицинскую платформу "
-  "с проработанной архитектурой и реалистичной бизнес-моделью. Реализованы "
-  "все 4 запланированных этапа разработки: базовый функционал, подписки и "
-  "лимиты, Premium-аналитика, кошелёк, автоматизация через APScheduler.")
+p("Проект MedFind представляет собой медицинскую платформу для Кыргызстана "
+  "с реализованным базовым функционалом, системой жалоб с авто-блокировкой "
+  "и AI-ассистентом на Mistral AI с серверной историей диалогов. Платформа "
+  "объединяет пациентов, врачей, клиники и аптеки в единой экосистеме.")
 
 p("Особое внимание уделено:")
-numbered("Безопасности — bcrypt, JWT, защита от перебора (cooldown 60 с, "
-         "5 попыток → блокировка на 15 мин), rate limiting через slowapi, "
-         "security headers, HSTS, атомарные финансовые операции.")
+reset_numbering()
+numbered("Безопасности — bcrypt, JWT с ротацией, защита от перебора OTP "
+         "(cooldown 60 с, 5 попыток → блокировка на 15 мин), rate limiting "
+         "через slowapi, security headers, HSTS.")
 numbered("Архитектуре — слоистая структура (data/providers/presentation в "
          "Flutter; routers/services/models в FastAPI), feature-first "
-         "организация, Strategy pattern для платежей.")
-numbered("Масштабируемости — асинхронная работа с БД, eager loading "
-         "(selectinload), денормализация аналитики, готовность к интеграции "
-         "с банковским API.")
+         "организация.")
+numbered("Масштабируемости — асинхронная работа с БД (asyncpg), eager loading "
+         "(selectinload), APScheduler без Celery.")
 numbered("Пользовательскому опыту — единая дизайн-система, анимации, 3 языка, "
          "поддержка геолокации, прямые deeplinks в мессенджеры.")
-numbered("Бизнес-обоснованности — модель B2B2C; LTV/CAC = 14.4; точка "
-         "безубыточности на 8–10-й месяц.")
-numbered("Качеству кода — 41 автоматизированный тест в 4 модулях.")
 
-p("Проект готов к публичному запуску после регистрации юридического лица и "
-  "подключения банковского API для автоматизации платежей.")
+p("Следующий приоритет — расширение функциональности, локализация в .arb-файлы, "
+  "перенос загрузки фото на S3 и запуск в App Store и Google Play.")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 23. ЛИТЕРАТУРА
+# 21. ЛИТЕРАТУРА
 # ═══════════════════════════════════════════════════════════════════════════
-h1("23. Список использованной литературы")
+h1("21. Список использованной литературы")
 
 h2("Книги")
 refs = [
@@ -1612,8 +1319,6 @@ refs = [
     "Целко Дж. SQL для профессионалов. — М.: Лори, 2020. — 778 с.",
     "Уорсли Дж., Дрейк Дж. PostgreSQL. Для профессионалов. 2-е изд. — СПб.: Питер, 2022. — 752 с.",
     "Дэйт К. Введение в системы баз данных. 8-е изд. — М.: Вильямс, 2019. — 1328 с.",
-    "Рис Э. Бизнес с нуля: метод Lean Startup. — М.: Альпина Паблишер, 2021. — 256 с.",
-    "Остервальдер А., Пинье И. Построение бизнес-моделей. — М.: Альпина Паблишер, 2020. — 288 с.",
 ]
 for i, r in enumerate(refs, 1):
     p(f"{i}. {r}", indent_first=0)

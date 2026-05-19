@@ -7,6 +7,7 @@ import 'package:shimmer/shimmer.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/widgets/custom_search_bar.dart';
 import '../../../../features/pharmacies/presentation/screens/pharmacies_screen.dart';
 import '../../../../features/doctors/providers/doctors_provider.dart';
@@ -23,11 +24,11 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  String _greeting() {
+  String _greeting(AppLocalizations l) {
     final h = DateTime.now().hour;
-    if (h < 12) return 'Доброе утро';
-    if (h < 18) return 'Добрый день';
-    return 'Добрый вечер';
+    if (h < 12) return l.homeGreetingMorning;
+    if (h < 18) return l.homeGreetingDay;
+    return l.homeGreetingEvening;
   }
 
   @override
@@ -59,6 +60,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildHeader(ProfileState profile, int unreadCount) {
+    final l = AppLocalizations.of(context);
     final role = profile.role;
     final isProvider = role == 'doctor' || role == 'clinic' || role == 'pharmacy' || role == 'admin';
 
@@ -107,7 +109,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _greeting(),
+                  _greeting(l),
                   style: AppTextStyles.bodySmall.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -133,23 +135,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildQuickServices(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final items = [
       (
         PhosphorIconsFill.stethoscope,
-        'Врачи',
+        l.commonDoctors,
         AppColors.primaryBlue,
         '/main/doctors',
       ),
       (
         PhosphorIconsFill.hospital,
-        'Клиники',
+        l.commonClinics,
         AppColors.accentBlue,
         '/main/clinics',
       ),
-      (PhosphorIconsFill.pill, 'Аптеки', AppColors.warning, '/main/pharmacies'),
+      (PhosphorIconsFill.pill, l.commonPharmacies, AppColors.warning, '/main/pharmacies'),
       (
         PhosphorIconsFill.magnifyingGlass,
-        'Поиск',
+        l.homeQuickSearch,
         AppColors.success,
         '/main/search',
       ),
@@ -202,6 +205,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildAiChatBanner(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return GestureDetector(
       onTap: () => context.push('/main/ai-chat'),
       child: Container(
@@ -232,10 +236,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('ИИ-Помощник', style: AppTextStyles.labelBold),
+                  Text(l.homeAiHelper, style: AppTextStyles.labelBold),
                   const SizedBox(height: 3),
                   Text(
-                    'Опишите симптомы — ИИ подскажет\nк какому врачу обратиться',
+                    l.homeAiHelperHint,
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -268,7 +272,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SectionHeader(
-          title: 'Симптомы',
+          title: AppLocalizations.of(context).homeSectionSymptoms,
           onTapAll: () => context.push('/main/symptoms'),
         ),
         symptomsAsync.when(
@@ -304,7 +308,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SectionHeader(
-          title: 'Специализации',
+          title: AppLocalizations.of(context).homeSectionSpecializations,
           onTapAll: () => context.push('/main/specializations'),
         ),
         SizedBox(
@@ -333,7 +337,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SectionHeader(
-          title: 'Врачи',
+          title: AppLocalizations.of(context).commonDoctors,
           onTapAll: () => context.push('/main/doctors'),
         ),
         doctorsAsync.when(
@@ -480,7 +484,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SectionHeader(
-          title: 'Клиники',
+          title: AppLocalizations.of(context).commonClinics,
           onTapAll: () => context.push('/main/clinics'),
         ),
         clinicsAsync.when(
@@ -596,7 +600,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SectionHeader(
-          title: 'Аптеки',
+          title: AppLocalizations.of(context).commonPharmacies,
           onTapAll: () => context.push('/main/pharmacies'),
         ),
         branchesAsync.when(
@@ -640,7 +644,7 @@ class _SectionHeader extends StatelessWidget {
             child: Row(
               children: [
                 Text(
-                  'Все',
+                  AppLocalizations.of(context).commonShowAll,
                   style: AppTextStyles.labelBold.copyWith(
                     color: AppColors.primaryBlue,
                   ),
@@ -880,12 +884,13 @@ class _RoleBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final (IconData icon, String label, Color color) = switch (role) {
-      'doctor' => (PhosphorIconsFill.stethoscope, 'Врач', AppColors.primaryBlue),
-      'clinic' => (PhosphorIconsFill.hospital, 'Клиника', AppColors.accentBlue),
-      'pharmacy' => (PhosphorIconsFill.pill, 'Аптека', AppColors.warning),
-      'admin' => (PhosphorIconsFill.shieldCheck, 'Админ', const Color(0xFF6B21A8)),
-      _ => (PhosphorIconsFill.user, 'Пациент', AppColors.textSecondary),
+      'doctor' => (PhosphorIconsFill.stethoscope, l.roleDoctor, AppColors.primaryBlue),
+      'clinic' => (PhosphorIconsFill.hospital, l.roleClinic, AppColors.accentBlue),
+      'pharmacy' => (PhosphorIconsFill.pill, l.rolePharmacy, AppColors.warning),
+      'admin' => (PhosphorIconsFill.shieldCheck, l.roleAdmin, const Color(0xFF6B21A8)),
+      _ => (PhosphorIconsFill.user, l.rolePatient, AppColors.textSecondary),
     };
 
     if (role == 'patient') return const SizedBox.shrink();

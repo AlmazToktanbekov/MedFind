@@ -22,13 +22,10 @@ class AdminLog(Base):
 
     action: Mapped[str] = mapped_column(String(60))
     # примеры: "doctor.approve", "clinic.reject", "user.block",
-    # "user.password_reset", "subscription.set_plan",
-    # "wallet.topup_confirm", "wallet.topup_cancel",
-    # "review.delete", "article.toggle", "broadcast.send"
+    # "user.password_reset", "review.delete", "article.toggle"
 
     target_type: Mapped[Optional[str]] = mapped_column(String(30))
-    # "doctor" | "clinic" | "pharmacy" | "user" | "subscription"
-    # | "wallet_tx" | "review" | "article" | "broadcast"
+    # "doctor" | "clinic" | "pharmacy" | "user" | "review" | "article"
     target_id: Mapped[Optional[int]] = mapped_column(Integer)
 
     details: Mapped[Optional[str]] = mapped_column(Text)

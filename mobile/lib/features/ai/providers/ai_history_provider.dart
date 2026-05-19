@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/ai_history_service.dart';
+import '../data/ai_repository.dart';
 
 final aiHistoryServiceProvider =
     Provider<AiHistoryService>((_) => AiHistoryService());
@@ -23,12 +24,12 @@ class AiHistoryNotifier extends StateNotifier<AsyncValue<List<AiConversation>>> 
     }
   }
 
-  Future<void> save(List<dynamic> messages) async {
-    await _service.saveConversation(messages.cast());
+  Future<void> save(List<ChatMessage> messages) async {
+    await _service.saveConversation(messages);
     await load();
   }
 
-  Future<void> delete(String id) async {
+  Future<void> delete(int id) async {
     await _service.deleteConversation(id);
     await load();
   }

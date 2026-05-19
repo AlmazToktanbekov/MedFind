@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/widgets/gradient_button.dart';
 import '../../providers/auth_provider.dart';
 import '../../../profile/providers/profile_provider.dart';
@@ -62,7 +63,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     if (role != null) {
       await _navigateByRole(role);
     } else {
-      final error = ref.read(authProvider).errorMessage ?? 'Ошибка входа';
+      final l = AppLocalizations.of(context);
+      final error = ref.read(authProvider).errorMessage ?? l.authLoginError;
       _showError(error);
     }
   }
@@ -125,6 +127,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   @override
   Widget build(BuildContext context) {
     final isLoading = ref.watch(authProvider).status == AuthStatus.loading;
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundApp,
@@ -186,31 +189,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         ),
                         const SizedBox(height: 24),
 
-                        Text('Добро\nпожаловать!',
+                        Text(l.authLoginTitle,
                             style: AppTextStyles.headingLarge),
                         const SizedBox(height: 8),
                         Text(
-                          'Войдите в свой аккаунт MedFind',
+                          l.authLoginSubtitle,
                           style: AppTextStyles.bodyLarge
                               .copyWith(color: AppColors.textSecondary),
                         ),
                         const SizedBox(height: 40),
 
-                        _buildLabel('Номер телефона'),
+                        _buildLabel(l.authPhoneLabel),
                         const SizedBox(height: 8),
-                        _buildPhoneField(),
+                        _buildPhoneField(l),
                         const SizedBox(height: 20),
 
-                        _buildLabel('Пароль'),
+                        _buildLabel(l.authPasswordLabel),
                         const SizedBox(height: 8),
-                        _buildPasswordField(),
+                        _buildPasswordField(l),
                         const SizedBox(height: 12),
                         Align(
                           alignment: Alignment.centerRight,
                           child: GestureDetector(
                             onTap: () => context.push('/forgot-password'),
                             child: Text(
-                              'Забыли пароль?',
+                              l.authForgotPassword,
                               style: AppTextStyles.labelBold
                                   .copyWith(color: AppColors.primaryBlue),
                             ),
@@ -219,7 +222,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         const SizedBox(height: 28),
 
                         GradientButton(
-                          text: 'Войти',
+                          text: l.authLoginButton,
                           onPressed: isLoading ? null : _login,
                           isLoading: isLoading,
                         ),
@@ -229,14 +232,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              'Нет аккаунта? ',
+                              l.authNoAccount,
                               style: AppTextStyles.bodySmall
                                   .copyWith(color: AppColors.textSecondary),
                             ),
                             GestureDetector(
                               onTap: () => context.push('/register'),
                               child: Text(
-                                'Зарегистрироваться',
+                                l.authRegisterButton,
                                 style: AppTextStyles.labelBold
                                     .copyWith(color: AppColors.primaryBlue),
                               ),
@@ -260,7 +263,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         style: AppTextStyles.labelBold.copyWith(color: AppColors.textPrimary),
       );
 
-  Widget _buildPhoneField() {
+  Widget _buildPhoneField(AppLocalizations l) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.backgroundCard,
@@ -275,12 +278,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         style: AppTextStyles.bodyLarge,
         validator: (v) {
           if (v == null || v.trim().length < 9) {
-            return 'Введите корректный номер (9 цифр)';
+            return l.authPhoneInvalid;
           }
           return null;
         },
         decoration: InputDecoration(
-          hintText: '700 000 000',
+          hintText: l.authPhoneHint,
           hintStyle:
               AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
           prefixText: '+996 ',
@@ -309,7 +312,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
-  Widget _buildPasswordField() {
+  Widget _buildPasswordField(AppLocalizations l) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.backgroundCard,
@@ -321,7 +324,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         obscureText: _obscurePassword,
         style: AppTextStyles.bodyLarge,
         validator: (v) {
-          if (v == null || v.length < 6) return 'Минимум 6 символов';
+          if (v == null || v.length < 6) return l.authPasswordMin6;
           return null;
         },
         decoration: InputDecoration(

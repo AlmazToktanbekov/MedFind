@@ -32,6 +32,48 @@ async def run_job_now(name: str, _=Depends(get_current_admin)):
     return await run_job(name)
 
 
+# ─── Тестовый push (для проверки FCM после деплоя) ───────────────────────────
+
+@router.post("/test-push")
+async def send_test_push(
+    user_id: Optional[int] = Query(None, description="ID получателя; по умолчанию — текущий админ"),
+    db: AsyncSession = Depends(get_db),
+    admin=Depends(get_current_admin),
+):
+    """Шлёт тестовое push-уведомление + создаёт in-app запись.
+
+    Использование:
+      POST /admin/test-push           — себе (текущему админу)
+      POST /admin/test-push?user_id=5 — конкретному юзеру
+    """
+    from app.services.fcm import send_push
+
+    target_id = user_id or admin.id
+    r = await db.execute(select(User.fcm_token, User.phone).where(User.id == target_id))
+    row = r.first()
+    if not row:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    fcm_token, phone = row
+    await send_push(
+        fcm_token,
+        "🧪 Тест MedFind",
+        f"Push работает! ({phone})",
+        notification_type="test",
+        data={"source": "admin_test"},
+        db=db,
+        user_id=target_id,
+    )
+    await db.commit()
+    return {
+        "ok": True,
+        "user_id": target_id,
+        "phone": phone,
+        "has_fcm_token": bool(fcm_token),
+        "note": "Если has_fcm_token=false — устройство не зарегистрировало токен (не залогинился, нет разрешения или эмулятор без Play Services).",
+    }
+
+
 # ─── Жалобы (только чтение и статистика) ─────────────────────────────────────
 
 async def _resolve_target_title(target_type: str, target_id: int, db: AsyncSession) -> Optional[str]:

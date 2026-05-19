@@ -1,4 +1,3 @@
-import math
 import json
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -104,38 +103,6 @@ async def list_clinics(
     query = query.order_by(Clinic.rating.desc()).limit(limit).offset(offset)
     result = await db.execute(query)
     return result.scalars().all()
-
-
-@router.get("/nearby", response_model=List[ClinicOut])
-async def nearby_clinics(
-    lat: float = Query(..., ge=-90, le=90),
-    lng: float = Query(..., ge=-180, le=180),
-    radius_km: float = Query(10.0, gt=0, le=50.0),
-    limit: int = Query(20, le=100),
-    db: AsyncSession = Depends(get_db),
-):
-    result = await db.execute(
-        select(Clinic)
-        .options(selectinload(Clinic.photos))
-        .where(
-            Clinic.status == "active",
-            Clinic.latitude.isnot(None),
-            Clinic.longitude.isnot(None),
-        )
-    )
-    clinics = result.scalars().all()
-
-    def haversine(lat2: float, lon2: float) -> float:
-        R = 6371.0
-        p1, p2 = math.radians(lat), math.radians(lat2)
-        dp = math.radians(lat2 - lat)
-        dl = math.radians(lon2 - lng)
-        a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
-        return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-
-    nearby = [c for c in clinics if haversine(c.latitude, c.longitude) <= radius_km]
-    nearby.sort(key=lambda c: haversine(c.latitude, c.longitude))
-    return nearby[:limit]
 
 
 @router.get("/{clinic_id}", response_model=ClinicOut)

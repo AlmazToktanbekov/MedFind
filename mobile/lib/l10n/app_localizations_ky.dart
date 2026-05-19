@@ -33,6 +33,33 @@ class AppLocalizationsKy extends AppLocalizations {
   String get commonLoading => 'Жүктөлүүдө…';
 
   @override
+  String get commonDoctors => 'Дарыгерлер';
+
+  @override
+  String get commonClinics => 'Клиникалар';
+
+  @override
+  String get commonPharmacies => 'Дарыканалар';
+
+  @override
+  String get commonShowAll => 'Баары';
+
+  @override
+  String get roleDoctor => 'Дарыгер';
+
+  @override
+  String get roleClinic => 'Клиника';
+
+  @override
+  String get rolePharmacy => 'Дарыкана';
+
+  @override
+  String get roleAdmin => 'Админ';
+
+  @override
+  String get rolePatient => 'Бейтап';
+
+  @override
   String get profileUser => 'Колдонуучу';
 
   @override
@@ -96,4 +123,84 @@ class AppLocalizationsKy extends AppLocalizations {
 
   @override
   String get locationAllow => 'Уруксат берүү';
+
+  @override
+  String get onboardingTagDoctors => '👨‍⚕️  Дарыгерлер';
+
+  @override
+  String get onboardingTagClinics => '🏥  Клиникалар';
+
+  @override
+  String get onboardingTagPharmacies => '💊  Дарыканалар';
+
+  @override
+  String get onboardingTagSearch => '🔍  Жакындан издөө';
+
+  @override
+  String get onboardingTitle => 'Ден соолук\nушул жерден башталат';
+
+  @override
+  String get onboardingSubtitle =>
+      'Кыргызстанда жакын жерден дарыгерди, клиниканы же дарыкананы табыңыз';
+
+  @override
+  String get authLoginTitle => 'Кош\nкелиңиз!';
+
+  @override
+  String get authLoginSubtitle => 'MedFind аккаунтуңузга кириңиз';
+
+  @override
+  String get authPhoneLabel => 'Телефон номери';
+
+  @override
+  String get authPhoneHint => '700 000 000';
+
+  @override
+  String get authPhoneInvalid => 'Туура номер киргизиңиз (9 цифра)';
+
+  @override
+  String get authPasswordLabel => 'Сырсөз';
+
+  @override
+  String get authPasswordMin6 => 'Кеминде 6 символ';
+
+  @override
+  String get authForgotPassword => 'Сырсөздү унуттуңузбу?';
+
+  @override
+  String get authLoginButton => 'Кирүү';
+
+  @override
+  String get authRegisterButton => 'Катталуу';
+
+  @override
+  String get authNoAccount => 'Аккаунтуңуз жокпу? ';
+
+  @override
+  String get authLoginError => 'Кирүү катасы';
+
+  @override
+  String get homeGreetingMorning => 'Кутмандуу таң';
+
+  @override
+  String get homeGreetingDay => 'Кутмандуу күн';
+
+  @override
+  String get homeGreetingEvening => 'Кутмандуу кеч';
+
+  @override
+  String get homeQuickSearch => 'Издөө';
+
+  @override
+  String get homeAiHelper => 'ЖИ-Жардамчы';
+
+  @override
+  String get homeAiHelperHint =>
+      'Симптомдоруңузду жазыңыз — ЖИ\nкайсы дарыгерге барууну айтат';
+
+  @override
+  String get homeSectionSymptoms => 'Симптомдор';
+
+  @override
+  String get homeSectionSpecializations => 'Адистиктер';
 }

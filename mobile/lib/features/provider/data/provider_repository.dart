@@ -109,19 +109,14 @@ class ProviderRepository {
     await _dio.post('/pharmacy/register', data: body);
   }
 
-  Future<int> createPharmacy(Map<String, dynamic> body) async {
-    final response = await _dio.post('/pharmacies', data: body);
-    return response.data['id'] as int;
-  }
-
   Future<int> updatePharmacy(int pharmacyId, Map<String, dynamic> body) async {
-    final response = await _dio.put('/pharmacies/$pharmacyId', data: body);
+    final response = await _dio.put('/pharmacy-companies/$pharmacyId', data: body);
     return response.data['id'] as int;
   }
 
   Future<Map<String, dynamic>?> getMyPharmacy() async {
     try {
-      final response = await _dio.get('/pharmacies/my');
+      final response = await _dio.get('/pharmacy-companies/my');
       return response.data as Map<String, dynamic>?;
     } catch (_) {
       return null;

@@ -10,6 +10,16 @@
 
   "commonRetry": "Retry",
   "commonLoading": "Loading…",
+  "commonDoctors": "Doctors",
+  "commonClinics": "Clinics",
+  "commonPharmacies": "Pharmacies",
+  "commonShowAll": "All",
+
+  "roleDoctor": "Doctor",
+  "roleClinic": "Clinic",
+  "rolePharmacy": "Pharmacy",
+  "roleAdmin": "Admin",
+  "rolePatient": "Patient",
 
   "profileUser": "User",
   "profileFavorites": "Favorites",
@@ -35,5 +45,34 @@
   "locationPermissionDeniedForever": "Location access is denied. Allow it in the app settings.",
   "locationEnableGeo": "Enable location",
   "locationOpenSettings": "Open settings",
-  "locationAllow": "Allow"
+  "locationAllow": "Allow",
+
+  "onboardingTagDoctors": "👨‍⚕️  Doctors",
+  "onboardingTagClinics": "🏥  Clinics",
+  "onboardingTagPharmacies": "💊  Pharmacies",
+  "onboardingTagSearch": "🔍  Search nearby",
+  "onboardingTitle": "Your health\nstarts here",
+  "onboardingSubtitle": "Find a doctor, clinic or pharmacy near you in Kyrgyzstan",
+
+  "authLoginTitle": "Welcome\nback!",
+  "authLoginSubtitle": "Sign in to your MedFind account",
+  "authPhoneLabel": "Phone number",
+  "authPhoneHint": "700 000 000",
+  "authPhoneInvalid": "Enter a valid number (9 digits)",
+  "authPasswordLabel": "Password",
+  "authPasswordMin6": "Minimum 6 characters",
+  "authForgotPassword": "Forgot password?",
+  "authLoginButton": "Sign in",
+  "authRegisterButton": "Sign up",
+  "authNoAccount": "No account? ",
+  "authLoginError": "Sign-in failed",
+
+  "homeGreetingMorning": "Good morning",
+  "homeGreetingDay": "Good afternoon",
+  "homeGreetingEvening": "Good evening",
+  "homeQuickSearch": "Search",
+  "homeAiHelper": "AI Assistant",
+  "homeAiHelperHint": "Describe your symptoms — AI will suggest\nwhich doctor to see",
+  "homeSectionSymptoms": "Symptoms",
+  "homeSectionSpecializations": "Specializations"
 }

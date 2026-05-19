@@ -10,6 +10,16 @@
 
   "commonRetry": "Повторить",
   "commonLoading": "Загрузка…",
+  "commonDoctors": "Врачи",
+  "commonClinics": "Клиники",
+  "commonPharmacies": "Аптеки",
+  "commonShowAll": "Все",
+
+  "roleDoctor": "Врач",
+  "roleClinic": "Клиника",
+  "rolePharmacy": "Аптека",
+  "roleAdmin": "Админ",
+  "rolePatient": "Пациент",
 
   "profileUser": "Пользователь",
   "profileFavorites": "Избранные",
@@ -32,5 +42,34 @@
   "locationPermissionDeniedForever": "Доступ к геолокации запрещён. Разрешите его в настройках приложения.",
   "locationEnableGeo": "Включить геолокацию",
   "locationOpenSettings": "Открыть настройки",
-  "locationAllow": "Разрешить"
+  "locationAllow": "Разрешить",
+
+  "onboardingTagDoctors": "👨‍⚕️  Врачи",
+  "onboardingTagClinics": "🏥  Клиники",
+  "onboardingTagPharmacies": "💊  Аптеки",
+  "onboardingTagSearch": "🔍  Поиск рядом",
+  "onboardingTitle": "Здоровье\nначинается здесь",
+  "onboardingSubtitle": "Найдите врача, клинику или аптеку рядом с вами в Кыргызстане",
+
+  "authLoginTitle": "Добро\nпожаловать!",
+  "authLoginSubtitle": "Войдите в свой аккаунт MedFind",
+  "authPhoneLabel": "Номер телефона",
+  "authPhoneHint": "700 000 000",
+  "authPhoneInvalid": "Введите корректный номер (9 цифр)",
+  "authPasswordLabel": "Пароль",
+  "authPasswordMin6": "Минимум 6 символов",
+  "authForgotPassword": "Забыли пароль?",
+  "authLoginButton": "Войти",
+  "authRegisterButton": "Зарегистрироваться",
+  "authNoAccount": "Нет аккаунта? ",
+  "authLoginError": "Ошибка входа",
+
+  "homeGreetingMorning": "Доброе утро",
+  "homeGreetingDay": "Добрый день",
+  "homeGreetingEvening": "Добрый вечер",
+  "homeQuickSearch": "Поиск",
+  "homeAiHelper": "ИИ-Помощник",
+  "homeAiHelperHint": "Опишите симптомы — ИИ подскажет\nк какому врачу обратиться",
+  "homeSectionSymptoms": "Симптомы",
+  "homeSectionSpecializations": "Специализации"
 }

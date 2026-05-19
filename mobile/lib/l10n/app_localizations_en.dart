@@ -33,6 +33,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonLoading => 'Loading…';
 
   @override
+  String get commonDoctors => 'Doctors';
+
+  @override
+  String get commonClinics => 'Clinics';
+
+  @override
+  String get commonPharmacies => 'Pharmacies';
+
+  @override
+  String get commonShowAll => 'All';
+
+  @override
+  String get roleDoctor => 'Doctor';
+
+  @override
+  String get roleClinic => 'Clinic';
+
+  @override
+  String get rolePharmacy => 'Pharmacy';
+
+  @override
+  String get roleAdmin => 'Admin';
+
+  @override
+  String get rolePatient => 'Patient';
+
+  @override
   String get profileUser => 'User';
 
   @override
@@ -96,4 +123,84 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get locationAllow => 'Allow';
+
+  @override
+  String get onboardingTagDoctors => '👨‍⚕️  Doctors';
+
+  @override
+  String get onboardingTagClinics => '🏥  Clinics';
+
+  @override
+  String get onboardingTagPharmacies => '💊  Pharmacies';
+
+  @override
+  String get onboardingTagSearch => '🔍  Search nearby';
+
+  @override
+  String get onboardingTitle => 'Your health\nstarts here';
+
+  @override
+  String get onboardingSubtitle =>
+      'Find a doctor, clinic or pharmacy near you in Kyrgyzstan';
+
+  @override
+  String get authLoginTitle => 'Welcome\nback!';
+
+  @override
+  String get authLoginSubtitle => 'Sign in to your MedFind account';
+
+  @override
+  String get authPhoneLabel => 'Phone number';
+
+  @override
+  String get authPhoneHint => '700 000 000';
+
+  @override
+  String get authPhoneInvalid => 'Enter a valid number (9 digits)';
+
+  @override
+  String get authPasswordLabel => 'Password';
+
+  @override
+  String get authPasswordMin6 => 'Minimum 6 characters';
+
+  @override
+  String get authForgotPassword => 'Forgot password?';
+
+  @override
+  String get authLoginButton => 'Sign in';
+
+  @override
+  String get authRegisterButton => 'Sign up';
+
+  @override
+  String get authNoAccount => 'No account? ';
+
+  @override
+  String get authLoginError => 'Sign-in failed';
+
+  @override
+  String get homeGreetingMorning => 'Good morning';
+
+  @override
+  String get homeGreetingDay => 'Good afternoon';
+
+  @override
+  String get homeGreetingEvening => 'Good evening';
+
+  @override
+  String get homeQuickSearch => 'Search';
+
+  @override
+  String get homeAiHelper => 'AI Assistant';
+
+  @override
+  String get homeAiHelperHint =>
+      'Describe your symptoms — AI will suggest\nwhich doctor to see';
+
+  @override
+  String get homeSectionSymptoms => 'Symptoms';
+
+  @override
+  String get homeSectionSpecializations => 'Specializations';
 }

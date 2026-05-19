@@ -12,6 +12,7 @@
 """
 import logging
 from datetime import datetime, timezone, timedelta
+from typing import Optional
 
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,6 +24,7 @@ from app.models.clinic import Clinic
 from app.models.doctor import Doctor
 from app.models.pharmacy import PharmacyBranch, PharmacyCompany
 from app.models.user import User
+from app.services.fcm import send_push
 
 logger = logging.getLogger(__name__)
 
@@ -68,8 +70,15 @@ async def _sent_today(db: AsyncSession, notif_type: str, target_type: str, targe
     return False
 
 
-def _notif(user_id: int, title: str, body: str, notif_type: str, data: dict) -> Notification:
-    return Notification(user_id=user_id, title=title, body=body, type=notif_type, data=data)
+async def _fcm_token(db: AsyncSession, user_id: int) -> Optional[str]:
+    r = await db.execute(select(User.fcm_token).where(User.id == user_id))
+    return r.scalar_one_or_none()
+
+
+async def _notify(db: AsyncSession, user_id: int, title: str, body: str, notif_type: str, data: dict) -> None:
+    """In-app запись + push (если есть FCM-токен)."""
+    token = await _fcm_token(db, user_id)
+    await send_push(token, title, body, notification_type=notif_type, data=data, db=db, user_id=user_id)
 
 
 async def run(db: AsyncSession) -> dict:
@@ -110,7 +119,8 @@ async def run(db: AsyncSession) -> dict:
                     user.is_active = False
                     user.complaint_blocked_until = block_until
                     blocked += 1
-                    db.add(_notif(
+                    await _notify(
+                        db,
                         owner_id,
                         "Аккаунт заблокирован",
                         (f"Ваш аккаунт заблокирован на {block_days} дней: "
@@ -118,15 +128,16 @@ async def run(db: AsyncSession) -> dict:
                          "Свяжитесь с поддержкой."),
                         "complaint_blocked",
                         {**data, "count": count, "block_days": block_days},
-                    ))
+                    )
                     for aid in admin_ids:
-                        db.add(_notif(
+                        await _notify(
+                            db,
                             aid,
                             f"🔴 Авто-блокировка: {target_type} #{target_id}",
                             f"{count} жалоб — аккаунт заблокирован на {block_days} дней.",
                             "complaint_blocked",
                             {**data, "count": count},
-                        ))
+                        )
                     logger.warning(
                         "AUTO-BLOCKED %s #%d (%d complaints, %d days)",
                         target_type, target_id, count, block_days,
@@ -138,22 +149,24 @@ async def run(db: AsyncSession) -> dict:
             if await _sent_today(db, "complaint_warning_2", target_type, target_id):
                 continue
             if owner_id:
-                db.add(_notif(
+                await _notify(
+                    db,
                     owner_id,
                     "⚠️ Критически много жалоб",
                     (f"На ваш профиль поступило уже {count} жалоб. "
                      f"При {n_block} жалобах аккаунт будет заблокирован на {block_days} дней."),
                     "complaint_warning_2",
                     {**data, "count": count},
-                ))
+                )
             for aid in admin_ids:
-                db.add(_notif(
+                await _notify(
+                    db,
                     aid,
                     f"⚠️ {count} жалоб на {target_type} #{target_id}",
                     f"Второе предупреждение (порог блокировки: {n_block}).",
                     "complaint_warning_2",
                     {**data, "count": count},
-                ))
+                )
             notified += 1
 
         else:
@@ -161,7 +174,8 @@ async def run(db: AsyncSession) -> dict:
             if await _sent_today(db, "complaint_warning_1", target_type, target_id):
                 continue
             if owner_id:
-                db.add(_notif(
+                await _notify(
+                    db,
                     owner_id,
                     "На вас поступили жалобы",
                     (f"На ваш профиль поступило {count} жалоб. "
@@ -169,15 +183,16 @@ async def run(db: AsyncSession) -> dict:
                      f"при {n_block} — блокировка на {block_days} дней."),
                     "complaint_warning_1",
                     {**data, "count": count},
-                ))
+                )
             for aid in admin_ids:
-                db.add(_notif(
+                await _notify(
+                    db,
                     aid,
                     f"ℹ️ {count} жалоб на {target_type} #{target_id}",
                     f"Первое предупреждение (порог: {n1}).",
                     "complaint_warning_1",
                     {**data, "count": count},
-                ))
+                )
             notified += 1
 
     if notified or blocked:

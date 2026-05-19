@@ -1,3 +1,5 @@
+import 'dart:ui' show Color;
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../network/api_client.dart';
@@ -52,7 +54,8 @@ class NotificationService {
             AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(_androidChannel);
 
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings =
+        AndroidInitializationSettings('@drawable/ic_notification');
     const iosSettings = DarwinInitializationSettings();
     await _localNotifications.initialize(
       const InitializationSettings(android: androidSettings, iOS: iosSettings),
@@ -90,6 +93,8 @@ class NotificationService {
             _androidChannel.name,
             importance: Importance.high,
             priority: Priority.high,
+            icon: '@drawable/ic_notification',
+            color: const Color(0xFF1565C0),
           ),
           iOS: const DarwinNotificationDetails(),
         ),

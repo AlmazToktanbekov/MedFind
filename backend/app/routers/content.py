@@ -35,12 +35,3 @@ async def get_first_aid(db: AsyncSession = Depends(get_db)):
     )
     return result.scalars().all()
 
-
-@router.get("/health-tips", response_model=List[ArticleOut])
-async def get_health_tips(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
-        select(Article)
-        .where(Article.is_published == True, Article.category == "health_tip")
-        .order_by(Article.created_at.desc())
-    )
-    return result.scalars().all()

@@ -1,14 +1,10 @@
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/network/api_client.dart';
 import 'ai_repository.dart';
-
-const _kHistoryKey = 'ai_chat_history';
-const _kMaxHistory = 10;
 
 // ─── Модель одного диалога ─────────────────────────────────────────────────
 
 class AiConversation {
-  final String id;
+  final int id;
   final String title;
   final DateTime date;
   final List<ChatMessage> messages;
@@ -20,20 +16,11 @@ class AiConversation {
     required this.messages,
   });
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'date': date.toIso8601String(),
-        'messages': messages
-            .map((m) => {'role': m.role, 'text': m.text})
-            .toList(),
-      };
-
   factory AiConversation.fromJson(Map<String, dynamic> json) {
     return AiConversation(
-      id: json['id'] as String,
+      id: json['id'] as int,
       title: json['title'] as String,
-      date: DateTime.parse(json['date'] as String),
+      date: DateTime.parse(json['updated_at'] as String),
       messages: (json['messages'] as List)
           .map((m) => ChatMessage(
                 role: m['role'] as String,
@@ -47,12 +34,12 @@ class AiConversation {
 // ─── Сервис ────────────────────────────────────────────────────────────────
 
 class AiHistoryService {
+  final _dio = ApiClient().dio;
+
   Future<List<AiConversation>> loadHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_kHistoryKey);
-    if (raw == null) return [];
     try {
-      final list = jsonDecode(raw) as List;
+      final response = await _dio.get('/ai/history');
+      final list = response.data as List<dynamic>;
       return list
           .map((e) => AiConversation.fromJson(e as Map<String, dynamic>))
           .toList();
@@ -61,47 +48,37 @@ class AiHistoryService {
     }
   }
 
-  Future<void> saveConversation(List<ChatMessage> messages) async {
-    if (messages.isEmpty) return;
+  Future<AiConversation?> saveConversation(List<ChatMessage> messages) async {
+    if (messages.isEmpty) return null;
 
-    // Заголовок = первое сообщение пользователя, обрезать до 45 символов
-    final firstUser = messages
-        .firstWhere((m) => m.role == 'user', orElse: () => messages.first);
+    final firstUser = messages.firstWhere(
+      (m) => m.role == 'user',
+      orElse: () => messages.first,
+    );
     final title = firstUser.text.length > 45
         ? '${firstUser.text.substring(0, 45)}...'
         : firstUser.text;
 
-    final conversation = AiConversation(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      title: title,
-      date: DateTime.now(),
-      messages: messages,
-    );
-
-    final history = await loadHistory();
-
-    // Удаляем дубликат если такой же диалог уже есть (по первому сообщению)
-    history.removeWhere((c) => c.title == title);
-
-    // Вставляем новый в начало
-    history.insert(0, conversation);
-
-    // Оставляем только последние 10
-    final trimmed = history.take(_kMaxHistory).toList();
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kHistoryKey, jsonEncode(trimmed.map((c) => c.toJson()).toList()));
+    try {
+      final response = await _dio.post('/ai/history', data: {
+        'title': title,
+        'messages': messages.map((m) => {'role': m.role, 'text': m.text}).toList(),
+      });
+      return AiConversation.fromJson(response.data as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
   }
 
-  Future<void> deleteConversation(String id) async {
-    final history = await loadHistory();
-    history.removeWhere((c) => c.id == id);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kHistoryKey, jsonEncode(history.map((c) => c.toJson()).toList()));
+  Future<void> deleteConversation(int id) async {
+    try {
+      await _dio.delete('/ai/history/$id');
+    } catch (_) {}
   }
 
   Future<void> clearAll() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_kHistoryKey);
+    try {
+      await _dio.delete('/ai/history');
+    } catch (_) {}
   }
 }

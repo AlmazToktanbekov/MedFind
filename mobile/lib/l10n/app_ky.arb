@@ -10,6 +10,16 @@
 
   "commonRetry": "Кайталоо",
   "commonLoading": "Жүктөлүүдө…",
+  "commonDoctors": "Дарыгерлер",
+  "commonClinics": "Клиникалар",
+  "commonPharmacies": "Дарыканалар",
+  "commonShowAll": "Баары",
+
+  "roleDoctor": "Дарыгер",
+  "roleClinic": "Клиника",
+  "rolePharmacy": "Дарыкана",
+  "roleAdmin": "Админ",
+  "rolePatient": "Бейтап",
 
   "profileUser": "Колдонуучу",
   "profileFavorites": "Тандалмалар",
@@ -32,5 +42,34 @@
   "locationPermissionDeniedForever": "Геолокацияга уруксат жок. Колдонмонун жөндөөлөрүнөн уруксат бериңиз.",
   "locationEnableGeo": "Геолокацияны күйгүзүү",
   "locationOpenSettings": "Жөндөөлөрдү ачуу",
-  "locationAllow": "Уруксат берүү"
+  "locationAllow": "Уруксат берүү",
+
+  "onboardingTagDoctors": "👨‍⚕️  Дарыгерлер",
+  "onboardingTagClinics": "🏥  Клиникалар",
+  "onboardingTagPharmacies": "💊  Дарыканалар",
+  "onboardingTagSearch": "🔍  Жакындан издөө",
+  "onboardingTitle": "Ден соолук\nушул жерден башталат",
+  "onboardingSubtitle": "Кыргызстанда жакын жерден дарыгерди, клиниканы же дарыкананы табыңыз",
+
+  "authLoginTitle": "Кош\nкелиңиз!",
+  "authLoginSubtitle": "MedFind аккаунтуңузга кириңиз",
+  "authPhoneLabel": "Телефон номери",
+  "authPhoneHint": "700 000 000",
+  "authPhoneInvalid": "Туура номер киргизиңиз (9 цифра)",
+  "authPasswordLabel": "Сырсөз",
+  "authPasswordMin6": "Кеминде 6 символ",
+  "authForgotPassword": "Сырсөздү унуттуңузбу?",
+  "authLoginButton": "Кирүү",
+  "authRegisterButton": "Катталуу",
+  "authNoAccount": "Аккаунтуңуз жокпу? ",
+  "authLoginError": "Кирүү катасы",
+
+  "homeGreetingMorning": "Кутмандуу таң",
+  "homeGreetingDay": "Кутмандуу күн",
+  "homeGreetingEvening": "Кутмандуу кеч",
+  "homeQuickSearch": "Издөө",
+  "homeAiHelper": "ЖИ-Жардамчы",
+  "homeAiHelperHint": "Симптомдоруңузду жазыңыз — ЖИ\nкайсы дарыгерге барууну айтат",
+  "homeSectionSymptoms": "Симптомдор",
+  "homeSectionSpecializations": "Адистиктер"
 }

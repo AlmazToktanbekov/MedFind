@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/widgets/gradient_button.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -39,6 +40,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       body: Stack(
         children: [
@@ -78,25 +80,25 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             top: 130,
             left: 28,
             child: _FloatingTag(
-                label: '👨‍⚕️  Врачи', delay: 200, ctrl: _ctrl),
+                label: l.onboardingTagDoctors, delay: 200, ctrl: _ctrl),
           ),
           Positioned(
             top: 200,
             right: 24,
             child: _FloatingTag(
-                label: '🏥  Клиники', delay: 350, ctrl: _ctrl),
+                label: l.onboardingTagClinics, delay: 350, ctrl: _ctrl),
           ),
           Positioned(
             top: 280,
             left: 52,
             child: _FloatingTag(
-                label: '💊  Аптеки', delay: 500, ctrl: _ctrl),
+                label: l.onboardingTagPharmacies, delay: 500, ctrl: _ctrl),
           ),
           Positioned(
             top: 355,
             right: 40,
             child: _FloatingTag(
-                label: '🔍  Поиск рядом', delay: 650, ctrl: _ctrl),
+                label: l.onboardingTagSearch, delay: 650, ctrl: _ctrl),
           ),
 
           // Центральная иконка
@@ -152,12 +154,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Здоровье\nначинается здесь',
+                        l.onboardingTitle,
                         style: AppTextStyles.headingLarge,
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Найдите врача, клинику или аптеку рядом с вами в Кыргызстане',
+                        l.onboardingSubtitle,
                         style: AppTextStyles.bodyLarge
                             .copyWith(color: AppColors.textSecondary),
                       ),
@@ -165,7 +167,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
                       // Войти
                       GradientButton(
-                        text: 'Войти',
+                        text: l.authLoginButton,
                         onPressed: () => context.push('/login'),
                       ),
                       const SizedBox(height: 14),
@@ -186,7 +188,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                             ),
                           ),
                           child: Text(
-                            'Зарегистрироваться',
+                            l.authRegisterButton,
                             style: AppTextStyles.bodyLarge.copyWith(
                               color: AppColors.primaryBlue,
                               fontWeight: FontWeight.w600,
