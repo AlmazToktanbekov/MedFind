@@ -18,7 +18,6 @@ from app.models.user import User
 from app.models.doctor import Doctor, DoctorContact, DoctorService, DoctorSchedule
 from app.models.clinic import Clinic
 from app.models.pharmacy import PharmacyCompany
-from app.models.article import Article
 from app.models.admin_log import AdminLog
 from app.models.complaint import Complaint
 from app.models.pharmacy import PharmacyBranch
@@ -419,59 +418,6 @@ async def panel_user_history(
     )
 
 
-# ── Статьи ────────────────────────────────────────────────────────────────────
-
-@router.get("/articles", response_class=HTMLResponse)
-async def articles_list(
-    request: Request,
-    cat: str = "all",
-    db: AsyncSession = Depends(get_db),
-):
-    admin = await _get_admin(request, db)
-    if not admin:
-        return _redirect_login()
-
-    pc = await _pending_count(db)
-    q = select(Article).order_by(Article.created_at.desc())
-    if cat != "all":
-        q = q.where(Article.category == cat)
-    articles = (await db.execute(q)).scalars().all()
-
-    counts = {"all": 0, "article": 0, "first_aid": 0, "health_tip": 0}
-    for c in ("all", "article", "first_aid", "health_tip"):
-        sq = select(func.count(Article.id))
-        if c != "all":
-            sq = sq.where(Article.category == c)
-        counts[c] = (await db.execute(sq)).scalar() or 0
-
-    return templates.TemplateResponse(
-        "admin/articles.html",
-        _ctx(request, "articles", {"articles": articles, "counts": counts, "current_cat": cat}, pc),
-    )
-
-
-@router.post("/articles/{article_id}/toggle")
-async def toggle_article(
-    request: Request,
-    article_id: int,
-    db: AsyncSession = Depends(get_db),
-):
-    admin = await _get_admin(request, db)
-    if not admin:
-        return _redirect_login()
-
-    result = await db.execute(select(Article).where(Article.id == article_id))
-    article = result.scalar_one_or_none()
-    if article:
-        article.is_published = not article.is_published
-        await log_action(db, admin_id=admin.id, action="article.toggle",
-                         target_type="article", target_id=article.id,
-                         details=f"is_published -> {article.is_published}", request=request)
-        await db.commit()
-
-    return RedirectResponse(request.headers.get("referer", "/panel/articles"), status_code=302)
-
-
 # ── Логи действий админов ────────────────────────────────────────────────────
 
 @router.get("/admin-logs", response_class=HTMLResponse)
@@ -756,103 +702,156 @@ async def panel_analytics(
     )
 
 
-# ── Контент: создание/редактирование статей ──────────────────────────────
+# ── Отзывы ────────────────────────────────────────────────────────────────────
 
-@router.get("/articles/new", response_class=HTMLResponse)
-async def panel_article_new(request: Request, db: AsyncSession = Depends(get_db)):
+async def _review_target_title(db: AsyncSession, review) -> tuple[str, str]:
+    if review.doctor_id:
+        d = (await db.execute(select(Doctor).where(Doctor.id == review.doctor_id))).scalar_one_or_none()
+        return ("Врач", d.full_name_ru if d else f"#{review.doctor_id}")
+    if review.clinic_id:
+        c = (await db.execute(select(Clinic).where(Clinic.id == review.clinic_id))).scalar_one_or_none()
+        return ("Клиника", c.name_ru if c else f"#{review.clinic_id}")
+    if review.branch_id:
+        b = (await db.execute(select(PharmacyBranch).where(PharmacyBranch.id == review.branch_id))).scalar_one_or_none()
+        return ("Филиал аптеки", (b.address or f"#{review.branch_id}") if b else f"#{review.branch_id}")
+    return ("—", "—")
+
+
+@router.get("/reviews", response_class=HTMLResponse)
+async def panel_reviews(request: Request, rating: str = "all", db: AsyncSession = Depends(get_db)):
     admin = await _get_admin(request, db)
     if not admin:
         return _redirect_login()
+
+    q = select(Review, User).join(User, Review.author_id == User.id, isouter=True)
+    if rating in ("1", "2", "3", "4", "5"):
+        q = q.where(Review.rating == int(rating))
+    q = q.order_by(Review.created_at.desc()).limit(200)
+    rows = (await db.execute(q)).all()
+
+    items = []
+    for r, author in rows:
+        ttype, ttitle = await _review_target_title(db, r)
+        items.append({
+            "id": r.id,
+            "target_type": ttype,
+            "target_title": ttitle,
+            "rating": int(r.rating or 0),
+            "text": r.text,
+            "author_name": author.full_name if author else None,
+            "author_phone": author.phone if author else None,
+            "created_at": r.created_at,
+        })
+
+    total = (await db.execute(select(func.count(Review.id)))).scalar() or 0
     pc = await _pending_count(db)
     return templates.TemplateResponse(
-        "admin/article_edit.html",
-        _ctx(request, "articles", {"article": None}, pending_count=pc),
+        "admin/reviews.html",
+        _ctx(request, "reviews", {"items": items, "rating": rating, "total": total}, pending_count=pc),
     )
 
 
-@router.get("/articles/{article_id}/edit", response_class=HTMLResponse)
-async def panel_article_edit_form(
-    article_id: int, request: Request, db: AsyncSession = Depends(get_db),
-):
-    admin = await _get_admin(request, db)
-    if not admin:
-        return _redirect_login()
-    article = (await db.execute(select(Article).where(Article.id == article_id))).scalar_one_or_none()
-    if not article:
-        return RedirectResponse("/panel/articles", status_code=302)
-    pc = await _pending_count(db)
-    return templates.TemplateResponse(
-        "admin/article_edit.html",
-        _ctx(request, "articles", {"article": article}, pending_count=pc),
-    )
-
-
-@router.post("/articles/save")
-async def panel_article_save(
+@router.post("/reviews/{review_id}/delete")
+async def panel_review_delete(
+    review_id: int,
     request: Request,
-    article_id: str = Form(default=""),
-    title_ru: str = Form(...),
-    title_kg: str = Form(default=""),
-    title_en: str = Form(default=""),
-    body_ru: str = Form(default=""),
-    body_kg: str = Form(default=""),
-    body_en: str = Form(default=""),
-    category: str = Form(default="article"),
-    image_url: str = Form(default=""),
-    is_published: str = Form(default=""),
+    reason: str = Form(default=""),
     db: AsyncSession = Depends(get_db),
 ):
     admin = await _get_admin(request, db)
     if not admin:
         return _redirect_login()
 
-    if article_id and article_id.isdigit():
-        article = (await db.execute(select(Article).where(Article.id == int(article_id)))).scalar_one_or_none()
-        if not article:
-            return RedirectResponse("/panel/articles", status_code=302)
-        action_kind = "update"
-    else:
-        article = Article()
-        db.add(article)
-        action_kind = "create"
+    review = (await db.execute(select(Review).where(Review.id == review_id))).scalar_one_or_none()
+    if review:
+        from app.routers.reviews import (
+            _recalc_doctor_rating, _recalc_clinic_rating, _recalc_branch_rating,
+        )
+        doctor_id, clinic_id, branch_id = review.doctor_id, review.clinic_id, review.branch_id
+        await db.delete(review)
+        await db.flush()
+        if doctor_id:
+            await _recalc_doctor_rating(doctor_id, db)
+        elif clinic_id:
+            await _recalc_clinic_rating(clinic_id, db)
+        elif branch_id:
+            await _recalc_branch_rating(branch_id, db)
+        await log_action(
+            db, admin.id, action="review.delete",
+            target_type="review", target_id=review_id,
+            details=f"причина: {reason}" if reason.strip() else "без указания причины",
+            request=request,
+        )
+        await db.commit()
 
-    article.title_ru = title_ru.strip()
-    article.title_kg = title_kg.strip() or None
-    article.title_en = title_en.strip() or None
-    article.body_ru = body_ru or None
-    article.body_kg = body_kg or None
-    article.body_en = body_en or None
-    article.category = category.strip() or "article"
-    article.image_url = image_url.strip() or None
-    article.is_published = is_published == "on"
-
-    await db.flush()
-    await log_action(
-        db, admin.id,
-        action=f"article.{action_kind}",
-        target_type="article",
-        target_id=article.id,
-        details=f"title: {title_ru}",
-        request=request,
-    )
-    return RedirectResponse("/panel/articles", status_code=302)
+    return RedirectResponse("/panel/reviews", status_code=302)
 
 
-@router.post("/articles/{article_id}/delete")
-async def panel_article_delete(
-    article_id: int, request: Request, db: AsyncSession = Depends(get_db),
-):
+# ── Служебные функции ────────────────────────────────────────────────────────
+
+_LAST_JOB_RESULT: dict = {}
+
+
+@router.get("/system", response_class=HTMLResponse)
+async def panel_system(request: Request, db: AsyncSession = Depends(get_db)):
     admin = await _get_admin(request, db)
     if not admin:
         return _redirect_login()
-    article = (await db.execute(select(Article).where(Article.id == article_id))).scalar_one_or_none()
-    if article:
-        await db.delete(article)
-        await log_action(
-            db, admin.id,
-            action="article.delete",
-            target_type="article",
-            target_id=article_id,
-            request=request,
-        )
-    return RedirectResponse("/panel/articles", status_code=302)
+    from app.services.scheduler import JOBS
+    from app.core.config import settings
+    jobs = [{"name": name, "last": _LAST_JOB_RESULT.get(name)} for name in JOBS.keys()]
+    pc = await _pending_count(db)
+    return templates.TemplateResponse(
+        "admin/system.html",
+        _ctx(request, "system", {
+            "jobs": jobs,
+            "test_push": _LAST_JOB_RESULT.get("test_push"),
+            "scheduler_time": f"{settings.SCHEDULER_HOUR:02d}:{settings.SCHEDULER_MINUTE:02d}",
+            "scheduler_tz": settings.SCHEDULER_TIMEZONE,
+        }, pending_count=pc),
+    )
+
+
+@router.post("/system/run/{name}")
+async def panel_system_run(name: str, request: Request, db: AsyncSession = Depends(get_db)):
+    admin = await _get_admin(request, db)
+    if not admin:
+        return _redirect_login()
+    from app.services.scheduler import run_job, JOBS
+    if name in JOBS:
+        result = await run_job(name)
+        _LAST_JOB_RESULT[name] = {
+            "at": datetime.now(timezone.utc),
+            "ok": result.get("ok"),
+            "info": result.get("stats") or result.get("error"),
+        }
+        await log_action(db, admin.id, action="system.run_job",
+                         target_type="job", details=name, request=request)
+        await db.commit()
+    return RedirectResponse("/panel/system", status_code=302)
+
+
+@router.post("/system/test-push")
+async def panel_system_test_push(request: Request, db: AsyncSession = Depends(get_db)):
+    admin = await _get_admin(request, db)
+    if not admin:
+        return _redirect_login()
+    from app.services.fcm import send_push
+    await send_push(
+        admin.fcm_token,
+        "Тестовое уведомление",
+        "Проверка работы push-уведомлений MedFind.",
+        notification_type="system_test",
+        db=db, user_id=admin.id,
+    )
+    _LAST_JOB_RESULT["test_push"] = {
+        "at": datetime.now(timezone.utc),
+        "ok": True,
+        "info": "push отправлен" if admin.fcm_token else "in-app сохранено (FCM-токен не задан)",
+    }
+    await log_action(db, admin.id, action="system.test_push",
+                     target_type="user", target_id=admin.id, request=request)
+    await db.commit()
+    return RedirectResponse("/panel/system", status_code=302)
+
+

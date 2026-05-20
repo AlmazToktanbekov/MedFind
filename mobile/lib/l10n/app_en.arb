@@ -74,5 +74,68 @@
   "homeAiHelper": "AI Assistant",
   "homeAiHelperHint": "Describe your symptoms — AI will suggest\nwhich doctor to see",
   "homeSectionSymptoms": "Symptoms",
-  "homeSectionSpecializations": "Specializations"
+  "homeSectionSpecializations": "Specializations",
+
+  "healthTitle": "Health",
+  "healthSubtitle": "First aid and emergency contacts",
+  "healthEmergencyContacts": "Emergency contacts",
+  "healthEmergencyAmbulance": "Ambulance",
+  "healthEmergencyPolice": "Police",
+  "healthEmergencyFire": "Fire",
+  "healthEmergencyRescue": "Rescue",
+  "healthFirstAid": "First aid",
+  "healthStepsCount": "{count} steps",
+  "@healthStepsCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "healthFirstAidStepsTitle": "Step-by-step actions",
+  "healthCallAmbulance": "Call ambulance — 103",
+
+  "firstAidHeartAttackTitle": "Heart attack",
+  "firstAidHeartAttackWarning": "Call 103 immediately!",
+  "firstAidHeartAttackSteps": "Immediately call ambulance 103\nSeat or lay the victim down, loosen tight clothing\nGive aspirin 325 mg — chew (if no allergy)\nIf unconscious and not breathing — start CPR: 30 chest compressions + 2 breaths\nCompression rate: 100–120 per minute, depth: 5–6 cm\nDo not leave the victim alone until the doctor arrives",
+
+  "firstAidStrokeTitle": "Stroke",
+  "firstAidStrokeWarning": "Every minute counts — call 103!",
+  "firstAidStrokeSteps": "FAST test: Face (drooping?), Arms (one falling?), Speech (slurred?), Time — call 103\nLay the victim down, slightly raise the head\nLoosen clothing, ensure airflow\nDo not give food, water or medicine\nIf vomiting — turn the head to the side\nRemember the exact time symptoms appeared — tell the doctor",
+
+  "firstAidBurnsTitle": "Burns",
+  "firstAidBurnsWarning": "Do not use ice, oil or toothpaste!",
+  "firstAidBurnsSteps": "Cool the burn under cool running water for 10–20 minutes\nRemove jewellery and clothing near the burn (if not stuck)\nCover with sterile gauze or clean cloth\nDo not pop blisters\nDo not apply oil, kefir, toothpaste or ice\nFor burns on face, hands or larger than a palm — call 103",
+
+  "firstAidBleedingTitle": "Bleeding",
+  "firstAidBleedingWarning": "Bright red pulsating blood — apply a tourniquet!",
+  "firstAidBleedingSteps": "Use gloves or a clean plastic bag on your hands\nPress a clean cloth or bandage onto the wound for 10–15 minutes\nDo not remove the cloth — add a new one on top if soaked\nFor arterial bleeding apply a tourniquet above the wound\nRecord the exact time the tourniquet was applied\nThe tourniquet must be removed only at hospital — call 103",
+
+  "firstAidFracturesTitle": "Fractures",
+  "firstAidFracturesWarning": "Do not realign the bone yourself!",
+  "firstAidFracturesSteps": "Immobilise the limb in the position it is in\nApply a splint from available materials (board, stick)\nApply cold through cloth for 20 minutes\nFor an open fracture — cover the wound with sterile dressing\nDo not try to realign or straighten the bone\nCall 103 or take the victim to hospital",
+
+  "firstAidPoisoningTitle": "Poisoning",
+  "firstAidPoisoningWarning": "For chemical poisoning — do not induce vomiting!",
+  "firstAidPoisoningSteps": "Call 103 and describe what the person was poisoned with\nFor food poisoning — give 1–1.5 L of water and induce vomiting (only if conscious)\nFor chemical or medicine poisoning — do not induce vomiting\nGive activated charcoal: 1 tablet per 10 kg of body weight\nLay the victim on their side\nMonitor breathing until the doctor arrives",
+
+  "firstAidHeatStrokeTitle": "Heat stroke",
+  "firstAidHeatStrokeWarning": "",
+  "firstAidHeatStrokeSteps": "Move the victim to a cool place or shade\nRemove excess clothing\nCool the body: wet cloth on neck, armpits, groin\nGive cool water in small sips (if conscious)\nDo not give alcohol or caffeine\nFor temperature above 39°C or loss of consciousness — call 103",
+
+  "firstAidFaintingTitle": "Fainting",
+  "firstAidFaintingWarning": "",
+  "firstAidFaintingSteps": "Lay the person flat, raise legs by 30 cm\nLoosen tight clothing, ensure airflow\nHold ammonia near the nose (carefully, not close)\nWipe face with cold water\nAfter regaining consciousness — let them lie 10–15 minutes\nIf consciousness does not return in 1–2 minutes — call 103",
+
+  "firstAidDrowningTitle": "Drowning",
+  "firstAidDrowningWarning": "Do not risk yourself during rescue!",
+  "firstAidDrowningSteps": "Take the victim out of water without risking yourself\nLay on a hard surface, on the side\nClear the mouth of water and dirt\nIf not breathing — start CPR: 30 compressions + 2 breaths\nIf pulse present but no breathing — only rescue breaths (12–15 per minute)\nCall 103 and continue CPR until arrival",
+
+  "firstAidElectricShockTitle": "Electric shock",
+  "firstAidElectricShockWarning": "Do not touch the victim while under current!",
+  "firstAidElectricShockSteps": "Do not touch the victim while they are under voltage\nTurn off the power source or push the wire away with a dry wooden stick\nOnly after ensuring safety — approach the victim\nCheck breathing and pulse; if needed start CPR\nCool electric burns with cool water\nCall 103 even if the victim is conscious",
+
+  "firstAidAnaphylaxisTitle": "Anaphylaxis",
+  "firstAidAnaphylaxisWarning": "Call 103 immediately!",
+  "firstAidAnaphylaxisSteps": "Call 103 immediately\nInject epinephrine (adrenaline) auto-injector into the thigh (if available)\nLay the victim down, raise legs (for low blood pressure)\nIf vomiting — turn on the side\nIf breathing stops — start CPR\nDo not give food or drink until the doctor arrives",
+
+  "firstAidAnimalBiteTitle": "Animal bite",
+  "firstAidAnimalBiteWarning": "For snake bite — call 103, do not suck out the venom!",
+  "firstAidAnimalBiteSteps": "Wash the wound with soap and water for 5–10 minutes\nTreat with iodine or hydrogen peroxide\nApply a sterile dressing\nGo to a trauma centre within 24 hours\nInform the doctor about the animal (vaccinated/not, wild/domestic)\nFor snake bite: immobilise the limb, do not suck out venom, call 103"
 }

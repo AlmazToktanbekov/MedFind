@@ -15,20 +15,13 @@ class Settings(BaseSettings):
     OTP_EXPIRE_MINUTES: int = 5
     DEV_MODE: bool = True  # returns OTP in response
 
-    S3_BUCKET_NAME: str = "medfind-media"
-    S3_REGION: str = "us-east-1"
-    AWS_ACCESS_KEY_ID: str = ""
-    AWS_SECRET_ACCESS_KEY: str = ""
-
     # Nikita.kg SMS gateway
     SMS_LOGIN: str = ""            # логин личного кабинета Nikita.kg
     SMS_PASSWORD: str = ""         # пароль API/SMPP (НЕ от кабинета — отдельный)
     SMS_SENDER: str = "SMSPRO.KG"  # одобренное имя отправителя
-    SMS_API_KEY: str = ""          # резерв (для других провайдеров)
 
     MISTRAL_API_KEY: str = ""
 
-    FIREBASE_PROJECT_ID: str = ""          # Firebase project ID
     FIREBASE_SERVICE_ACCOUNT_PATH: str = ""  # path to serviceAccountKey.json
 
     BACKEND_CORS_ORIGINS: List[str] = ["*"]

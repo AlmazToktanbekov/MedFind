@@ -63,6 +63,9 @@ class _DoctorEditScreenState extends ConsumerState<DoctorEditScreen> {
   bool _isLoading = false;
   bool _isPhotoUploading = false;
 
+  // Снапшот исходных значений — нужен для отправки только реально изменённых полей.
+  Map<String, dynamic> _initialDoctor = const {};
+
   @override
   void initState() {
     super.initState();
@@ -85,6 +88,7 @@ class _DoctorEditScreenState extends ConsumerState<DoctorEditScreen> {
   }
 
   void _applyDoctorData(Map<String, dynamic> d) {
+    _initialDoctor = d;
     _currentClinicName = d['clinic_name'] as String?;
     _nameCtrl.text = d['full_name_ru'] ?? '';
     _phoneCtrl.text = d['phone'] ?? '';
@@ -142,6 +146,81 @@ class _DoctorEditScreenState extends ConsumerState<DoctorEditScreen> {
 
     _initialized = true;
     setState(() {});
+  }
+
+  // ─── Diff helpers ───────────────────────────────────────────────────────
+
+  bool _valuesEqual(dynamic a, dynamic b) {
+    if (a == null && b == null) return true;
+    if (a == null || b == null) {
+      // Считаем пустую строку и null эквивалентными — пустое поле не меняет null.
+      if (a is String && a.isEmpty) return true;
+      if (b is String && b.isEmpty) return true;
+      return false;
+    }
+    if (a is num && b is num) return a.toDouble() == b.toDouble();
+    return a == b;
+  }
+
+  bool _listEquals(List<Map<String, dynamic>> a, List<Map<String, dynamic>> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      final ma = a[i];
+      final mb = b[i];
+      if (ma.length != mb.length) return false;
+      for (final k in ma.keys) {
+        if (!_valuesEqual(ma[k], mb[k])) return false;
+      }
+    }
+    return true;
+  }
+
+  List<Map<String, dynamic>> _normalizeContacts(dynamic raw) {
+    if (raw is! List) return const [];
+    final list = raw
+        .whereType<Map>()
+        .map((m) => {
+              'type': (m['type'] ?? '').toString(),
+              'value': (m['value'] ?? '').toString(),
+            })
+        .where((m) => (m['value'] as String).isNotEmpty)
+        .toList();
+    list.sort((a, b) => (a['type'] as String).compareTo(b['type'] as String));
+    return list;
+  }
+
+  List<Map<String, dynamic>> _normalizeServices(dynamic raw) {
+    if (raw is! List) return const [];
+    final list = raw
+        .whereType<Map>()
+        .map((m) {
+          final price = m['price'];
+          return {
+            'name_ru': (m['name_ru'] ?? '').toString(),
+            'price': price == null ? null : (price as num).toDouble(),
+          };
+        })
+        .where((m) => (m['name_ru'] as String).isNotEmpty)
+        .toList();
+    list.sort(
+        (a, b) => (a['name_ru'] as String).compareTo(b['name_ru'] as String));
+    return list;
+  }
+
+  List<Map<String, dynamic>> _normalizeSchedules(dynamic raw) {
+    if (raw is! List) return const [];
+    final list = raw
+        .whereType<Map>()
+        .map((m) => {
+              'day_of_week': m['day_of_week'] as int? ?? 0,
+              'start_time': (m['start_time'] ?? '').toString(),
+              'end_time': (m['end_time'] ?? '').toString(),
+              'is_available': m['is_available'] as bool? ?? false,
+            })
+        .toList();
+    list.sort((a, b) =>
+        (a['day_of_week'] as int).compareTo(b['day_of_week'] as int));
+    return list;
   }
 
   TimeOfDay _parseTime(String t) {
@@ -313,23 +392,83 @@ class _DoctorEditScreenState extends ConsumerState<DoctorEditScreen> {
               })
           .toList();
 
-      await _repo.requestProfileUpdate({
-        'full_name_ru': _nameCtrl.text.trim(),
-        'specialization_ru': _specialization,
-        'bio_ru': _bioCtrl.text.trim().isEmpty ? null : _bioCtrl.text.trim(),
-        'education': _educationCtrl.text.trim().isEmpty ? null : _educationCtrl.text.trim(),
-        'consultation_language': _langCtrl.text.trim().isEmpty ? null : _langCtrl.text.trim(),
-        'experience_years': int.tryParse(_expCtrl.text.trim()),
-        'has_online': _hasOnline,
-        'has_offline': _hasOffline,
-        'online_price': double.tryParse(_onlinePriceCtrl.text.trim()),
-        'offline_price': double.tryParse(_offlinePriceCtrl.text.trim()),
-        if (_photoUrl != null) 'photo_url': _photoUrl,
-        if (_coverPhotoUrl != null) 'cover_photo_url': _coverPhotoUrl,
-        'contacts': contacts,
-        'services': services,
-        'schedules': schedules,
-      });
+      // Собираем payload — только реально изменённые поля.
+      // Клиника получает заявку только с тем, что врач реально поменял,
+      // и не видит пометку «изменено» на каждом поле.
+      final body = <String, dynamic>{};
+      void putIfChanged(String key, dynamic newVal, dynamic origVal) {
+        if (!_valuesEqual(newVal, origVal)) body[key] = newVal;
+      }
+
+      final newName = _nameCtrl.text.trim();
+      putIfChanged('full_name_ru', newName, _initialDoctor['full_name_ru']);
+      putIfChanged('specialization_ru', _specialization,
+          _initialDoctor['specialization_ru']);
+
+      final newBio = _bioCtrl.text.trim().isEmpty ? null : _bioCtrl.text.trim();
+      putIfChanged('bio_ru', newBio, _initialDoctor['bio_ru']);
+
+      final newEdu = _educationCtrl.text.trim().isEmpty
+          ? null
+          : _educationCtrl.text.trim();
+      putIfChanged('education', newEdu, _initialDoctor['education']);
+
+      final newLang = _langCtrl.text.trim().isEmpty
+          ? null
+          : _langCtrl.text.trim();
+      putIfChanged('consultation_language', newLang,
+          _initialDoctor['consultation_language']);
+
+      final newExp = int.tryParse(_expCtrl.text.trim());
+      putIfChanged(
+          'experience_years', newExp, _initialDoctor['experience_years']);
+
+      putIfChanged('has_online', _hasOnline, _initialDoctor['has_online']);
+      putIfChanged('has_offline', _hasOffline, _initialDoctor['has_offline']);
+
+      final newOnlinePrice = double.tryParse(_onlinePriceCtrl.text.trim());
+      putIfChanged(
+          'online_price', newOnlinePrice, _initialDoctor['online_price']);
+
+      final newOfflinePrice = double.tryParse(_offlinePriceCtrl.text.trim());
+      putIfChanged(
+          'offline_price', newOfflinePrice, _initialDoctor['offline_price']);
+
+      if (_photoUrl != null &&
+          _photoUrl != _initialDoctor['photo_url']) {
+        body['photo_url'] = _photoUrl;
+      }
+      if (_coverPhotoUrl != null &&
+          _coverPhotoUrl != _initialDoctor['cover_photo_url']) {
+        body['cover_photo_url'] = _coverPhotoUrl;
+      }
+
+      final origContacts = _normalizeContacts(_initialDoctor['contacts']);
+      if (!_listEquals(_normalizeContacts(contacts), origContacts)) {
+        body['contacts'] = contacts;
+      }
+
+      final origServices = _normalizeServices(_initialDoctor['services']);
+      if (!_listEquals(_normalizeServices(services), origServices)) {
+        body['services'] = services;
+      }
+
+      final origSchedules = _normalizeSchedules(_initialDoctor['schedules']);
+      if (!_listEquals(_normalizeSchedules(schedules), origSchedules)) {
+        body['schedules'] = schedules;
+      }
+
+      if (body.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Нет изменений для отправки')),
+          );
+          setState(() => _isLoading = false);
+        }
+        return;
+      }
+
+      await _repo.requestProfileUpdate(body);
 
       if (mounted) {
         ref.invalidate(myDoctorProvider);

@@ -194,7 +194,6 @@ class _BranchReport extends ConsumerWidget {
         child: Center(child: CircularProgressIndicator()),
       ),
       error: (e, _) {
-        final isPremium = e.toString().contains('premium_required');
         return Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
@@ -205,15 +204,13 @@ class _BranchReport extends ConsumerWidget {
           child: Column(
             children: [
               Icon(
-                isPremium ? PhosphorIconsFill.crown : PhosphorIconsRegular.warning,
+                PhosphorIconsRegular.warning,
                 size: 48,
-                color: isPremium ? const Color(0xFFFFB300) : AppColors.error,
+                color: AppColors.error,
               ),
               const SizedBox(height: 12),
               Text(
-                isPremium
-                    ? 'Отчёты доступны на тарифе Premium'
-                    : 'Не удалось загрузить отчёт',
+                'Не удалось загрузить отчёт',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
                   fontSize: 16,

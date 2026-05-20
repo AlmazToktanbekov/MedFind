@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../data/first_aid_data.dart';
 
 class FirstAidDetailScreen extends StatelessWidget {
@@ -11,10 +12,13 @@ class FirstAidDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final category = firstAidCategories.firstWhere(
       (c) => c.id == categoryId,
       orElse: () => firstAidCategories.first,
     );
+    final warning = category.warning(l);
+    final steps = category.steps(l);
 
     return Scaffold(
       backgroundColor: category.bgColor,
@@ -42,7 +46,7 @@ class FirstAidDetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      category.title,
+                      category.title(l),
                       style: GoogleFonts.inter(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
@@ -64,7 +68,7 @@ class FirstAidDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (category.warning != null) ...[
+                  if (warning != null) ...[
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(
@@ -83,7 +87,7 @@ class FirstAidDetailScreen extends StatelessWidget {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              category.warning!,
+                              warning,
                               style: GoogleFonts.inter(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -97,7 +101,7 @@ class FirstAidDetailScreen extends StatelessWidget {
                     const SizedBox(height: 24),
                   ],
                   Text(
-                    'Действия по шагам',
+                    l.healthFirstAidStepsTitle,
                     style: GoogleFonts.inter(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
@@ -105,7 +109,7 @@ class FirstAidDetailScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  ...category.steps.asMap().entries.map(
+                  ...steps.asMap().entries.map(
                         (e) => _StepTile(
                           number: e.key + 1,
                           text: e.value,
@@ -113,7 +117,9 @@ class FirstAidDetailScreen extends StatelessWidget {
                         ),
                       ),
                   const SizedBox(height: 32),
-                  _EmergencyCallButton(accentColor: category.accentColor),
+                  _EmergencyCallButton(
+                      accentColor: category.accentColor,
+                      label: l.healthCallAmbulance),
                 ],
               ),
             ),
@@ -183,8 +189,9 @@ class _StepTile extends StatelessWidget {
 
 class _EmergencyCallButton extends StatelessWidget {
   final Color accentColor;
+  final String label;
 
-  const _EmergencyCallButton({required this.accentColor});
+  const _EmergencyCallButton({required this.accentColor, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -206,7 +213,7 @@ class _EmergencyCallButton extends StatelessWidget {
             const Icon(Icons.phone_rounded, color: Colors.white, size: 20),
             const SizedBox(width: 10),
             Text(
-              'Вызвать скорую — 103',
+              label,
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,

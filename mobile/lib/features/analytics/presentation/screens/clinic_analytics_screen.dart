@@ -346,7 +346,6 @@ class _ErrorBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isPremiumRequired = error.toString().contains('premium_required');
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -357,15 +356,13 @@ class _ErrorBox extends StatelessWidget {
       child: Column(
         children: [
           Icon(
-            isPremiumRequired ? PhosphorIconsFill.crown : PhosphorIconsRegular.warning,
+            PhosphorIconsRegular.warning,
             size: 48,
-            color: isPremiumRequired ? const Color(0xFFFFB300) : AppColors.error,
+            color: AppColors.error,
           ),
           const SizedBox(height: 12),
           Text(
-            isPremiumRequired
-                ? 'Отчёты доступны на тарифе Premium'
-                : 'Не удалось загрузить отчёт',
+            'Не удалось загрузить отчёт',
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               fontSize: 16,
@@ -373,17 +370,6 @@ class _ErrorBox extends StatelessWidget {
               color: AppColors.textPrimary,
             ),
           ),
-          if (isPremiumRequired) ...[
-            const SizedBox(height: 8),
-            Text(
-              'Оформите Premium, чтобы видеть просмотры, звонки и активность пациентов',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                color: AppColors.textPrimary.withValues(alpha: 0.6),
-              ),
-            ),
-          ],
         ],
       ),
     );

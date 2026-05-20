@@ -14,8 +14,9 @@ flutter run
 flutter build apk
 flutter test                                       # все тесты
 flutter test test/widget_test.dart                # один тест
+flutter gen-l10n                                   # генерация локализации из .arb
 
-# Кодогенерация (freezed + riverpod_generator) — обязательно после изменений моделей/провайдеров
+# Кодогенерация (freezed) — после изменений @freezed-моделей
 dart run build_runner build --delete-conflicting-outputs
 dart run build_runner watch    # режим watch при активной разработке
 
@@ -29,6 +30,7 @@ pytest                         # все тесты бэкенда
 ```
 
 API документация: http://localhost:8000/docs
+Веб-панель администратора: http://localhost:8000/panel
 
 ---
 
@@ -43,9 +45,9 @@ Flutter-приложение находится в `mobile/` (не `frontend/`).
 - `providers/` — StateNotifierProvider: содержит бизнес-логику и состояние
 - `presentation/screens/` — виджеты, читают провайдеры через `ref.watch`/`ref.read`
 
-Папка `domain/` существует в каждой фиче, но в текущей кодовой базе не используется (пустая).
+Папка `domain/` существует в некоторых фичах, но в текущей кодовой базе не используется.
 
-Фичи: `auth`, `clinics`, `doctors`, `health`, `home`, `pharmacies`, `profile`, `provider`, `search`.
+**Фичи (12):** `ai`, `analytics`, `auth`, `clinics`, `doctors`, `health`, `home`, `notifications`, `pharmacies`, `profile`, `provider`, `search`.
 
 ### Riverpod
 
@@ -64,42 +66,74 @@ Flutter-приложение находится в `mobile/` (не `frontend/`).
 
 GoRouter, начальный маршрут `/splash`.
 
+**Верхнеуровневые маршруты:**
+
 | Путь | Экран |
 |------|-------|
 | `/splash` | SplashScreen |
 | `/onboarding` | OnboardingScreen |
 | `/login` | LoginScreen |
+| `/register` | RegisterScreen (выбор роли) |
+| `/register/form` | RegisterFormScreen |
 | `/forgot-password` | ForgotPasswordScreen |
 | `/reset-password` | ResetPasswordScreen (extra: `{phone, devCode?}`) |
 | `/otp` | OtpScreen (extra: `{phone, devCode?}`) |
 | `/main` | MainScreen (bottom nav: Home / Search / Health / Profile) |
-| `/main/doctors` | DoctorsScreen |
-| `/main/doctors/:id` | DoctorDetailScreen |
-| `/main/clinics` | ClinicsScreen |
-| `/main/clinics/:id` | ClinicDetailScreen |
-| `/main/pharmacies` | PharmaciesScreen |
-| `/main/pharmacies/:id` | PharmacyDetailScreen |
-| `/main/search` | SearchScreen |
-| `/main/favorites` | FavoritesScreen |
-| `/provider/setup` | DoctorSetupScreen |
-| `/provider/pending` | PendingReviewScreen |
 
-`MainScreen` использует `IndexedStack` с 4 табами: HomeScreen, SearchScree
-n, HealthScreen, ProfileScreen. Вложенные маршруты (`/main/doctors`, etc.) открываются поверх MainScreen через GoRouter.
+**Вложенные маршруты под `/main`** (открываются поверх MainScreen):
+
+| Путь | Экран |
+|------|-------|
+| `/main/doctors` | DoctorsScreen |
+| `/main/doctors/by-symptom/:symptomId` | врачи по симптому |
+| `/main/doctors/by-specialization` | врачи по специализации |
+| `/main/doctors/:id` | DoctorDetailScreen |
+| `/main/clinics`, `/main/clinics/:id` | ClinicsScreen / ClinicDetailScreen |
+| `/main/pharmacies` | PharmaciesScreen |
+| `/main/pharmacies/branch/:id` | PharmacyBranchScreen |
+| `/main/pharmacies/company/:id` | PharmacyCompanyScreen |
+| `/main/search`, `/main/favorites` | SearchScreen / FavoritesScreen |
+| `/main/notifications` | NotificationsScreen |
+| `/main/edit-profile` | EditProfileScreen |
+| `/main/ai-chat` | AiChatScreen |
+| `/main/specializations`, `/main/symptoms` | списки |
+| `/main/health/first-aid/:id` | FirstAidDetailScreen |
+
+**Кабинеты провайдеров:**
+
+| Путь | Экран |
+|------|-------|
+| `/provider/setup` | DoctorSetupScreen (регистрация врача) |
+| `/provider/doctor-edit` | DoctorEditScreen |
+| `/provider/pending` | PendingReviewScreen (врач) |
+| `/provider/clinic-intro`, `/provider/clinic-setup`, `/provider/clinic-created`, `/provider/pending-clinic` | регистрация клиники |
+| `/clinic/:id/edit`, `/clinic/:id/photos`, `/clinic/:id/doctors`, `/clinic/:id/doctor-requests` | кабинет клиники |
+| `/clinic/analytics` | ClinicAnalyticsScreen |
+| `/provider/pharmacy-setup`, `/provider/pharmacy/manage`, `/provider/pending-pharmacy` | регистрация/кабинет аптеки |
+| `/provider/pharmacy/edit`, `/provider/pharmacy/branch/add`, `/provider/pharmacy/branch/:id/edit`, `/pharmacy/branch/:id/photos` | управление филиалами |
+| `/pharmacy/analytics` | PharmacyBranchAnalyticsScreen |
+
+`MainScreen` использует `IndexedStack` с 4 табами: HomeScreen, SearchScreen, HealthScreen, ProfileScreen.
 
 ### Общие компоненты
 
-- `shared/models/` — модели с `fromJson`
-- `shared/providers/` — общие провайдеры
-- `shared/widgets/` — переиспользуемые виджеты (`GradientButton`, `DoctorCard`, `FilterChipWidget`, `RatingStars`, `CustomSearchBar`, `AppBottomNavBar`)
-- `core/constants/app_constants.dart` — канонические списки `symptoms`, `specializations`, `clinicCategories`
+- `shared/models/` — `doctor_model`, `clinic_model`, `pharmacy_model`, `symptom_model` (с `fromJson`)
+- `shared/providers/` — `current_user_provider`, `favorites_provider`
+- `shared/widgets/` — `GradientButton`, `DoctorCard`, `FilterChipWidget`, `RatingStars`, `CustomSearchBar`, `AppBottomNavBar` (`bottom_nav_bar.dart`), `ReviewCard`, `ReportDialog`
+- `core/constants/app_constants.dart` — `baseUrl`, канонические списки `symptoms`, `specializations`, `clinicCategories`
+- `core/services/notification_service.dart` — локальные/push-уведомления
+- `core/analytics/` — клиент трекинга событий аналитики
+
+### Локализация
+
+3 языка (RU, KY, EN); код Kyrgyz — `ky` (не `kg`). Файлы `app_ru.arb`, `app_ky.arb`, `app_en.arb` в `mobile/lib/l10n/`, `flutter_localizations` подключён, `generate: true`. Сгенерированные `app_localizations*.dart` коммитятся. Новые строки добавлять во все три `.arb` и запускать `flutter gen-l10n`.
 
 ### Хранилище на устройстве
 
 - **`FlutterSecureStorage`** — токены (`access_token`, `refresh_token`), данные профиля (`full_name`, `user_phone`)
-- **`SharedPreferences`** — избранное (ключи вида `"doctor:123"`, `"clinic:456"`) и выбранная локаль (`app_locale`)
+- **`SharedPreferences`** — выбранная локаль (`app_locale`), локальный кэш
 
-Избранное хранится **локально** и не синхронизируется с бэкендом.
+**Избранное синхронизируется с бэкендом** через роутер `/favorites` — не хранится только локально.
 
 ---
 
@@ -111,17 +145,69 @@ Backend находится в `backend/`.
 
 - **Async SQLAlchemy** с `asyncpg`; сессия через `Depends(get_db)` в каждом роутере
 - **Eager loading** через `selectinload` для связанных сущностей
-- Pydantic-схемы: отдельно для чтения (`DoctorOut`, `DoctorListItem`) и записи (`DoctorCreate`, `DoctorUpdate`)
+- Pydantic-схемы в `app/schemas/` (отдельные файлы: `auth`, `clinic`, `doctor`, `pharmacy`, `review`, `complaint`, `search`); раздельно для чтения (`DoctorOut`, `DoctorListItem`) и записи (`DoctorCreate`, `DoctorUpdate`)
+- Модели в `app/models/`
 - Все роутеры подключены в `app/main.py` через `include_router`
 - Настройки в `app/core/config.py` (pydantic-settings, читает из `.env`)
 
-### Роутеры (`app/routers/`)
+### Роутеры (`app/routers/`) — 15 шт.
 
-`auth`, `doctors`, `clinics`, `pharmacies`, `reviews`, `search`, `content`, `admin`, `upload`, `panel`
+| Роутер | Назначение |
+|--------|-----------|
+| `auth` | регистрация, логин, refresh, OTP, восстановление пароля, `/auth/me`, `/auth/fcm-token` |
+| `doctors` | каталог врачей, профиль, заявки в клинику, заявки на изменение профиля |
+| `clinics` | каталог клиник, кабинет клиники, управление врачами и заявками |
+| `pharmacies` | компании и филиалы аптек, `nearby` (Haversine), галереи фото |
+| `reviews` | отзывы на врачей / клиники / филиалы аптек |
+| `search` | глобальный поиск, списки специализаций и категорий |
+| `symptoms` | каталог симптомов, маппинг симптом → специализации |
+| `favorites` | избранное (синхронизация с бэкендом) |
+| `ai` | AI-ассистент (Mistral): чат + серверная история диалогов |
+| `notifications` | список уведомлений, счётчик непрочитанных, отметка прочитанным |
+| `complaints` | жалобы на врачей / клиники / филиалы |
+| `analytics` | трекинг событий + отчёты для клиник и аптек |
+| `admin` | служебные эндпоинты (jobs, статистика жалоб, тест-push) |
+| `upload` | загрузка фото в локальную папку `uploads/` |
+| `panel` | веб-панель администратора (Jinja2 + cookie JWT) |
 
-**Веб-панель администратора** (`panel`) — доступна по `/panel/*`, рендерит Jinja2-шаблоны из `app/templates/admin/`, аутентификация через cookie с JWT-токеном (не Bearer).
+### Ключевые эндпоинты
 
-**Загрузка файлов** (`upload`) — `POST /upload/photo` сохраняет изображения в локальную папку `uploads/` и возвращает URL вида `/uploads/<filename>`. S3 в конфиге настроен, но в текущей реализации не используется.
+**auth:** `POST /auth/register|login|refresh|logout`, `GET|PATCH /auth/me`, `POST /auth/otp/send|verify`, `POST /auth/password/forgot|reset`, `POST /auth/fcm-token`
+
+**doctors:** `GET /doctors`, `/doctors/{id}`, `/doctors/my`, `/doctors/by-symptom/{id}`; `POST /doctors`, `/doctors/apply-clinic`, `/doctors/my/request-update`; `PUT|DELETE /doctors/{id}`; `DELETE /doctors/my/pending-update`
+
+**clinics:** `GET|PUT /clinics/my`, `GET /clinics`, `/clinics/{id}`, `/clinics/{id}/doctors`, `/clinics/{id}/doctor-requests`, `/clinics/{id}/doctor-update-requests`; `POST /clinics/{id}/approve-doctor|reject-doctor|deactivate-doctor|activate-doctor|approve-update|reject-update`; `DELETE /clinics/{id}/remove-doctor/{doctorId}`
+
+**pharmacies:** `POST /pharmacy/register`, `GET /pharmacy-companies[/my|/{id}]`, `GET /pharmacy-branches[/nearby|/{id}]`, CRUD филиалов и фото
+
+**ai:** `POST /ai/chat`, `GET|POST|DELETE /ai/history[/{id}]`
+
+**analytics:** `POST /analytics/track`, `GET /analytics/clinic/me`, `GET /analytics/pharmacy/branch/{id}`
+
+**notifications:** `GET /notifications`, `/notifications/unread-count`, `PATCH /notifications/{id}/read`, `/notifications/read-all`, `DELETE`
+
+**complaints:** `POST /complaints`, `GET /complaints/mine`
+
+### Веб-панель администратора (`panel`)
+
+Доступна по `/panel/*`, рендерит Jinja2-шаблоны из `app/templates/admin/`, аутентификация через cookie с JWT-токеном (не Bearer). Разделы: дашборд, врачи, клиники, аптеки, пользователи (+ история), отзывы и жалобы, аналитика платформы, логи админов. Управления статьями нет — раздел «Первая помощь» встроен в мобильное приложение (`first_aid_data.dart`), через панель не управляется.
+
+### Модели (`app/models/`)
+
+`user`, `doctor`, `clinic`, `pharmacy`, `review`, `symptom`, `favorite`, `complaint`, `notification`, `analytics`, `ai_conversation`, `search_log`, `admin_log`.
+
+### Сервисы (`app/services/`)
+
+- `sms.py` — единая точка отправки SMS (`send_sms`)
+- `fcm.py` — push-уведомления через Firebase Admin SDK (`send_push`)
+- `scheduler.py` + `jobs/` — APScheduler: `complaints_warning.py`, `unblock_expired.py`
+- `analytics_service.py` — агрегация метрик для отчётов
+- `admin_log_service.py` — запись действий админов
+- `seed.py` — тестовые данные
+
+### AI-ассистент
+
+Чат на **Mistral AI** (`MISTRAL_API_KEY` в `.env`). История диалогов хранится на сервере (таблица `ai_conversations`), эндпоинты `/ai/*`. Mobile: фича `ai`, экран `/main/ai-chat`.
 
 ### DEV_MODE
 
@@ -133,8 +219,8 @@ Backend находится в `backend/`.
 
 ### Восстановление пароля
 
-- `POST /auth/password/forgot` — принимает `{phone}`, отправляет OTP-код через `send_sms`. Из соображений приватности всегда возвращает одинаковое сообщение, даже если номер не зарегистрирован (`dev_code` возвращается только если юзер существует и `DEV_MODE=true`).
-- `POST /auth/password/reset` — принимает `{phone, code, new_password}` (мин. 6 символов), валидирует OTP (переиспользует таблицу `OTPCode`), обновляет `password_hash`, ротирует `refresh_token` и возвращает `TokenResponse` (автологин).
+- `POST /auth/password/forgot` — принимает `{phone}`, отправляет OTP через `send_sms`. Из соображений приватности всегда возвращает одинаковое сообщение (`dev_code` — только если юзер существует и `DEV_MODE=true`).
+- `POST /auth/password/reset` — принимает `{phone, code, new_password}` (мин. 6 символов), валидирует OTP, обновляет `password_hash`, ротирует `refresh_token`, возвращает `TokenResponse` (автологин).
 
 ### Статусы провайдеров
 
@@ -147,9 +233,13 @@ Backend находится в `backend/`.
 - `active` — клиника подтвердила, виден пациентам
 - `rejected` — клиника отклонила заявку
 - `deactivated` — клиника временно деактивировала
-- `removed` — клиника удалила врача из своего состава; врач НЕ виден пациентам, в его личном кабинете показывается красная плашка «Вас никто не видит — выберите новую клинику», кнопка ведёт на шаг выбора клиники
+- `removed` — клиника удалила врача; врач НЕ виден пациентам, в кабинете показывается красная плашка с кнопкой выбора новой клиники
 
 Только врачи со статусом `active` отдаются в публичных эндпоинтах.
+
+### Модерация изменений профиля врача
+
+Активный врач не редактирует профиль напрямую: `POST /doctors/my/request-update` создаёт заявку на изменение, клиника одобряет (`/clinics/{id}/approve-update/{updateId}`) или отклоняет (`/reject-update`). Отменить свою заявку — `DELETE /doctors/my/pending-update`.
 
 ---
 
@@ -207,6 +297,10 @@ cardShadow:   BoxShadow(color: #1A1565C0, blurRadius: 20, offset: Offset(0, 8))
 
 Пакет `phosphor_flutter`, стиль **Outline**.
 
+### Графики
+
+Аналитика и отчёты — через `fl_chart`.
+
 ---
 
 ## ПРАВИЛА
@@ -214,9 +308,9 @@ cardShadow:   BoxShadow(color: #1A1565C0, blurRadius: 20, offset: Offset(0, 8))
 - **Дизайн**: строго следуй дизайн-системе — никаких отклонений от палитры, радиусов, теней
 - **Архитектура**: логика только в repository/provider, не в виджетах
 - **Deeplinks**: WhatsApp → `https://wa.me/<номер>`, Telegram → `https://t.me/<username>`, звонок → `tel:<номер>` через `url_launcher`
-- **Локализация**: 3 языка (RU, KY, EN); код Kyrgyz — `ky` (не `kg`). `.arb`-файлы ещё не созданы — строки пока хардкодятся; при добавлении локализации через `flutter_localizations` создавать `app_ru.arb`, `app_ky.arb`, `app_en.arb`
-- **Кодогенерация**: при добавлении `@freezed` / `@riverpod` аннотаций запускать `build_runner`
-- **Канонические списки**: симптомы, специализации, категории клиник хранятся в `app_constants.dart` — не дублировать в других местах
+- **Локализация**: 3 языка (RU, KY, EN); код Kyrgyz — `ky`. Новые строки — во все три `.arb`, затем `flutter gen-l10n`
+- **Кодогенерация**: при добавлении `@freezed` аннотаций запускать `build_runner`
+- **Канонические списки**: симптомы, специализации, категории клиник — в `app_constants.dart` (mobile) и в БД (`symptom` table) — не дублировать в других местах
 
 ---
 
@@ -264,7 +358,7 @@ cardShadow:   BoxShadow(color: #1A1565C0, blurRadius: 20, offset: Offset(0, 8))
 - Кнопка **«Маршрут»** → открывает 2GIS (приоритет) или Google Maps
 
 #### Геолокация
-- Разрешение на геолокацию запрашивается **при первом входе в раздел аптек** ИЛИ при нажатии кнопки «Ближайшие аптеки»
+- Разрешение запрашивается **при первом входе в раздел аптек** ИЛИ при нажатии «Ближайшие аптеки»
 - Если пользователь уже дал разрешение — повторно не спрашивать
 - Логика ближайших: `GET /pharmacy-branches/nearby?lat=...&lon=...` → сортировка по расстоянию (формула Haversine на бэкенде)
 
@@ -282,12 +376,10 @@ cardShadow:   BoxShadow(color: #1A1565C0, blurRadius: 20, offset: Offset(0, 8))
 
 #### Пошаговая регистрация клиники (3 шага)
 - Шаг 1: название (required), телефон (required), описание, сайт, направления/категории multi-select (required), логотип
-- Шаг 2: адрес (required), координаты lat/lon (для кнопки «Маршрут»), график работы, WhatsApp, Telegram, Instagram, email
+- Шаг 2: адрес (required), координаты lat/lon, график работы, WhatsApp, Telegram, Instagram, email
 - Шаг 3: фото клиники
 
 Категории хранятся как строка, разделённая «, » (`category_ru`). Координаты — `latitude`, `longitude` (float). Логотип — `logo_url`.
-
-Клиника **сразу активна** после регистрации, без модерации.
 
 #### Публичный профиль клиники
 - Все данные + список подтверждённых врачей, сгруппированных по специализации
@@ -309,10 +401,9 @@ cardShadow:   BoxShadow(color: #1A1565C0, blurRadius: 20, offset: Offset(0, 8))
 - **Деактивировать** активного врача (статус → `deactivated`)
 - **Активировать** деактивированного врача (статус → `active`)
 - **Удалить** врача из клиники (статус → `removed`)
+- **Одобрить / отклонить** заявку врача на изменение профиля
 
-Перед подтверждением клиника видит: ФИО, фото, телефон, специализацию, образование, стаж, услуги, контакты, график.
-
-Причина отказа — **не обязательна**.
+Перед подтверждением клиника видит: ФИО, фото, телефон, специализацию, образование, стаж, услуги, контакты, график. Причина отказа — **не обязательна**.
 
 ---
 
@@ -340,24 +431,23 @@ cardShadow:   BoxShadow(color: #1A1565C0, blurRadius: 20, offset: Offset(0, 8))
 
 #### Пошаговая регистрация врача (7 шагов + экран ожидания)
 1. Основная информация (фото, ФИО, телефон)
-2. Специализация + формат консультации (очный / онлайн / оба) + цены
+2. Специализация + формат консультации + цены
 3. Образование и стаж
 4. Услуги (название + цена)
-5. Контакты (WhatsApp, Telegram, Instagram) — телефон вводится на шаге 1
-6. График приёма — адрес берётся автоматически из выбранной клиники
+5. Контакты (WhatsApp, Telegram, Instagram)
+6. График приёма — адрес берётся автоматически из клиники
 7. Выбор клиники → отправка заявки
 → Экран ожидания подтверждения (PendingReviewScreen)
 
 #### Статусы врача
-- `pending` — ожидает подтверждения клиники
-- `active` — подтверждён, виден пациентам
-- `rejected` — клиника отклонила
-- `deactivated` — клиника деактивировала
-- `removed` — клиника удалила врача
+`pending`, `active`, `rejected`, `deactivated`, `removed` (см. раздел «Статусы провайдеров»).
 
-**При статусе `removed`:** в личном кабинете врача красная плашка:
+**При статусе `removed`:** в кабинете врача красная плашка:
 > «⚠️ Вас не видят пациенты — вы не привязаны к клинике. Выберите новую клинику.»
-Кнопка ведёт на шаг 7 регистрации (выбор клиники).
+Кнопка ведёт на шаг выбора клиники.
+
+#### Изменение профиля
+Активный врач отправляет заявку на изменение, клиника одобряет/отклоняет (см. «Модерация изменений профиля врача»).
 
 #### Push-уведомления врачу
 - Клиника подтвердила → «Клиника [название] подтвердила ваш профиль»
@@ -366,11 +456,9 @@ cardShadow:   BoxShadow(color: #1A1565C0, blurRadius: 20, offset: Offset(0, 8))
 
 #### Публичный профиль врача
 - Фото, ФИО, специализация, образование, стаж, опыт, язык консультации
-- Формат консультации + цены
-- Услуги
+- Формат консультации + цены, услуги
 - Контакты (кнопки WhatsApp, Telegram, звонок)
-- График приёма
-- Рейтинг + отзывы
+- График приёма, рейтинг + отзывы
 - Блок **«✅ Подтверждён клиникой: [Название]»** — кнопка ведёт в профиль клиники
 
 ---
@@ -397,92 +485,66 @@ cardShadow:   BoxShadow(color: #1A1565C0, blurRadius: 20, offset: Offset(0, 8))
 
 ---
 
-### НОВЫЕ МАРШРУТЫ РОУТЕРА (добавить в app_router.dart)
-
-| Путь | Экран |
-|------|-------|
-| `/main/pharmacies` | PharmaciesScreen (список филиалов, поиск, ближайшие) |
-| `/main/pharmacies/company/:id` | PharmacyCompanyScreen (профиль компании) |
-| `/main/pharmacies/branch/:id` | PharmacyBranchScreen (профиль филиала + галерея + отзывы) |
-| `/provider/pharmacy-setup` | PharmacySetupScreen (регистрация аптечной компании) |
-| `/provider/pharmacy/branches` | PharmacyBranchesScreen (управление филиалами) |
-| `/provider/pharmacy/branch/add` | AddBranchScreen (добавить филиал) |
-| `/clinic/doctors` | ClinicDoctorsScreen (список врачей клиники) |
-| `/clinic/doctor-requests` | DoctorRequestsScreen (управление заявками) |
-
----
-
 ### АНАЛИТИКА И ОТЧЁТЫ
 
 Раздел **«Отчёты»** доступен клиникам и аптекам. Отображается только внутри приложения (без PDF/email на старте).
 
-**Период:** кастомный диапазон дат (date picker «с — по»). По умолчанию — последние 30 дней.
+**Период:** кастомный диапазон дат. По умолчанию — последние 30 дней.
 
-#### Метрики в отчёте клиники
-1. **Просмотры профиля клиники** — сколько раз пациенты открывали карточку
-2. **Просмотры каждого врача клиники** — сколько раз открывали профиль каждого врача
-3. **Количество звонков** (нажатий кнопки «Позвонить»)
-4. **Количество переходов в WhatsApp**
-5. **Количество переходов в Telegram**
-6. **Количество нажатий «Маршрут»** (2GIS / Google Maps)
-7. **Добавления в избранное** — сколько пациентов добавили клинику/врачей
-8. **Средний рейтинг и число отзывов**
-9. **Топ популярных врачей клиники** — ранжированный список по просмотрам/звонкам
-10. **График активности по дням** — столбчатый/линейный (переключение метрик)
+#### Метрики отчёта клиники
+Просмотры профиля клиники и каждого врача; звонки; переходы в WhatsApp / Telegram; нажатия «Маршрут»; добавления в избранное; средний рейтинг и число отзывов; топ популярных врачей; график активности по дням.
 
-#### Метрики в отчёте аптеки
-- **Только по каждому филиалу отдельно** (без сводного по компании)
-- Селектор филиала наверху экрана
-- Те же метрики: просмотры филиала, звонки, WhatsApp, маршрут, избранное, рейтинг
+#### Метрики отчёта аптеки
+Только по каждому филиалу отдельно (селектор филиала наверху): просмотры филиала, звонки, WhatsApp, маршрут, избранное, рейтинг.
 
-#### Технические требования
-- Новая таблица `analytics_events` (event_type, target_type, target_id, clinic_id, user_id?, metadata, created_at)
-- Mobile отправляет события через `POST /analytics/track` (fire-and-forget, батчем)
+#### Техническая реализация
+- Таблица `analytics_events` (event_type, target_type, target_id, clinic_id, user_id?, metadata, created_at)
+- Mobile отправляет события через `POST /analytics/track` (fire-and-forget)
 - События: `view_clinic`, `view_doctor`, `view_pharmacy_branch`, `click_call`, `click_whatsapp`, `click_telegram`, `click_route`, `add_favorite`, `search`
-- Backend: `GET /clinic/me/analytics?from=...&to=...` + `/clinic/me/analytics/doctors`
-- Для аптек: `GET /pharmacy/me/analytics/branch/:id?from=...&to=...`
-- Этический фильтр: НЕЛЬЗЯ показывать имена/телефоны пациентов клинике — только агрегированные цифры
+- Backend: `GET /analytics/clinic/me`, `GET /analytics/pharmacy/branch/{id}`
+- Этический фильтр: НЕЛЬЗЯ показывать имена/телефоны пациентов — только агрегированные цифры
 - Графики в Flutter через `fl_chart`
 
 ---
 
 ### АДМИН-ПАНЕЛЬ
 
-Доступна по `/panel`, аутентификация cookie + JWT (уже реализовано в `panel.py`). На старте — **1 super-admin** (основатель). Уровень вмешательства — минимум (только блокировка), без редактирования контента клиник.
+Доступна по `/panel`, аутентификация cookie + JWT. На старте — **1 super-admin** (основатель). Уровень вмешательства — минимум: модерация и блокировка, **без редактирования** профилей клиник и врачей. Администратор не является разрешительным звеном: клиники и аптеки активны сразу после регистрации, врачей подтверждают клиники, админ подключается реактивно (по жалобам). Мобильное приложение работает независимо от панели. Финансовых разделов нет — приложение бесплатное.
 
 #### Разделы
+1. **Дашборд** — регистрации (всего / сегодня / неделя / месяц), разбивка по ролям, DAU/WAU/MAU, размер каталога, счётчики ожидающих подтверждения врачей и новых жалоб.
+2. **Пользователи** — список с фильтрами по роли и статусу, поиск, карточка + история действий; блокировка/разблокировка, сброс пароля.
+3. **Врачи** — список по статусам и специализациям, карточка профиля; принудительная смена статуса и заморозка — только при жалобах, без редактирования профиля.
+4. **Клиники** — список, карточка с составом врачей и отзывами; заморозка/разморозка с указанием причины.
+5. **Аптеки** — аптечные компании и их филиалы; заморозка/разморозка компании.
+6. **Отзывы и жалобы** — жалобы (приоритетная вкладка, агрегаты по объектам с порогами 10/100/300), отзывы (удаление недопустимых с указанием причины).
+7. **Аналитика платформы** — регистрации по дням/ролям, DAU/WAU/MAU, топ поисковых запросов (из `search_logs`), запросы без результатов, агрегаты событий (`analytics_events`).
+8. **Журнал действий админов** — аудит всех действий, не удаляется.
+9. **Служебные функции** — статус и ручной запуск регламентных задач (`complaints_warning`, `unblock_expired`), тестовая отправка push.
 
-1. **📊 Дашборд** — регистрации сегодня (по ролям), DAU, новые жалобы
-2. **👥 Пользователи** — список всех (фильтр по роли), поиск, блокировка/разблокировка, сброс пароля, история действий
-3. **🏥 Клиники** — список, просмотр карточки, заморозка
-4. **💊 Аптеки** — то же + список филиалов каждой компании
-5. **👨‍⚕️ Врачи** — список со статусом, фильтры, принудительное изменение статуса (только при жалобах)
-6. **⭐ Отзывы и жалобы** — все отзывы, жалобы наверху отдельным табом, удаление с указанием причины, история модерации
-7. **📝 Контент** — статьи «Первая помощь», категории, фото, управление симптомами/специализациями/категориями клиник
-8. **📈 Аналитика платформы** — DAU/WAU/MAU, регистрации по дням, топ поисковых запросов пациентов, конверсии, география
-9. **🔒 Логи действий админов** — кто, когда, что сделал (для аудита, не удаляется)
+Управления статьями в панели нет: «Первая помощь» — встроенный в приложение фиксированный справочник неотложных ситуаций.
 
-#### Авто-уведомления от админки (cron, ежедневно)
+#### Авто-уведомления от админки (cron, ежедневно 09:00)
 
-**Предупреждение о жалобах:** ежедневно (09:00) job `complaints_warning` агрегирует ВСЕ жалобы по каждой цели (врач / клиника / филиал аптеки) и при достижении порогов отправляет push-уведомление (FCM) владельцу + админам, дублирует in-app:
-- ≥ 10 жалоб (`COMPLAINT_NOTIFY_1`) — первое уведомление «На вас поступили жалобы»
-- ≥ 100 жалоб (`COMPLAINT_NOTIFY_2`) — повторное «Критически много жалоб»
-- ≥ 300 жалоб (`COMPLAINT_BLOCK_AT`) — автоматическая блокировка аккаунта на `COMPLAINT_BLOCK_DAYS` (по умолч. 14) дней + push
-- Ежедневный job `unblock_expired` снимает блокировку по истечении срока
+Job `complaints_warning` агрегирует ВСЕ жалобы по каждой цели (врач / клиника / филиал аптеки) и при достижении порогов шлёт push (FCM) + in-app владельцу и админам:
+- ≥ 10 жалоб (`COMPLAINT_NOTIFY_1`) — «На вас поступили жалобы»
+- ≥ 100 жалоб (`COMPLAINT_NOTIFY_2`) — «Критически много жалоб»
+- ≥ 300 жалоб (`COMPLAINT_BLOCK_AT`) — автоблокировка на `COMPLAINT_BLOCK_DAYS` (по умолч. 14) дней
 
-Дедупликация: повторное уведомление одного типа на ту же цель не шлётся в течение 24 часов.
+Job `unblock_expired` снимает блокировку по истечении срока. Дедупликация: повторное уведомление одного типа на ту же цель не шлётся в течение 24 часов.
 
-#### Технические требования
+#### Техническая реализация
 - Таблицы: `analytics_events`, `complaints`, `admin_logs`, `notifications`
-- Cron через **APScheduler** (запуск в `app/services/scheduler.py`):
-  - Ежедневно 09:00: `complaints_warning`, `unblock_expired`
-- Endpoints: `/admin/dashboard`, `/admin/complaints`, etc.
+- Cron через **APScheduler** (`app/services/scheduler.py`, jobs в `app/services/jobs/`)
+- Служебные эндпоинты: `GET /admin/jobs`, `POST /admin/jobs/{name}/run`, `GET /admin/complaints[/stats]`, `POST /admin/test-push`
 
 ---
 
 ### КОНФИГ (`app/core/config.py`)
 
 ```python
+DEV_MODE = true              # OTP возвращается в ответе
+MISTRAL_API_KEY = ""         # ключ AI-ассистента
 COMPLAINT_NOTIFY_1 = 10      # первое уведомление о жалобах
 COMPLAINT_NOTIFY_2 = 100     # повторное серьёзное
 COMPLAINT_BLOCK_AT = 300     # автоблокировка
@@ -494,34 +556,23 @@ FIREBASE_SERVICE_ACCOUNT_PATH = "serviceAccountKey.json"
 
 ### ТЕКУЩИЙ СТАТУС РАЗРАБОТКИ
 
-**Что согласовано и зафиксировано** (апрель 2026):
-- ✅ Архитектура аптек: компания + филиалы
-- ✅ Галерея фото для каждого филиала
-- ✅ Отзывы на каждый филиал отдельно
-- ✅ Геолокация: запрос при входе или при нажатии «Ближайшие»
-- ✅ Клиника регистрируется сама, сразу активна
-- ✅ Врач — только одна клиника
-- ✅ Статус `removed` для врача + красная плашка
-- ✅ Онлайн-консультация только через WhatsApp/Telegram
-- ✅ 9 шагов регистрации врача
-- ✅ Карты: 2GIS (приоритет) → Google Maps (fallback)
+**Бизнес-модель:** приложение полностью бесплатное для всех ролей; монетизация и подписки убраны. Аналитика и отчёты доступны клиникам и аптекам без ограничений.
 
-**Что согласовано (май 2026):**
-- ✅ Бесплатная модель: монетизация и подписки убраны, приложение полностью бесплатное для всех ролей
-- ✅ Аналитика и отчёты доступны клиникам и аптекам без ограничений
-- ✅ Админ-панель: минимум вмешательства, без финансовых разделов
-- ✅ Авто-уведомления: предупреждения и блокировки при жалобах (пороги 10 / 100 / 300)
-
-**Что реализовано в коде:**
-- ✅ Базовый функционал: аутентификация, каталоги, поиск, отзывы, избранное
-- ✅ AI-ассистент (Mistral AI) с серверной историей диалогов (`ai_conversations`)
-- ✅ Аналитика событий: `analytics_events`, роутер `/analytics`, трекинг с mobile
-- ✅ Жалобы: таблица `complaints`, роутер `/complaints`, диалог жалобы в mobile
-- ✅ APScheduler (ежедневно 09:00): `complaints_warning` (push + in-app + авто-блокировки при 10/100/300 жалобах), `unblock_expired` (снятие блокировок)
-- ✅ Push-уведомления (FCM): сохранение fcm_token через `/auth/fcm-token`, отправка через `send_push` (Firebase Admin SDK)
+**Реализовано в коде:**
+- ✅ Аутентификация (JWT + refresh, OTP, восстановление пароля), роли
+- ✅ Каталоги врачей / клиник / аптек, поиск, симптомы → специализации
+- ✅ Регистрация и кабинеты врачей, клиник, аптек; управление врачами
+- ✅ Модерация изменений профиля врача
+- ✅ Отзывы (врачи / клиники / филиалы аптек)
+- ✅ Избранное с синхронизацией на бэкенде (`/favorites`)
+- ✅ AI-ассистент (Mistral) с серверной историей диалогов
+- ✅ Аналитика событий и отчёты для клиник и аптек (`fl_chart`)
+- ✅ Жалобы + APScheduler (`complaints_warning`, `unblock_expired`) с порогами 10/100/300
+- ✅ Push-уведомления (FCM) + in-app уведомления
 - ✅ Веб-панель администратора (Jinja2, cookie JWT)
+- ✅ Локализация RU / KY / EN (`.arb` + `flutter_localizations`)
 - ✅ pytest: `backend/tests/test_complaints.py`
 
-**Что ещё не реализовано (запланировано):**
-- ⏳ Локализация: создание .arb файлов для KY и EN (сейчас RU хардкод)
-- ⏳ Перенос загрузки фото с локальной папки uploads/ на S3
+**Запланировано:**
+- ⏳ Перенос загрузки фото с локальной папки `uploads/` на S3
+- ⏳ Полноценные миграции Alembic (сейчас `versions/` пуста)

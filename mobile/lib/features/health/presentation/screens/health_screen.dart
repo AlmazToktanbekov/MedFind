@@ -4,6 +4,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../data/first_aid_data.dart';
 
 class HealthScreen extends StatelessWidget {
@@ -11,21 +12,22 @@ class HealthScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.backgroundApp,
       body: CustomScrollView(
         slivers: [
-          _buildHeader(),
-          _buildEmergencyContacts(context),
-          _buildSectionTitle(),
-          _buildFirstAidGrid(context),
+          _buildHeader(l),
+          _buildEmergencyContacts(context, l),
+          _buildSectionTitle(l),
+          _buildFirstAidGrid(context, l),
           const SliverToBoxAdapter(child: SizedBox(height: 32)),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(AppLocalizations l) {
     return SliverToBoxAdapter(
       child: Container(
         decoration: const BoxDecoration(gradient: AppColors.heroGradient),
@@ -34,7 +36,7 @@ class HealthScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Здоровье',
+              l.healthTitle,
               style: GoogleFonts.inter(
                 fontSize: 28,
                 fontWeight: FontWeight.w700,
@@ -43,7 +45,7 @@ class HealthScreen extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Первая помощь и экстренные контакты',
+              l.healthSubtitle,
               style: GoogleFonts.inter(
                 fontSize: 14,
                 color: Colors.white.withValues(alpha: 0.75),
@@ -55,7 +57,7 @@ class HealthScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmergencyContacts(BuildContext context) {
+  Widget _buildEmergencyContacts(BuildContext context, AppLocalizations l) {
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
@@ -76,7 +78,7 @@ class HealthScreen extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  'Экстренные контакты',
+                  l.healthEmergencyContacts,
                   style: GoogleFonts.inter(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
@@ -90,11 +92,15 @@ class HealthScreen extends StatelessWidget {
               children: [
                 Expanded(
                     child: _EmergencyCard(
-                        emoji: '🚑', label: 'Скорая', number: '103')),
+                        emoji: '🚑',
+                        label: l.healthEmergencyAmbulance,
+                        number: '103')),
                 const SizedBox(width: 10),
                 Expanded(
                     child: _EmergencyCard(
-                        emoji: '👮', label: 'Полиция', number: '102')),
+                        emoji: '👮',
+                        label: l.healthEmergencyPolice,
+                        number: '102')),
               ],
             ),
             const SizedBox(height: 10),
@@ -102,11 +108,15 @@ class HealthScreen extends StatelessWidget {
               children: [
                 Expanded(
                     child: _EmergencyCard(
-                        emoji: '🚒', label: 'Пожарные', number: '101')),
+                        emoji: '🚒',
+                        label: l.healthEmergencyFire,
+                        number: '101')),
                 const SizedBox(width: 10),
                 Expanded(
                     child: _EmergencyCard(
-                        emoji: '⛑️', label: 'ПССУ', number: '161')),
+                        emoji: '⛑️',
+                        label: l.healthEmergencyRescue,
+                        number: '161')),
               ],
             ),
           ],
@@ -115,7 +125,7 @@ class HealthScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTitle() {
+  Widget _buildSectionTitle(AppLocalizations l) {
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 28, 16, 14),
@@ -133,7 +143,7 @@ class HealthScreen extends StatelessWidget {
             ),
             const SizedBox(width: 10),
             Text(
-              'Первая помощь',
+              l.healthFirstAid,
               style: GoogleFonts.inter(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
@@ -146,7 +156,7 @@ class HealthScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFirstAidGrid(BuildContext context) {
+  Widget _buildFirstAidGrid(BuildContext context, AppLocalizations l) {
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       sliver: SliverGrid(
@@ -159,6 +169,7 @@ class HealthScreen extends StatelessWidget {
         delegate: SliverChildBuilderDelegate(
           (context, index) => _FirstAidCard(
             category: firstAidCategories[index],
+            l: l,
             onTap: () => context.push(
               '/main/health/first-aid/${firstAidCategories[index].id}',
             ),
@@ -239,9 +250,14 @@ class _EmergencyCard extends StatelessWidget {
 
 class _FirstAidCard extends StatelessWidget {
   final FirstAidCategory category;
+  final AppLocalizations l;
   final VoidCallback onTap;
 
-  const _FirstAidCard({required this.category, required this.onTap});
+  const _FirstAidCard({
+    required this.category,
+    required this.l,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -269,7 +285,7 @@ class _FirstAidCard extends StatelessWidget {
             ),
             const Spacer(),
             Text(
-              category.title,
+              category.title(l),
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
@@ -280,7 +296,7 @@ class _FirstAidCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              '${category.steps.length} шагов',
+              l.healthStepsCount(category.steps(l).length),
               style: GoogleFonts.inter(
                 fontSize: 12,
                 color: category.accentColor.withValues(alpha: 0.7),

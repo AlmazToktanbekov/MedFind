@@ -1,214 +1,191 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 class FirstAidCategory {
   final String id;
   final String emoji;
-  final String title;
   final Color bgColor;
   final Color accentColor;
-  final List<String> steps;
-  final String? warning;
+  final String Function(AppLocalizations l) titleOf;
+  final String Function(AppLocalizations l) warningOf;
+  final String Function(AppLocalizations l) stepsRawOf;
 
   const FirstAidCategory({
     required this.id,
     required this.emoji,
-    required this.title,
     required this.bgColor,
     required this.accentColor,
-    required this.steps,
-    this.warning,
+    required this.titleOf,
+    required this.warningOf,
+    required this.stepsRawOf,
   });
+
+  String title(AppLocalizations l) => titleOf(l);
+  String? warning(AppLocalizations l) {
+    final w = warningOf(l);
+    return w.isEmpty ? null : w;
+  }
+
+  List<String> steps(AppLocalizations l) =>
+      stepsRawOf(l).split('\n').where((s) => s.isNotEmpty).toList();
 }
 
 const List<FirstAidCategory> firstAidCategories = [
   FirstAidCategory(
     id: 'heart-attack',
     emoji: '🫀',
-    title: 'Сердечный приступ',
     bgColor: Color(0xFFFFEBEE),
     accentColor: Color(0xFFC62828),
-    warning: 'Немедленно вызовите 103!',
-    steps: [
-      'Немедленно вызовите скорую 103',
-      'Усадите или уложите пострадавшего, расстегните одежду',
-      'Дайте аспирин 325 мг — разжевать (если нет аллергии)',
-      'При потере сознания и отсутствии дыхания — начните СЛР: 30 нажатий на грудь + 2 вдоха',
-      'Частота нажатий: 100–120 в минуту, глубина: 5–6 см',
-      'Не оставляйте пострадавшего одного до приезда врача',
-    ],
+    titleOf: _heartAttackTitle,
+    warningOf: _heartAttackWarning,
+    stepsRawOf: _heartAttackSteps,
   ),
   FirstAidCategory(
     id: 'stroke',
     emoji: '🧠',
-    title: 'Инсульт',
     bgColor: Color(0xFFE8EAF6),
     accentColor: Color(0xFF283593),
-    warning: 'Каждая минута на счету — вызовите 103!',
-    steps: [
-      'Тест УДАР: Улыбка (кривая?), Движение рук (одна падает?), Артикуляция (речь нарушена?), Решение — звоните 103',
-      'Уложите пострадавшего, чуть приподнимите голову',
-      'Расстегните одежду, обеспечьте доступ воздуха',
-      'Не давайте еду, воду и лекарства',
-      'При рвоте — поверните голову на бок',
-      'Запомните точное время появления симптомов — сообщите врачу',
-    ],
+    titleOf: _strokeTitle,
+    warningOf: _strokeWarning,
+    stepsRawOf: _strokeSteps,
   ),
   FirstAidCategory(
     id: 'burns',
     emoji: '🔥',
-    title: 'Ожоги',
     bgColor: Color(0xFFFFF3E0),
     accentColor: Color(0xFFE65100),
-    warning: 'Не используйте лёд, масло и зубную пасту!',
-    steps: [
-      'Охладите место ожога под прохладной проточной водой 10–20 минут',
-      'Снимите украшения и одежду рядом с ожогом (если не прилипли)',
-      'Накройте стерильной марлей или чистой тканью',
-      'Не вскрывайте волдыри',
-      'Не наносите масло, кефир, зубную пасту или лёд',
-      'При ожоге лица, рук или площади больше ладони — вызовите 103',
-    ],
+    titleOf: _burnsTitle,
+    warningOf: _burnsWarning,
+    stepsRawOf: _burnsSteps,
   ),
   FirstAidCategory(
     id: 'bleeding',
     emoji: '🩸',
-    title: 'Кровотечение',
     bgColor: Color(0xFFFCE4EC),
     accentColor: Color(0xFFAD1457),
-    warning: 'При ярко-красной пульсирующей крови — жгут!',
-    steps: [
-      'Используйте перчатки или чистый пакет на руки',
-      'Прижмите рану чистой тканью или бинтом и держите 10–15 минут',
-      'Не убирайте ткань — добавьте поверх новую, если промокла',
-      'При артериальном кровотечении наложите жгут выше раны',
-      'Запишите точное время наложения жгута',
-      'Жгут снимать только в больнице — вызовите 103',
-    ],
+    titleOf: _bleedingTitle,
+    warningOf: _bleedingWarning,
+    stepsRawOf: _bleedingSteps,
   ),
   FirstAidCategory(
     id: 'fractures',
     emoji: '🦴',
-    title: 'Переломы',
     bgColor: Color(0xFFE3F2FD),
     accentColor: Color(0xFF1565C0),
-    warning: 'Не вправляйте кость самостоятельно!',
-    steps: [
-      'Обездвижьте конечность в том положении, в котором она находится',
-      'Наложите шину из подручных материалов (доска, палка)',
-      'Приложите холод через ткань на 20 минут',
-      'При открытом переломе — закройте рану стерильной повязкой',
-      'Не пытайтесь вправить или выпрямить кость',
-      'Вызовите 103 или доставьте в больницу',
-    ],
+    titleOf: _fracturesTitle,
+    warningOf: _fracturesWarning,
+    stepsRawOf: _fracturesSteps,
   ),
   FirstAidCategory(
     id: 'poisoning',
     emoji: '💊',
-    title: 'Отравление',
     bgColor: Color(0xFFE8F5E9),
     accentColor: Color(0xFF2E7D32),
-    warning: 'При отравлении химикатами — не вызывайте рвоту!',
-    steps: [
-      'Позвоните 103 и опишите, чем отравился человек',
-      'При пищевом отравлении — дайте выпить 1–1,5 л воды и вызовите рвоту (только если в сознании)',
-      'При отравлении химикатами или лекарствами — рвоту не вызывать',
-      'Дайте активированный уголь: 1 таблетка на 10 кг веса',
-      'Уложите пострадавшего на бок',
-      'Следите за дыханием до приезда врача',
-    ],
+    titleOf: _poisoningTitle,
+    warningOf: _poisoningWarning,
+    stepsRawOf: _poisoningSteps,
   ),
   FirstAidCategory(
     id: 'heat-stroke',
     emoji: '🌡️',
-    title: 'Тепловой удар',
     bgColor: Color(0xFFFFFDE7),
     accentColor: Color(0xFFF57F17),
-    steps: [
-      'Перенесите пострадавшего в прохладное место или тень',
-      'Снимите лишнюю одежду',
-      'Охладите тело: влажная ткань на шею, подмышки, пах',
-      'Давайте прохладную воду небольшими глотками (если в сознании)',
-      'Не давайте алкоголь или кофеин',
-      'При температуре выше 39°C или потере сознания — вызовите 103',
-    ],
+    titleOf: _heatStrokeTitle,
+    warningOf: _heatStrokeWarning,
+    stepsRawOf: _heatStrokeSteps,
   ),
   FirstAidCategory(
     id: 'fainting',
     emoji: '😵',
-    title: 'Обморок',
     bgColor: Color(0xFFF3E5F5),
     accentColor: Color(0xFF6A1B9A),
-    steps: [
-      'Уложите человека горизонтально, приподнимите ноги на 30 см',
-      'Расстегните тесную одежду, обеспечьте доступ воздуха',
-      'Поднесите нашатырный спирт к носу (осторожно, не вплотную)',
-      'Протрите лицо холодной водой',
-      'После прихода в сознание — дайте полежать 10–15 минут',
-      'Если сознание не вернулось за 1–2 минуты — вызовите 103',
-    ],
+    titleOf: _faintingTitle,
+    warningOf: _faintingWarning,
+    stepsRawOf: _faintingSteps,
   ),
   FirstAidCategory(
     id: 'drowning',
     emoji: '💧',
-    title: 'Утопление',
     bgColor: Color(0xFFE0F7FA),
     accentColor: Color(0xFF00838F),
-    warning: 'Не рискуйте собой при спасении!',
-    steps: [
-      'Выньте пострадавшего из воды, не рискуя собой',
-      'Уложите на твёрдую поверхность на бок',
-      'Очистите рот от воды и грязи',
-      'Если нет дыхания — начните СЛР: 30 нажатий на грудь + 2 вдоха',
-      'Если есть пульс, но нет дыхания — только искусственное дыхание (12–15 в минуту)',
-      'Вызовите 103 и продолжайте СЛР до приезда',
-    ],
+    titleOf: _drowningTitle,
+    warningOf: _drowningWarning,
+    stepsRawOf: _drowningSteps,
   ),
   FirstAidCategory(
     id: 'electric-shock',
     emoji: '⚡',
-    title: 'Электротравма',
     bgColor: Color(0xFFFFF8E1),
     accentColor: Color(0xFFFF6F00),
-    warning: 'Не прикасайтесь к пострадавшему под током!',
-    steps: [
-      'Не прикасайтесь к пострадавшему, пока он под напряжением',
-      'Отключите источник тока или отодвиньте провод сухой деревянной палкой',
-      'Только убедившись в безопасности — подойдите к пострадавшему',
-      'Проверьте дыхание и пульс; при необходимости начните СЛР',
-      'Охладите ожоги от тока прохладной водой',
-      'Вызовите 103, даже если пострадавший в сознании',
-    ],
+    titleOf: _electricShockTitle,
+    warningOf: _electricShockWarning,
+    stepsRawOf: _electricShockSteps,
   ),
   FirstAidCategory(
     id: 'anaphylaxis',
     emoji: '🤧',
-    title: 'Анафилаксия',
     bgColor: Color(0xFFE0F2F1),
     accentColor: Color(0xFF00695C),
-    warning: 'Вызовите 103 немедленно!',
-    steps: [
-      'Вызовите 103 немедленно',
-      'Введите адреналин (эпинефрин) аутоинъектором в бедро (если есть)',
-      'Уложите пострадавшего, приподнимите ноги (при низком давлении)',
-      'При рвоте — уложите на бок',
-      'При остановке дыхания — начните СЛР',
-      'Не давайте пить или есть до приезда врача',
-    ],
+    titleOf: _anaphylaxisTitle,
+    warningOf: _anaphylaxisWarning,
+    stepsRawOf: _anaphylaxisSteps,
   ),
   FirstAidCategory(
     id: 'animal-bite',
     emoji: '🐾',
-    title: 'Укус животного',
     bgColor: Color(0xFFF9FBE7),
     accentColor: Color(0xFF558B2F),
-    warning: 'При укусе змеи — вызовите 103, не отсасывайте яд!',
-    steps: [
-      'Промойте рану водой с мылом 5–10 минут',
-      'Обработайте йодом или перекисью водорода',
-      'Наложите стерильную повязку',
-      'Обратитесь в травмпункт в течение 24 часов',
-      'Сообщите врачу о состоянии животного (привито/нет, дикое/домашнее)',
-      'При укусе змеи: обездвижьте конечность, не отсасывайте яд, вызовите 103',
-    ],
+    titleOf: _animalBiteTitle,
+    warningOf: _animalBiteWarning,
+    stepsRawOf: _animalBiteSteps,
   ),
 ];
+
+String _heartAttackTitle(AppLocalizations l) => l.firstAidHeartAttackTitle;
+String _heartAttackWarning(AppLocalizations l) => l.firstAidHeartAttackWarning;
+String _heartAttackSteps(AppLocalizations l) => l.firstAidHeartAttackSteps;
+
+String _strokeTitle(AppLocalizations l) => l.firstAidStrokeTitle;
+String _strokeWarning(AppLocalizations l) => l.firstAidStrokeWarning;
+String _strokeSteps(AppLocalizations l) => l.firstAidStrokeSteps;
+
+String _burnsTitle(AppLocalizations l) => l.firstAidBurnsTitle;
+String _burnsWarning(AppLocalizations l) => l.firstAidBurnsWarning;
+String _burnsSteps(AppLocalizations l) => l.firstAidBurnsSteps;
+
+String _bleedingTitle(AppLocalizations l) => l.firstAidBleedingTitle;
+String _bleedingWarning(AppLocalizations l) => l.firstAidBleedingWarning;
+String _bleedingSteps(AppLocalizations l) => l.firstAidBleedingSteps;
+
+String _fracturesTitle(AppLocalizations l) => l.firstAidFracturesTitle;
+String _fracturesWarning(AppLocalizations l) => l.firstAidFracturesWarning;
+String _fracturesSteps(AppLocalizations l) => l.firstAidFracturesSteps;
+
+String _poisoningTitle(AppLocalizations l) => l.firstAidPoisoningTitle;
+String _poisoningWarning(AppLocalizations l) => l.firstAidPoisoningWarning;
+String _poisoningSteps(AppLocalizations l) => l.firstAidPoisoningSteps;
+
+String _heatStrokeTitle(AppLocalizations l) => l.firstAidHeatStrokeTitle;
+String _heatStrokeWarning(AppLocalizations l) => l.firstAidHeatStrokeWarning;
+String _heatStrokeSteps(AppLocalizations l) => l.firstAidHeatStrokeSteps;
+
+String _faintingTitle(AppLocalizations l) => l.firstAidFaintingTitle;
+String _faintingWarning(AppLocalizations l) => l.firstAidFaintingWarning;
+String _faintingSteps(AppLocalizations l) => l.firstAidFaintingSteps;
+
+String _drowningTitle(AppLocalizations l) => l.firstAidDrowningTitle;
+String _drowningWarning(AppLocalizations l) => l.firstAidDrowningWarning;
+String _drowningSteps(AppLocalizations l) => l.firstAidDrowningSteps;
+
+String _electricShockTitle(AppLocalizations l) => l.firstAidElectricShockTitle;
+String _electricShockWarning(AppLocalizations l) =>
+    l.firstAidElectricShockWarning;
+String _electricShockSteps(AppLocalizations l) => l.firstAidElectricShockSteps;
+
+String _anaphylaxisTitle(AppLocalizations l) => l.firstAidAnaphylaxisTitle;
+String _anaphylaxisWarning(AppLocalizations l) => l.firstAidAnaphylaxisWarning;
+String _anaphylaxisSteps(AppLocalizations l) => l.firstAidAnaphylaxisSteps;
+
+String _animalBiteTitle(AppLocalizations l) => l.firstAidAnimalBiteTitle;
+String _animalBiteWarning(AppLocalizations l) => l.firstAidAnimalBiteWarning;
+String _animalBiteSteps(AppLocalizations l) => l.firstAidAnimalBiteSteps;

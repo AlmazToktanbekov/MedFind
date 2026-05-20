@@ -477,6 +477,288 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Specializations'**
   String get homeSectionSpecializations;
+
+  /// No description provided for @healthTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Health'**
+  String get healthTitle;
+
+  /// No description provided for @healthSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'First aid and emergency contacts'**
+  String get healthSubtitle;
+
+  /// No description provided for @healthEmergencyContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency contacts'**
+  String get healthEmergencyContacts;
+
+  /// No description provided for @healthEmergencyAmbulance.
+  ///
+  /// In en, this message translates to:
+  /// **'Ambulance'**
+  String get healthEmergencyAmbulance;
+
+  /// No description provided for @healthEmergencyPolice.
+  ///
+  /// In en, this message translates to:
+  /// **'Police'**
+  String get healthEmergencyPolice;
+
+  /// No description provided for @healthEmergencyFire.
+  ///
+  /// In en, this message translates to:
+  /// **'Fire'**
+  String get healthEmergencyFire;
+
+  /// No description provided for @healthEmergencyRescue.
+  ///
+  /// In en, this message translates to:
+  /// **'Rescue'**
+  String get healthEmergencyRescue;
+
+  /// No description provided for @healthFirstAid.
+  ///
+  /// In en, this message translates to:
+  /// **'First aid'**
+  String get healthFirstAid;
+
+  /// No description provided for @healthStepsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} steps'**
+  String healthStepsCount(int count);
+
+  /// No description provided for @healthFirstAidStepsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Step-by-step actions'**
+  String get healthFirstAidStepsTitle;
+
+  /// No description provided for @healthCallAmbulance.
+  ///
+  /// In en, this message translates to:
+  /// **'Call ambulance — 103'**
+  String get healthCallAmbulance;
+
+  /// No description provided for @firstAidHeartAttackTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Heart attack'**
+  String get firstAidHeartAttackTitle;
+
+  /// No description provided for @firstAidHeartAttackWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Call 103 immediately!'**
+  String get firstAidHeartAttackWarning;
+
+  /// No description provided for @firstAidHeartAttackSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Immediately call ambulance 103\nSeat or lay the victim down, loosen tight clothing\nGive aspirin 325 mg — chew (if no allergy)\nIf unconscious and not breathing — start CPR: 30 chest compressions + 2 breaths\nCompression rate: 100–120 per minute, depth: 5–6 cm\nDo not leave the victim alone until the doctor arrives'**
+  String get firstAidHeartAttackSteps;
+
+  /// No description provided for @firstAidStrokeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stroke'**
+  String get firstAidStrokeTitle;
+
+  /// No description provided for @firstAidStrokeWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Every minute counts — call 103!'**
+  String get firstAidStrokeWarning;
+
+  /// No description provided for @firstAidStrokeSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'FAST test: Face (drooping?), Arms (one falling?), Speech (slurred?), Time — call 103\nLay the victim down, slightly raise the head\nLoosen clothing, ensure airflow\nDo not give food, water or medicine\nIf vomiting — turn the head to the side\nRemember the exact time symptoms appeared — tell the doctor'**
+  String get firstAidStrokeSteps;
+
+  /// No description provided for @firstAidBurnsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Burns'**
+  String get firstAidBurnsTitle;
+
+  /// No description provided for @firstAidBurnsWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Do not use ice, oil or toothpaste!'**
+  String get firstAidBurnsWarning;
+
+  /// No description provided for @firstAidBurnsSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Cool the burn under cool running water for 10–20 minutes\nRemove jewellery and clothing near the burn (if not stuck)\nCover with sterile gauze or clean cloth\nDo not pop blisters\nDo not apply oil, kefir, toothpaste or ice\nFor burns on face, hands or larger than a palm — call 103'**
+  String get firstAidBurnsSteps;
+
+  /// No description provided for @firstAidBleedingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bleeding'**
+  String get firstAidBleedingTitle;
+
+  /// No description provided for @firstAidBleedingWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Bright red pulsating blood — apply a tourniquet!'**
+  String get firstAidBleedingWarning;
+
+  /// No description provided for @firstAidBleedingSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Use gloves or a clean plastic bag on your hands\nPress a clean cloth or bandage onto the wound for 10–15 minutes\nDo not remove the cloth — add a new one on top if soaked\nFor arterial bleeding apply a tourniquet above the wound\nRecord the exact time the tourniquet was applied\nThe tourniquet must be removed only at hospital — call 103'**
+  String get firstAidBleedingSteps;
+
+  /// No description provided for @firstAidFracturesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fractures'**
+  String get firstAidFracturesTitle;
+
+  /// No description provided for @firstAidFracturesWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Do not realign the bone yourself!'**
+  String get firstAidFracturesWarning;
+
+  /// No description provided for @firstAidFracturesSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Immobilise the limb in the position it is in\nApply a splint from available materials (board, stick)\nApply cold through cloth for 20 minutes\nFor an open fracture — cover the wound with sterile dressing\nDo not try to realign or straighten the bone\nCall 103 or take the victim to hospital'**
+  String get firstAidFracturesSteps;
+
+  /// No description provided for @firstAidPoisoningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Poisoning'**
+  String get firstAidPoisoningTitle;
+
+  /// No description provided for @firstAidPoisoningWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'For chemical poisoning — do not induce vomiting!'**
+  String get firstAidPoisoningWarning;
+
+  /// No description provided for @firstAidPoisoningSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Call 103 and describe what the person was poisoned with\nFor food poisoning — give 1–1.5 L of water and induce vomiting (only if conscious)\nFor chemical or medicine poisoning — do not induce vomiting\nGive activated charcoal: 1 tablet per 10 kg of body weight\nLay the victim on their side\nMonitor breathing until the doctor arrives'**
+  String get firstAidPoisoningSteps;
+
+  /// No description provided for @firstAidHeatStrokeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Heat stroke'**
+  String get firstAidHeatStrokeTitle;
+
+  /// No description provided for @firstAidHeatStrokeWarning.
+  ///
+  /// In en, this message translates to:
+  /// **''**
+  String get firstAidHeatStrokeWarning;
+
+  /// No description provided for @firstAidHeatStrokeSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Move the victim to a cool place or shade\nRemove excess clothing\nCool the body: wet cloth on neck, armpits, groin\nGive cool water in small sips (if conscious)\nDo not give alcohol or caffeine\nFor temperature above 39°C or loss of consciousness — call 103'**
+  String get firstAidHeatStrokeSteps;
+
+  /// No description provided for @firstAidFaintingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fainting'**
+  String get firstAidFaintingTitle;
+
+  /// No description provided for @firstAidFaintingWarning.
+  ///
+  /// In en, this message translates to:
+  /// **''**
+  String get firstAidFaintingWarning;
+
+  /// No description provided for @firstAidFaintingSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Lay the person flat, raise legs by 30 cm\nLoosen tight clothing, ensure airflow\nHold ammonia near the nose (carefully, not close)\nWipe face with cold water\nAfter regaining consciousness — let them lie 10–15 minutes\nIf consciousness does not return in 1–2 minutes — call 103'**
+  String get firstAidFaintingSteps;
+
+  /// No description provided for @firstAidDrowningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drowning'**
+  String get firstAidDrowningTitle;
+
+  /// No description provided for @firstAidDrowningWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Do not risk yourself during rescue!'**
+  String get firstAidDrowningWarning;
+
+  /// No description provided for @firstAidDrowningSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Take the victim out of water without risking yourself\nLay on a hard surface, on the side\nClear the mouth of water and dirt\nIf not breathing — start CPR: 30 compressions + 2 breaths\nIf pulse present but no breathing — only rescue breaths (12–15 per minute)\nCall 103 and continue CPR until arrival'**
+  String get firstAidDrowningSteps;
+
+  /// No description provided for @firstAidElectricShockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Electric shock'**
+  String get firstAidElectricShockTitle;
+
+  /// No description provided for @firstAidElectricShockWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Do not touch the victim while under current!'**
+  String get firstAidElectricShockWarning;
+
+  /// No description provided for @firstAidElectricShockSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Do not touch the victim while they are under voltage\nTurn off the power source or push the wire away with a dry wooden stick\nOnly after ensuring safety — approach the victim\nCheck breathing and pulse; if needed start CPR\nCool electric burns with cool water\nCall 103 even if the victim is conscious'**
+  String get firstAidElectricShockSteps;
+
+  /// No description provided for @firstAidAnaphylaxisTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Anaphylaxis'**
+  String get firstAidAnaphylaxisTitle;
+
+  /// No description provided for @firstAidAnaphylaxisWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Call 103 immediately!'**
+  String get firstAidAnaphylaxisWarning;
+
+  /// No description provided for @firstAidAnaphylaxisSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Call 103 immediately\nInject epinephrine (adrenaline) auto-injector into the thigh (if available)\nLay the victim down, raise legs (for low blood pressure)\nIf vomiting — turn on the side\nIf breathing stops — start CPR\nDo not give food or drink until the doctor arrives'**
+  String get firstAidAnaphylaxisSteps;
+
+  /// No description provided for @firstAidAnimalBiteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Animal bite'**
+  String get firstAidAnimalBiteTitle;
+
+  /// No description provided for @firstAidAnimalBiteWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'For snake bite — call 103, do not suck out the venom!'**
+  String get firstAidAnimalBiteWarning;
+
+  /// No description provided for @firstAidAnimalBiteSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Wash the wound with soap and water for 5–10 minutes\nTreat with iodine or hydrogen peroxide\nApply a sterile dressing\nGo to a trauma centre within 24 hours\nInform the doctor about the animal (vaccinated/not, wild/domestic)\nFor snake bite: immobilise the limb, do not suck out venom, call 103'**
+  String get firstAidAnimalBiteSteps;
 }
 
 class _AppLocalizationsDelegate

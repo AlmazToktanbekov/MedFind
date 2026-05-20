@@ -4,7 +4,6 @@ from app.models.clinic import Clinic, ClinicPhoto
 from app.models.pharmacy import PharmacyCompany, PharmacyBranch, PharmacyBranchPhoto
 from app.models.symptom import Symptom, SymptomSpecialization
 from app.models.review import Review
-from app.models.article import Article
 from app.models.favorite import Favorite
 from app.models.notification import Notification
 from app.models.admin_log import AdminLog
@@ -20,7 +19,6 @@ __all__ = [
     "PharmacyCompany", "PharmacyBranch", "PharmacyBranchPhoto",
     "Symptom", "SymptomSpecialization",
     "Review",
-    "Article",
     "Favorite",
     "Notification",
     "AdminLog",

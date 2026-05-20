@@ -1,0 +1,72 @@
+{% extends "admin/base.html" %}
+{% block title %}Служебные функции — MedFind Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>⚙️ Служебные функции</h1>
+  <p>Регламентные задачи и проверка push-уведомлений</p>
+</div>
+
+<div class="card" style="margin-bottom:20px;">
+  <p style="font-size:13px; color:var(--text2); margin:0;">
+    Регламентные задачи выполняются автоматически ежедневно в {{ scheduler_time }}
+    (часовой пояс {{ scheduler_tz }}). Ниже их можно запустить вручную.
+  </p>
+</div>
+
+<div class="card" style="margin-bottom:20px;">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Задача</th>
+          <th>Последний ручной запуск</th>
+          <th>Действие</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for j in jobs %}
+        <tr>
+          <td style="font-weight:600;">{{ j.name }}</td>
+          <td style="font-size:13px; color:var(--text2);">
+            {% if j.last %}
+              {{ j.last.at.strftime('%d.%m.%Y %H:%M') }} —
+              {% if j.last.ok %}
+                <span style="color:#00C897;">успешно</span>
+              {% else %}
+                <span style="color:var(--error);">ошибка</span>
+              {% endif %}
+              <div style="font-size:11px;">{{ j.last.info }}</div>
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td>
+            <form method="POST" action="/panel/system/run/{{ j.name }}" style="display:inline;"
+                  onsubmit="return confirm('Запустить задачу {{ j.name }} сейчас?');">
+              <button type="submit" class="btn btn-sm btn-primary">▶ Запустить</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <h3 style="margin:0 0 8px;">Тестовое push-уведомление</h3>
+  <p style="font-size:13px; color:var(--text2);">
+    Отправить тестовое уведомление текущему администратору для проверки работы
+    push-уведомлений (Firebase Cloud Messaging).
+  </p>
+  {% if test_push %}
+  <p style="font-size:12px; color:var(--text2);">
+    Последняя проверка: {{ test_push.at.strftime('%d.%m.%Y %H:%M') }} — {{ test_push.info }}
+  </p>
+  {% endif %}
+  <form method="POST" action="/panel/system/test-push" style="margin-top:8px;">
+    <button type="submit" class="btn btn-sm btn-primary">📨 Отправить тест</button>
+  </form>
+</div>
+{% endblock %}

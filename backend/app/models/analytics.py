@@ -6,7 +6,7 @@ from app.core.database import Base
 
 
 class AnalyticsEvent(Base):
-    """Событие действия пациента — для отчётов Premium-клиник и аптек.
+    """Событие действия пациента — для отчётов клиник и аптек.
 
     clinic_id и pharmacy_branch_id денормализованы: при view_doctor/click_call/etc
     мы определяем clinic_id врача в момент записи, чтобы потом не делать JOIN.

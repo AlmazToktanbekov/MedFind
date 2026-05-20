@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 
 from app.core.config import settings
 from app.core.rate_limit import limiter
-from app.routers import auth, doctors, clinics, pharmacies, search, reviews, content, admin
+from app.routers import auth, doctors, clinics, pharmacies, search, reviews, admin
 from app.routers import upload, panel, ai, symptoms, favorites, notifications, complaints, analytics
 from app.services import scheduler as _scheduler
 
@@ -83,7 +83,6 @@ app.include_router(clinics.router)
 app.include_router(pharmacies.router)
 app.include_router(search.router)
 app.include_router(reviews.router)
-app.include_router(content.router)
 app.include_router(admin.router)
 app.include_router(panel.router)
 app.include_router(ai.router)

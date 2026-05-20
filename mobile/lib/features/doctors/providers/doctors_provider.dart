@@ -17,6 +17,8 @@ final doctorFilterProvider = StateProvider<DoctorFilter>((_) => DoctorFilter.all
 
 final doctorSpecializationProvider = StateProvider<String?>((_) => null);
 
+final doctorSearchQueryProvider = StateProvider<String>((_) => '');
+
 // ─── Doctors list ──────────────────────────────────────────────────────────
 
 final doctorsProvider = FutureProvider.autoDispose<List<DoctorModel>>((ref) async {

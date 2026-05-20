@@ -17,6 +17,7 @@ class DoctorsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final filter = ref.watch(doctorFilterProvider);
+    final query = ref.watch(doctorSearchQueryProvider).trim().toLowerCase();
     final doctorsAsync = ref.watch(doctorsProvider);
 
     return Scaffold(
@@ -35,7 +36,10 @@ class DoctorsScreen extends ConsumerWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            child: CustomSearchBar(),
+            child: CustomSearchBar(
+              onChanged: (v) =>
+                  ref.read(doctorSearchQueryProvider.notifier).state = v,
+            ),
           ),
           _ConsultationFilterBar(currentFilter: filter),
           const SizedBox(height: 8),
@@ -47,7 +51,14 @@ class DoctorsScreen extends ConsumerWidget {
               error: (e, _) => _ErrorView(
                 onRetry: () => ref.refresh(doctorsProvider),
               ),
-              data: (doctors) {
+              data: (allDoctors) {
+                final doctors = query.isEmpty
+                    ? allDoctors
+                    : allDoctors.where((d) {
+                        final name = d.fullName.toLowerCase();
+                        final spec = d.specialization.toLowerCase();
+                        return name.contains(query) || spec.contains(query);
+                      }).toList();
                 if (doctors.isEmpty) {
                   return const _EmptyView();
                 }

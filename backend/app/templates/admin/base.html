@@ -224,11 +224,14 @@
         <span class="nav-badge">{{ complaints_new_count }}</span>
       {% endif %}
     </a>
-    <a href="/panel/articles" class="nav-item {% if active == 'articles' %}active{% endif %}">
-      <span class="nav-icon">📝</span> Статьи
+    <a href="/panel/reviews" class="nav-item {% if active == 'reviews' %}active{% endif %}">
+      <span class="nav-icon">⭐</span> Отзывы
     </a>
     <a href="/panel/admin-logs" class="nav-item {% if active == 'admin_logs' %}active{% endif %}">
       <span class="nav-icon">🔒</span> Логи действий
+    </a>
+    <a href="/panel/system" class="nav-item {% if active == 'system' %}active{% endif %}">
+      <span class="nav-icon">⚙️</span> Служебные
     </a>
   </nav>
 
