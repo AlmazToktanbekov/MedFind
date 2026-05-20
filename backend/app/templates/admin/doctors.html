@@ -83,22 +83,14 @@
           <td>
             <div style="display:flex; gap:6px; flex-wrap:wrap;">
               <a href="/panel/doctors/{{ d.id }}" class="btn btn-sm btn-ghost">👁</a>
-              {% if d.status == 'pending' %}
-                <form method="POST" action="/panel/approve/doctor/{{ d.id }}" style="display:inline;">
-                  <button type="submit" class="btn btn-sm btn-success" title="Одобрить">✓</button>
+              {% if d.status == 'active' %}
+                <form method="POST" action="/panel/doctors/{{ d.id }}/freeze" style="display:inline;"
+                      onsubmit="return confirm('Заморозить врача?')">
+                  <button type="submit" class="btn btn-sm btn-danger" title="Заморозить">🚫 Заморозить</button>
                 </form>
-                <form method="POST" action="/panel/reject/doctor/{{ d.id }}" style="display:inline;"
-                      onsubmit="return confirm('Отклонить?')">
-                  <button type="submit" class="btn btn-sm btn-danger" title="Отклонить">✗</button>
-                </form>
-              {% elif d.status == 'active' %}
-                <form method="POST" action="/panel/reject/doctor/{{ d.id }}" style="display:inline;"
-                      onsubmit="return confirm('Деактивировать врача?')">
-                  <button type="submit" class="btn btn-sm btn-danger" title="Деактивировать">🚫</button>
-                </form>
-              {% elif d.status == 'rejected' %}
-                <form method="POST" action="/panel/approve/doctor/{{ d.id }}" style="display:inline;">
-                  <button type="submit" class="btn btn-sm btn-success" title="Восстановить">↩</button>
+              {% elif d.status == 'deactivated' %}
+                <form method="POST" action="/panel/doctors/{{ d.id }}/freeze" style="display:inline;">
+                  <button type="submit" class="btn btn-sm btn-success" title="Разморозить">↩ Разморозить</button>
                 </form>
               {% endif %}
             </div>

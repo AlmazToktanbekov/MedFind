@@ -50,20 +50,13 @@
           <td>
             <div style="display:flex; gap:6px;">
               <a href="/panel/clinics/{{ c.id }}" class="btn btn-sm btn-ghost" title="Карточка">👁</a>
-              {% if c.status == 'pending' %}
-                <form method="POST" action="/panel/approve/clinic/{{ c.id }}" style="display:inline;">
-                  <button type="submit" class="btn btn-sm btn-success">✓</button>
+              {% if c.is_frozen %}
+                <form method="POST" action="/panel/clinics/{{ c.id }}/freeze" style="display:inline;">
+                  <button type="submit" class="btn btn-sm btn-success" title="Разморозить">↩ Разморозить</button>
                 </form>
-                <form method="POST" action="/panel/reject/clinic/{{ c.id }}" style="display:inline;" onsubmit="return confirm('Отклонить?')">
-                  <button type="submit" class="btn btn-sm btn-danger">✗</button>
-                </form>
-              {% elif c.status == 'active' %}
-                <form method="POST" action="/panel/reject/clinic/{{ c.id }}" style="display:inline;" onsubmit="return confirm('Деактивировать?')">
-                  <button type="submit" class="btn btn-sm btn-danger">🚫</button>
-                </form>
-              {% elif c.status == 'rejected' %}
-                <form method="POST" action="/panel/approve/clinic/{{ c.id }}" style="display:inline;">
-                  <button type="submit" class="btn btn-sm btn-success">↩</button>
+              {% else %}
+                <form method="POST" action="/panel/clinics/{{ c.id }}/freeze" style="display:inline;" onsubmit="return confirm('Заморозить клинику?')">
+                  <button type="submit" class="btn btn-sm btn-danger" title="Заморозить">🚫 Заморозить</button>
                 </form>
               {% endif %}
             </div>

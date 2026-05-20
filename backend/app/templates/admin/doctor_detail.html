@@ -24,20 +24,14 @@
         {% else %}Отклонён{% endif %}
       </span>
 
-      {% if doctor.status == 'pending' %}
-      <div style="display:flex; gap:8px; margin-top:16px;">
-        <form method="POST" action="/panel/approve/doctor/{{ doctor.id }}" style="flex:1;">
-          <button type="submit" class="btn btn-success" style="width:100%;">✓ Одобрить</button>
-        </form>
-        <form method="POST" action="/panel/reject/doctor/{{ doctor.id }}" style="flex:1;"
-              onsubmit="return confirm('Отклонить?')">
-          <button type="submit" class="btn btn-danger" style="width:100%;">✗ Отклонить</button>
-        </form>
-      </div>
-      {% elif doctor.status == 'active' %}
-      <form method="POST" action="/panel/reject/doctor/{{ doctor.id }}" style="margin-top:16px;"
-            onsubmit="return confirm('Деактивировать?')">
-        <button type="submit" class="btn btn-danger" style="width:100%;">🚫 Деактивировать</button>
+      {% if doctor.status == 'active' %}
+      <form method="POST" action="/panel/doctors/{{ doctor.id }}/freeze" style="margin-top:16px;"
+            onsubmit="return confirm('Заморозить врача?')">
+        <button type="submit" class="btn btn-danger" style="width:100%;">🚫 Заморозить</button>
+      </form>
+      {% elif doctor.status == 'deactivated' %}
+      <form method="POST" action="/panel/doctors/{{ doctor.id }}/freeze" style="margin-top:16px;">
+        <button type="submit" class="btn btn-success" style="width:100%;">↩ Разморозить</button>
       </form>
       {% endif %}
     </div>

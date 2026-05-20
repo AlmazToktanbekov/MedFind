@@ -162,11 +162,6 @@
           <td>
             <div style="display:flex; gap:6px;">
               <a href="/panel/doctors/{{ d.id }}" class="btn btn-sm btn-ghost">Просмотр</a>
-              {% if d.status == 'pending' %}
-              <form method="POST" action="/panel/approve/doctor/{{ d.id }}" style="display:inline;">
-                <button type="submit" class="btn btn-sm btn-success">✓ Одобрить</button>
-              </form>
-              {% endif %}
             </div>
           </td>
         </tr>

@@ -856,3 +856,76 @@ async def panel_system_test_push(request: Request, db: AsyncSession = Depends(ge
     return RedirectResponse("/panel/system", status_code=302)
 
 
+# ── Действия: модерация жалоб ─────────────────────────────────────────────────
+
+@router.post("/complaints/{complaint_id}/status")
+async def panel_complaint_status(
+    complaint_id: int,
+    request: Request,
+    status: str = Form(...),
+    resolution_note: str = Form(default=""),
+    db: AsyncSession = Depends(get_db),
+):
+    admin = await _get_admin(request, db)
+    if not admin:
+        return _redirect_login()
+    c = (await db.execute(select(Complaint).where(Complaint.id == complaint_id))).scalar_one_or_none()
+    if c and status in ("new", "in_review", "resolved", "rejected"):
+        c.status = status
+        if resolution_note.strip():
+            c.resolution_note = resolution_note.strip()
+        if status in ("resolved", "rejected"):
+            c.resolved_by_admin_id = admin.id
+            c.resolved_at = datetime.now(timezone.utc)
+        await log_action(db, admin_id=admin.id, action=f"complaint.{status}",
+                         target_type="complaint", target_id=complaint_id, request=request)
+        await db.commit()
+    return RedirectResponse(request.headers.get("referer", "/panel/complaints"), status_code=302)
+
+
+@router.post("/complaints/{complaint_id}/delete")
+async def panel_complaint_delete(complaint_id: int, request: Request, db: AsyncSession = Depends(get_db)):
+    admin = await _get_admin(request, db)
+    if not admin:
+        return _redirect_login()
+    c = (await db.execute(select(Complaint).where(Complaint.id == complaint_id))).scalar_one_or_none()
+    if c:
+        await db.delete(c)
+        await log_action(db, admin_id=admin.id, action="complaint.delete",
+                         target_type="complaint", target_id=complaint_id, request=request)
+        await db.commit()
+    return RedirectResponse("/panel/complaints", status_code=302)
+
+
+# ── Действия: заморозка врачей и клиник (надзор) ──────────────────────────────
+
+@router.post("/doctors/{doctor_id}/freeze")
+async def panel_doctor_freeze(doctor_id: int, request: Request, db: AsyncSession = Depends(get_db)):
+    admin = await _get_admin(request, db)
+    if not admin:
+        return _redirect_login()
+    d = (await db.execute(select(Doctor).where(Doctor.id == doctor_id))).scalar_one_or_none()
+    if d and d.status in ("active", "deactivated"):
+        d.status = "deactivated" if d.status == "active" else "active"
+        await log_action(db, admin_id=admin.id, action="doctor.freeze",
+                         target_type="doctor", target_id=doctor_id,
+                         details=f"status -> {d.status}", request=request)
+        await db.commit()
+    return RedirectResponse(request.headers.get("referer", "/panel/doctors"), status_code=302)
+
+
+@router.post("/clinics/{clinic_id}/freeze")
+async def panel_clinic_freeze(clinic_id: int, request: Request, db: AsyncSession = Depends(get_db)):
+    admin = await _get_admin(request, db)
+    if not admin:
+        return _redirect_login()
+    c = (await db.execute(select(Clinic).where(Clinic.id == clinic_id))).scalar_one_or_none()
+    if c:
+        c.is_frozen = not c.is_frozen
+        await log_action(db, admin_id=admin.id, action="clinic.freeze",
+                         target_type="clinic", target_id=clinic_id,
+                         details=f"is_frozen -> {c.is_frozen}", request=request)
+        await db.commit()
+    return RedirectResponse(request.headers.get("referer", "/panel/clinics"), status_code=302)
+
+
