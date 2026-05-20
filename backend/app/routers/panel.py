@@ -18,6 +18,7 @@ from app.models.user import User
 from app.models.doctor import Doctor, DoctorContact, DoctorService, DoctorSchedule
 from app.models.clinic import Clinic
 from app.models.pharmacy import PharmacyCompany
+from app.models.review import Review
 from app.models.admin_log import AdminLog
 from app.models.complaint import Complaint
 from app.models.pharmacy import PharmacyBranch
@@ -777,7 +778,7 @@ async def panel_review_delete(
         elif branch_id:
             await _recalc_branch_rating(branch_id, db)
         await log_action(
-            db, admin.id, action="review.delete",
+            db, admin_id=admin.id, action="review.delete",
             target_type="review", target_id=review_id,
             details=f"причина: {reason}" if reason.strip() else "без указания причины",
             request=request,
@@ -825,7 +826,7 @@ async def panel_system_run(name: str, request: Request, db: AsyncSession = Depen
             "ok": result.get("ok"),
             "info": result.get("stats") or result.get("error"),
         }
-        await log_action(db, admin.id, action="system.run_job",
+        await log_action(db, admin_id=admin.id, action="system.run_job",
                          target_type="job", details=name, request=request)
         await db.commit()
     return RedirectResponse("/panel/system", status_code=302)
@@ -849,7 +850,7 @@ async def panel_system_test_push(request: Request, db: AsyncSession = Depends(ge
         "ok": True,
         "info": "push отправлен" if admin.fcm_token else "in-app сохранено (FCM-токен не задан)",
     }
-    await log_action(db, admin.id, action="system.test_push",
+    await log_action(db, admin_id=admin.id, action="system.test_push",
                      target_type="user", target_id=admin.id, request=request)
     await db.commit()
     return RedirectResponse("/panel/system", status_code=302)
